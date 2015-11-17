@@ -1,0 +1,416 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>WindNinja Mobile</title>
+
+	<link rel="stylesheet" href="css/ol.css" type="text/css">
+	<link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
+	<link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css" type="text/css">
+	<link rel="stylesheet" href="css/map.css" type="text/css">
+
+</head>
+<body>
+	<!-- Mappage -->
+	<div data-role="page" id="mapPage" data-theme="a">
+		<!-- Head -->
+		<div id="head" data-theme="a" data-role="header">
+			<h3>WindNinja Mobile</h3>
+			<a href="#pnl_Runs" data-role="button" data-icon="bars" data-iconpos="left" class="btn">Runs</a>
+			<a href="#pnl_Settings" data-position-to="window" class="btn ui-content" data-role="button" data-inline="true" data-icon="gear" data-transition="pop" data-iconpos="notext">Settings</a>
+			<div id="tbl_Date">
+				<div id="runDate" class="ui-corner-all"></div>
+			</div>
+		</div>
+		<!-- Busy Overlay -->
+		<div id="spinner"></div>
+		<!-- Downloads -->
+		<div id="loader" data-role="popup" data-corners="true" data-dismissible="false" style="width: 250px;">
+			<div data-role="content" data-corners="true" style="margin: 0.5em;">
+				<label for="totalprogress" id="totalLabel">Outputs:</label>
+				<div id="totalprogress" data-mini="true"></div>
+				<br />
+				<label for="productProgress" id="productLabel">Files:</label>
+				<div id="productProgress" data-mini="true"></div>
+			</div>
+		</div>
+		<!-- Help -->
+		<div id="splash" data-role="popup" data-corners="true" data-dismissible="false">
+			<div id="helpHeader" data-role="header" class="ui-corner-top">
+				<h1>Help</h1>
+			</div>
+			<div id="helpContent" data-role="content" style="overflow-y: scroll; overflow-x: hidden;">
+				<div style="font-size: small; margin: 0.5em;">
+					<ul>
+						<li>
+							<p>
+								Navigate (zoom in/out, pan) around on the map until you find a place you want to create an event.
+							</p>
+						</li>
+						<li>
+							<p>
+								Click the pencil icon to start the drawing tool and draw around the area you want to include in the run, when you're satisfied with the area, click the check button at the bottom of the screen to accept this as the rough domain of the run.
+								<br />
+								Enter a Run Name, select your forecast and time span, and select a vegetation type. When you're ready to go, press the 'Create' button.
+								<br />
+								Additionally, if you wish to be notified when the run has finished executing on the server, ensure you have entered your email and or phone/provider in the settings menu and toggle the appropriate option(s).
+							</p>
+						</li>
+						<li>
+							<p>
+								The request is then sent to the server where it will execute and, if selected, notify you when the run is complete. You can also select the run from the dropdown list and click 'Run Status' to check the status and/or download the finished run data.
+							</p>
+						</li>
+						<li>
+							<p>
+								Once the run is complete and ready for downloading, press the 'Run Status' button and you should be presented with the option to download the data. Clicking "download" will show a download progress bar as it downloads the files locally.
+							</p>
+						</li>
+						<li>
+							<p>
+								Once all the data has been downloaded, you have a few options as far as what gets displayed on the map. You can choose to show the forecast layer from which the run was created, select your display type, and how many forecast hours you want to load with the 'Forecast Hours to Load' slider option (loading more than 5 hours of vector layers is not reccomended). Press 'Add Run to Map' button and the application will begin creating the layers and adding them to the map <strong>NOTE: this may take a long time, please be patient and wait for the spinner to stop and the map to refresh.</strong>
+							</p>
+						</li>
+						<li>
+							<p>
+								You may also select additional fire-related map layers to display on the map in addition to the WindNinja outputs. These map layers are ONLINE only, so may be useful when creating your initial run(s). Currently the layers available are: GeoMac Current Fires &amp; Perimeters, and MODIS Thermal Satellite (two hosting servers available - wildfire.cr.usgs.gov and ActiveFireMaps.fs.fed.us)
+							</p>
+						</li>
+						<li>
+							<p>
+								To change the time of the run (if requested duration is greater than a single forecast), click the clock icon and use the slider to shuffle back and forth between the resultant layers (this will also change the forecast layer to match). The date/time of the forecast will be displayed at the top of the map.
+							</p>
+						</li>
+						<li>
+							<p>
+								You can remove the run from the map with "Remove Run from Map" and get rid of the whole directory (if you're done with it) with "Delete Run" (deletes the directory and all the data within it - <strong>cannot be undone!</strong>).
+							</p>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div id="gotItBtn">Got It</div>
+		</div>
+		<!-- Welcome -->
+		<div id="welcome" data-role="popup" class="ui-corner-all">
+			<div data-role="header" class="ui-corner-top ui-header">
+				<h1 class="ui-title">Welcome</h1>
+			</div>
+			<div role="main" class="ui-corner-bottom ui-content" style="padding:0.75em;">
+				<h4>Welcome to WindNinja Mobile</h4>
+				<p>
+					Thank you for installing WindNinja Mobile, We recommend you provide your contact
+					info so we can notify you via text or email when your simulations finish running.
+					<br /><br />
+					We also suggest that you register your install of WindNinja Mobile to allow you
+					to provide feedback and for us to better track bugs and provide support.
+					<br /><br />
+					These options can be changed at any time in the 'Settings' menu.
+				</p>
+				<div id="btn_ok">OK!</div>
+			</div>
+		</div>
+		<!-- Runs & Display -->
+		<div data-role="panel" data-position="left" data-display="overlay" id="pnl_Runs">
+			<ul data-role="listview" class="nav-search">
+				<li data-icon="delete">
+					<a href="#" data-rel="close">Runs &amp; Display</a>
+				</li>
+			</ul>
+			<div data-role="content" id="menuContent" style="margin-top: 1em;">
+				<fieldset data-role="controlgroup" id="RUNLIST">
+					<legend>Runs:</legend>
+					<select id="runSelect" data-mini="true" data-disabled="true" disabled="disabled"></select>
+					<input type="button" data-role="button" data-mini="true" id="getJobStatus" value="Run Status" />
+					<input type="button" data-role="button" data-mini="true" id="deleteEvent" value="Delete Run" />
+				</fieldset>
+				<fieldset data-role="controlgroup" id="RUNDISPLAY">
+					<span>Forecast Hours to load:</span>
+					<div id="layerSlider" data-role="rangeslider" data-disabled="true">
+						<input type="range" id="layerSliderStart" min="0" max="0" value="0" />
+						<input type="range" id="layerSliderEnd" min="0" max="0" value="0" />
+					</div>
+					<input type="button" data-role="button" data-mini="true" data-disabled="true" id="loadRun" disabled="disabled" value="Add Run to Map" />
+					<input type="button" data-role="button" data-mini="true" data-disabled="true" id="removeRun" disabled="disabled" value="Remove Run from Map" />
+				</fieldset>
+				<div style="display:none;">
+					<span>Display Type:</span>
+					<select id="displayType" data-mini="true" data-disabled="true" disabled="disabled"></select>
+				</div>
+			</div>
+		</div>
+		<!-- Request -->
+		<div data-role="panel" data-position="right" data-position-fixed="true" data-display="overlay" id="request-panel">
+			<ul data-role="listview" class="nav-search">
+				<li data-icon="delete">
+					<a href="#" data-rel="close">WindNinja Run Creation</a>
+				</li>
+			</ul>
+			<div data-role="content" id="requestContent" style="position:relative; top:1em;">
+				<fieldset data-role="controlgroup">
+					<div class="ui-field-contain">
+						<label for="runName">Name:</label>
+						<input type="text" id="runName" data-mini="true" placeholder="Enter Run Name..." />
+					</div>
+				</fieldset>
+				<fieldset data-role="controlgroup">
+					<legend>Forecast Model:</legend>
+					<select data-mini="true" id="forecastModel">
+						<!--<option value="UCAR-NAM-CONUS-12-KM">UCAR NAM CONUS 12km</option>-->
+						<option value="NOMADS-NAM-CONUS-12-KM">NAM CONUS 12km</option>
+						<option value="NOMADS-NAM-ALASKA-11.25-KM">NAM ALASKA 11.25km</option>
+						<option value="NOMADS-HRRR-CONUS-3-KM">HRRR CONUS 3km</option>
+					</select>
+				</fieldset>
+				<fieldset data-role="controlgroup">
+					<legend>Forecast Duration: (hours)</legend>
+					<input type="range" id="forecastDuration" value="1" min="1" max="36" step="1" />
+				</fieldset>
+				<fieldset data-role="controlgroup">
+					<legend>Vegetation:</legend>
+					<select id="vegetation" data-mini="true">
+						<option value="grass">Grass</option>
+						<option value="brush">Brush</option>
+						<option value="trees">Trees</option>
+					</select>
+				</fieldset>
+				<fieldset data-role="controlgroup">
+					<legend>Notifications:</legend>
+					<span style="font-size:x-small;">The run will be completed on a remote server. Enable the text/email options below if you want to be notified when your run is ready for download.</span>
+					<div class="ui-field-contain" style="margin-bottom:0; border:0;">
+						<label for="email" style="display:inline; white-space:nowrap;">Email:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="email" data-role="flipswitch" data-mini="true" data-disabled="true" />
+						</span>
+					</div>
+					<div class="ui-field-contain" style="margin-top:0; border:0;">
+						<label for="text" style="display:inline; white-space:nowrap;">Text:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="text" data-role="flipswitch" data-mini="true" data-disabled="true" />
+						</span>
+					</div>
+				</fieldset>
+				<br />
+				<input type="button" data-role="button" data-mini="true" id="createRun" value="Submit" />
+			</div>
+		</div>
+		<!-- Settings -->
+		<div id="pnl_Settings" data-role="panel" data-position="right" data-position-fixed="true" data-display="overlay">
+			<ul class="nav-search" data-role="listview">
+				<li data-icon="delete">
+					<a href="#" data-rel="close">WindNinja Mobile Settings</a>
+				</li>
+			</ul>
+			<div id="settingsContent" data-role="content" style="position:relative; top:1em;">
+				<fieldset data-role="controlgroup">
+					<legend>User Info:</legend>
+					<span style="font-size: x-small;">
+						If you wish to register your install of WindNinja Mobile, please fill in your name and
+						email address and press 'Save' This information will also be used when submiting feedback.
+					</span>
+					<div class="ui-field-contain">
+						<label for="userName">Name:</label>
+						<input type="text" id="userName" data-mini="true" placeholder="Your Name" />
+						<label for="userEmail">Email:</label>
+						<input type="email" id="userEmail" data-mini="true" placeholder="Email Address" />
+						<label for="userPhone">Phone:</label>
+						<input type="tel" id="userPhone" data-mini="true" placeholder="Mobile Number" />
+						<label for="provider">&nbsp;</label>
+						<select id="provider" data-mini="true">
+							<option value="">Cell Provider</option>
+							<option value="message.Alltel.com">Alltel Wireless</option>
+							<option value="txt.att.net">AT&T Wireless</option>
+							<option value="cingularme.com">AT&T Mobility (Cingular)</option>
+							<option value="myboostmobile.com">Boost Mobile</option>
+							<option value="sms.mycricket.com">Cricket</option>
+							<option value="mymetropcs.com">Metro PCS</option>
+							<option value="messaging.sprintpcs.com">Sprint (PCS)</option>
+							<option value="page.nextel.com">Sprint (Nextel)</option>
+							<option value="tmomail.net">T-Mobile</option>
+							<option value="email.uscc.net">U.S. Cellular</option>
+							<option value="vtext.com">Verizon Wireless (inc. Straight Talk)</option>
+							<option value="vmobl.com">Virgin Mobile</option>
+						</select>
+						<span style="font-size:x-small;">
+							If you wish to recieve text alerts when your WindNinja runs have completed,
+							enter your mobile telephone number and select your provider from the drop-down list.
+						</span>
+					</div>
+				</fieldset>
+				<fieldset data-role="controlgroup" style="display:none;">
+					<legend>Output Options:</legend>
+					<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+						<label for="vectorOutput" style="display:inline; white-space:nowrap;">Vectors:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="vectorOutput" data-role="flipswitch" />
+						</span>
+					</div>
+					<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+						<label for="rasterOutput" style="display:inline; white-space:nowrap;">Rasters:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="rasterOutput" data-role="flipswitch" />
+						</span>
+					</div>
+					<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+						<label for="topoOutput" style="display:inline; white-space:nowrap;">TopoFire Tiles:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="topoOutput" data-role="flipswitch" />
+						</span>
+					</div>
+					<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+						<label for="googlOutput" style="display:inline; white-space:nowrap;">Google (KML):</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="googlOutput" data-role="flipswitch" />
+						</span>
+					</div>
+					<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+						<label for="geopdfOutput" style="display:inline; white-space:nowrap;">GeoPDF:</label>
+						<span style="float:right; margin-top:-0.5em;">
+							<input type="checkbox" id="geopdfOutput" data-role="flipswitch" />
+						</span>
+					</div>
+				</fieldset>
+				<input type="button" id="saveSettings" value="Save" />
+				<input type="button" id="register" value="Register" />
+				<input type="button" id="sbmtFeedback" value="Submit Feedback/Questions" />
+				<input type="button" id="help" value="Help" />
+			</div>
+		</div>
+		<!-- Feedback -->
+		<div id="feedback-panel" data-role="popup" data-corners="true" data-dismissible="false">
+			<div id="feedback-header" data-role="header" class="ui-corner-top">
+				<h1>Submit Feedback / Questions</h1>
+			</div>
+			<div id="feedback-content" data-role="content" style="overflow:scroll,hidden;">
+				<div style="height:250px; width:310px; margin:0.5em;">
+					<textarea id="feedbackInfo" style="max-height:250px; height:250px;" data-mini="true" data-autogrow="false"></textarea>
+				</div>
+			</div>
+			<div id="feedback-footer" class="ui-corner-bottom" style="display:inline-block; width:100%;">
+				<div style="width:50%; float:left;">
+					<input type="button" id="cancel" data-role="button" data-mini="true" value="Cancel" />
+				</div>
+				<div style="width:50%; float:right;">
+					<input type="button" id="submit" data-role="button" data-mini="true" value="Submit" />
+				</div>
+			</div>
+		</div>
+		<!-- Layers/Basemap panel -->
+		<div id="pnl_layers" class="ui-corner-right">
+			<ul data-role="listview" class="nav-search" style="border-top-right-radius:4px;">
+				<li data-icon="delete">
+					<a href="#" data-rel="close">Basemap &amp; Layers</a>
+				</li>
+			</ul>
+			<div data-role="content" style="margin-top:1em;">
+				<fieldset data-role="controlgroup" id="BASEMAPS">
+					<legend>Basemap:</legend>
+					<select id="baseMap" data-mini="true">
+						<option value="osm" data-online="true">Topo (Online)</option>
+						<option value="sat" data-online="true">Satellite (Online)</option>
+						<option value="topofire" data-online="true">TopoFire (Online)</option>
+						<option value="local" data-online="false">TopoFire (Offline)</option>
+					</select>
+				</fieldset>
+				<fieldset data-role="controlgroup" id="LAYERS">
+					<legend>Layers:</legend>
+					<label><input type="checkbox" name="layers" value="geomac" /> GeoMac</label>
+					<label><input type="checkbox" name="layers" value="modis" /> MODIS</label>
+				</fieldset>
+			</div>
+		</div>
+		<!-- Run Options Panel -->
+		<div id="pnl_run-opts" class="ui-corner-left">
+			<ul data-role="listview" class="nav-search" style="border-top-left-radius:4px;">
+				<li data-icon="delete">
+					<a href="#" data-rel="close">Viewing Options</a>
+				</li>
+			</ul>
+			<div data-role="content" style="margin-top:1em;">
+				<div id="btn_time">Time Slider</div>
+				<div id="btn_legend">Legend</div>
+				<div id="btn_home">Zoom to Extents</div>
+				<div id="btn_weather">Show Coarse Model</div>
+			</div>
+		</div>
+		<!-- Legend -->
+		<div id="pnl_legend">
+			<div data-role="header" class="ui-corner-top" data-mini="true">
+				<h1 style="font-size: x-small;">Wind Speed</h1>
+			</div>
+			<div data-role="content" data-theme="none" class="ui-content ui-corner-bottom" style="margin: 0.5em;">
+				<ul style="list-style: none; padding: 0; margin: 0; font-size: 12px;">
+					<li>
+						<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAADFBMVEX///8AAAAAAP8AAP8Li+sxAAAAA3RSTlMAAAYTFWHrAAAAJElEQVQI12NgYJA+wMDAIP4BSDD8YfgPBBACzGVgYAdJiB8AAAmZDaEeVMGRAAAAAElFTkSuQmCC" class="legendIcon" />
+						<span id="spd_0"></span>
+						<span id="w_spd_0"></span>
+					</li>
+					<li>
+						<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAAA/wDtdVQvAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
+						<span id="spd_1"></span>
+					</li>
+					<li>
+						<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAD//wBT7WDCAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
+						<span id="spd_2"></span>
+					</li>
+					<li>
+						<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAADFBMVEUAAAD/////pQD/pQD5MLBgAAAAA3RSTlMAAAGNcfRIAAAAH0lEQVQI12MIDXW+ygAkvgKJ0L8M/4EAQoC5UAnvqwB7cxNBByGKwgAAAABJRU5ErkJggg==" class="legendIcon" />
+						<span id="spd_3"></span>
+					</li>
+					<li>
+						<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIBAMAAAACWGKkAAAAFVBMVEX///8AAAAIAAAAAAD/AAD/AAD7AADmFRtAAAAABXRSTlMAABgEAcM1AesAAAAnSURBVAjXY2AAAka1AAYIMA2FMhhCAxhCoQDBgEuBAStUgNE1gAEALEAIjIr3qUkAAAAASUVORK5CYII=" class="legendIcon" />
+						<span id="spd_4"></span>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<!-- Forecast Hour Slider Panel -->
+		<div id="pnl_time">
+			<div data-role="content" data-corners="true">
+				<input type="range" id="timeSlider" data-highlight="true" data-track-theme="b" min="0" max="0" value="0" />
+			</div>
+		</div>
+		<!-- Map -->
+		<div id="map"></div>
+		<!-- Foot -->
+		<div id="foot" data-role="footer" data-theme="b" data-position="fixed" data-tap-toggle="false">
+			<div class="ui-grid-b">
+				<div class="ui-block-a">
+					<!-- Layers Button -->
+					<div id="btn_layers">Layers</div>
+					<!-- /Layers Button -->
+				</div>
+				<div id="pnl_Sketch" class="ui-block-b">
+					<!-- Sketch Buttons -->
+					<div id="draw">
+						<a id="btn_draw" data-role="button" data-icon="edit" data-iconpos="notext" data-mini="true"></a>
+					</div>
+					<div id="sketch">
+						<a id="btn_submit" data-role="button" data-icon="check" data-iconpos="notext" data-mini="true"></a>
+						<a id="btn_cancel" data-role="button" data-icon="delete" data-iconpos="notext" data-mini="true"></a>
+						<!--<span id="btn_submit">Accept</span>
+						<span id="btn_cancel">Cancel</span>-->
+					</div>
+					<!-- /Sketch Buttons -->
+				</div>
+				<div class="ui-block-c">
+					<!-- Run Options -->
+					<div id="btn_run-opts">Viewing Options</div>
+					<!-- /Run Options -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript" src="cordova.js"></script>
+	<script type="text/javascript" src="scripts/ol.js"></script>
+	<script type="text/javascript" src="scripts/jquery-1.11.2.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery.mobile-1.4.5.min.js"></script>
+	<script type="text/javascript" src="scripts/spin.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery.spin.min.js"></script>
+	<script type="text/javascript" src="scripts/helpers.js"></script>
+	<script type="text/javascript" src="scripts/windninja.js"></script>
+
+</body>
+</html>

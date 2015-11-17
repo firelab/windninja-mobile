@@ -1,0 +1,94 @@
+{
+    "org.apache.cordova.splashscreen": {
+        "source": {
+            "type": "registry",
+            "id": "org.apache.cordova.splashscreen"
+        }
+    },
+    "org.apache.cordova.device-motion": {
+        "source": {
+            "type": "registry",
+            "id": "org.apache.cordova.device-motion"
+        }
+    },
+    "org.apache.cordova.device-orientation": {
+        "source": {
+            "type": "registry",
+            "id": "org.apache.cordova.device-orientation"
+        }
+    },
+    "org.apache.cordova.geolocation": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.geolocation"
+        }
+    },
+    "org.apache.cordova.network-information": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.network-information"
+        }
+    },
+    "org.apache.cordova.statusbar": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.statusbar"
+        }
+    },
+    "org.apache.cordova.vibration": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.vibration"
+        }
+    },
+    "org.apache.cordova.file": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.file"
+        }
+    },
+    "org.apache.cordova.file-transfer": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.file-transfer"
+        }
+    },
+    "org.apache.cordova.dialogs": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.dialogs"
+        }
+    },
+    "org.apache.cordova.battery-status": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.battery-status"
+        }
+    },
+    "org.apache.cordova.device": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Projects\\USFS.WindNinja.Mobile\\WindNinja-Mobile\\plugins\\org.apache.cordova.device"
+        }
+    },
+    "cordova-plugin-zip": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/MobileChromeApps/cordova-plugin-zip",
+            "subdir": "."
+        }
+    },
+    "cordova-plugin-file": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/apache/cordova-plugin-file",
+            "subdir": "."
+        }
+    },
+    "org.chromium.zip": {
+        "source": {
+            "type": "local",
+            "path": "C:\\Users\\tweber\\Desktop\\org.chromium.zip"
+        }
+    }
+}
