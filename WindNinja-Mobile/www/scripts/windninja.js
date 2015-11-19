@@ -226,7 +226,6 @@ function _loadConfig() {
 			"RegistrationID": undefined
 		};
 		// Open welcome & settings pages
-		$('#welcome').popup('open');
 		$('#pnl_Settings').panel('open');
 	}).always(function () {
 		// bind config properties to the proper UI elements
@@ -252,15 +251,32 @@ function _loadConfig() {
 			$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 		}
 
-		_enableRegister();
+	    _enableRegister();
+
+	    // Only show the Registration page if the user isn't registered
+		console.log("CONFIG OBJECT: ");
+		console.log(config);
+		if (config.Registered) {
+		    console.log("Already registered, hiding registration page...");
+		    //_hideRegistrationPage();
+		} else {
+		    console.log("User not registered");
+		}
 	});
 }
 // Save config file
-function _saveConfig(alert) {
-	// Save UI elements to the config object
-	config.Name = $('#userName').val();
-	config.Email = $('#userEmail').val();
-	config.Phone = $('#userPhone').val().replace(/\D/g, '') + '@' + $('#provider').val();
+function _saveConfig(alert, registration) {
+    if (registration == undefined) {
+        // Save UI elements to the config object
+        config.Name = $('#userName').val();
+        config.Email = $('#userEmail').val();
+        config.Phone = $('#userPhone').val().replace(/\D/g, '') + '@' + $('#provider').val();
+    } else {
+        // Save Registration elements to config object
+        config.Name = $('#registrationName').val();
+        config.Email = $('#registrationEmail').val();
+    }
+
 	config.Outputs = {
 		"vector": $('#vectorOutput').prop('checked'),
 		"raster": $('#rasterOutput').prop('checked'),
@@ -285,8 +301,6 @@ function _saveConfig(alert) {
 		$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 	}
 
-	console.info(config);
-
 	configDir.getFile('config.json', { create: true, exclusive: false }, function (file) {
 		file.createWriter(function (fileWriter) {
 			var blob = new Blob([JSON.stringify(config)], { type: 'application/json' });
@@ -301,13 +315,23 @@ function _enableRegister() {
 	if (config.Registered) {
 		$('#register').prop('disabled', true).button('disable').button('refresh');
 		$('#sbmtFeedback').prop('disabled', false).button('enable').button('refresh');
+		_hideRegistrationPage();
 		return
-	}
-
+    }
 	if ($('#userName').val() !== '' && $('#userEmail').val() !== '') {
 		$('#register').prop('disabled', false).button('enable').button('refresh');
-	}
+    }
 	return
+}
+// display the registration page
+function _showRegistrationPage() {
+    $("#registration").show();
+    $("#mapPage").hide();
+}
+// hide the registration page
+function _hideRegistrationPage() {
+    $("#registration").hide();
+    $("#mapPage").show();
 }
 // Register device for support and feedback
 function _registerInstall() {
@@ -318,7 +342,10 @@ function _registerInstall() {
 		"platform": config.Platform,
 		"version": config.Version
 	};
-
+	config.RegistrationID = $("#registrationEmail").val();
+	config.Registered = true;
+	_saveConfig(false, true);
+    /*
 	$.ajax({
 		url: serverURL + 'api/register',
 		method: 'POST',
@@ -338,6 +365,7 @@ function _registerInstall() {
 		_saveConfig(false);
 		navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
 	});
+    */
 }
 // Submit feedback
 function _submitFeedback(feedback) {
@@ -667,13 +695,17 @@ function initUI() {
 
 	});
 	$('#btn_draw').on('click', function () {
-		console.group('#btn_draw.onClick');
-		$('#draw').hide();
-		$('#sketch').show();
-		_cleanSketch();
-		map.addLayer(sketchLayer);
-		map.addInteraction(sketch);
-		console.groupEnd();
+	    if (config.Registered) {
+	        console.group('#btn_draw.onClick');
+	        $('#draw').hide();
+	        $('#sketch').show();
+	        _cleanSketch();
+	        map.addLayer(sketchLayer);
+	        map.addInteraction(sketch);
+	        console.groupEnd();
+	    } else {
+	        _showRegistrationPage();
+	    }
 	});
 	$('#btn_submit').on('click', function () {
 		console.group('#btn_submit.onClick');
@@ -926,7 +958,6 @@ function initUI() {
 	});
 	$('#btn_ok').button({ mini: true }).on('click', function () {
 		$(this).button('refresh');
-		$('#welcome').popup('close');
 	});
 
 	// Initialize Settings Panel
@@ -941,17 +972,18 @@ function initUI() {
 		$(this).button('refresh');
 		_saveConfig(true);
 	});
-	$('#register').button({ mini: true, disabled: true }).prop('disabled', true).on('click', function () {
-		$(this).prop('disabled', true).button('disable').button('refresh');
-		_registerInstall();
+	$('#register').button({ mini:true, disabled: false }).prop('disabled', false).on('click', function () {
+		//$(this).prop('disabled', true).button('disable').button('refresh');
+	    //_registerInstall();
+	    _showRegistrationPage();
 	});
 	$('#sbmtFeedback').button({ mini: true, disabled: true }).on('click', function () {
 		$(this).button('refresh');
 		$('#feedback-panel').popup('open');
 	});
 	$('#help').button({ mini: true }).on('click', function () {
-		$(this).button('refresh');
-		$('#splash').popup('open');
+	    $(this).button('refresh');
+	    $('#splash').popup('open');
 	});
 	$('#submit').on('click', function () {
 		$(this).button('refresh');
@@ -965,14 +997,23 @@ function initUI() {
 		$('#feedback-panel').popup('close');
 		$('#feedbackInfo').val('');
 	});
-
+	$("#skip").button().on('click', function () {
+	    $(this).button('refresh');
+	    _hideRegistrationPage();
+	});
+	$("#execute_register").button().on('click', function () {
+	    $("#register").prop('disabled', true).button('disable').button('refresh');
+	    _registerInstall()
+	    _hideRegistrationPage();
+	});
 	// Handle window resizing (rotating device)
 	$(window).on('resize', setmapsize);
 	setmapsize();
 }
 // Set map element size
 function setmapsize() {
-	var scrnHeight = $.mobile.getScreenHeight(); // total available screen height
+    var scrnHeight = $.mobile.getScreenHeight(); // total available screen height
+    var srcnWidth = $(window).width(); // total available screen width
 	var headHeight = $('#head').outerHeight(); // outer most height of the header (title bar)
 	var footHeight = $('#foot').outerHeight(); // outer most height of the footer (action buttons)
 	var helpHead = $('#helpHeader').outerHeight(); // outer most height of the 'help' header
