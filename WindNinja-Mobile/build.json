@@ -1,0 +1,18 @@
+{
+	"android": {
+		"distribution": {
+			"keystore": "C:\\keystores\\windninja.jks",
+			"storePassword": "windninja",
+			"alias": "windninja",
+			"password": "windninja",
+			"keystoreType": "jks"
+		},
+		"release": {
+			"keystore": "C:\\keystores\\windninja.jks",
+			"storePassword": "windninja",
+			"alias": "windninja",
+			"password": "windninja",
+			"keystoreType": "jks"
+		}
+	}
+}

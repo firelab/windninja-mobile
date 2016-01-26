@@ -18,19 +18,17 @@ var _DEBUG = false
 	, sketchCoordinates = []
 	, mapProj
 	, latLonProj
+	, wgs84Sphere = new ol.Sphere(6378137)
 	, baseMaps = []
 	, mapLayers = []
-	, gpsLayer
-	, clusterDistance = 12
 	, ninjaRun
-	, domainName
 	, startPixel
 	, holdPromise
 	, connection
 	, dataDir
 	, cacheDir
-	, serverURL = 'http://carto.yourdatasmarter.com/USFS/WindNinja/'
-	, dataURL
+	//, serverURL = 'http://10.20.1.141:8088/'
+	, serverURL = 'http://windninja.wfmrda.org/'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,2}(?:\.\d{1,2})?-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -39,7 +37,7 @@ var _DEBUG = false
 	, rasRegex = /(tiles)/
 	, guidRegex = /[\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}/
 	, demoJob = {
-		"status": "Created",
+		"status": "created",
 		"output": {
 			"products": [
 			{
@@ -100,7 +98,14 @@ var _DEBUG = false
 			}
 			]
 		},
-		"messages": [],
+		"messages": [
+			"2015-02-27T16:48:45.2949952-07:00 | INFO | job created",
+			"2015-02-27T16:48:46.251000-07:00 | INFO | Initializing WindNinja Run",
+			"2015-02-27T16:48:46.370000-07:00 | INFO | DEM created",
+			"2015-02-27T16:49:01.439000-07:00 | INFO | WindNinjaCLI executed",
+			"2015-02-27T16:49:19.481000-07:00 | INFO | Output converted to geojson",
+			"2015-02-27T16:49:19.527000-07:00 | INFO | Complete - total processing: 0:00:33.474000"
+		],
 		"id": "23becdaa-df7c-4ec2-9934-97261e63d813",
 		"name": "Point Six (test)",
 		"input": {
@@ -114,7 +119,8 @@ var _DEBUG = false
 			"products": "vector:true;raster:true;topofire:true;geopdf:false",
 			"forecast": "UCAR-NAM-CONUS-12-KM"
 		}
-	};
+	}
+	, version = '0.2.1';
 
 // Initialize UI
 $(document).ready(initUI);
@@ -145,8 +151,6 @@ function _onDeviceReady() {
 			console.info('tiles cache directory created/set.');
 			cacheDir = dir;
 			_initMap();
-			// Start GPS location
-			_onGPSOn();
 		}, fail);
 	}, fail);
 
@@ -186,15 +190,15 @@ function _onDeviceReady() {
 // Loss of network connection
 function _onOffilne() {
 	connection = false;
-	$('#createRun').button('disable').attr({ 'disabled': 'disabled' });
-	$('[data-online=true]').each(function () { $(this).attr({ 'disabled': 'disabled' }); });
+	$('#createRun').button('disable').prop({ 'disabled': true });
+	$('[data-online="true"]').each(function () { $(this).prop({ 'disabled': true }); });
 	navigator.notification.alert('Network Connection lost', null, 'Network Status', 'Ok');
 }
 // Reacquire network connection
 function _onOnline() {
 	connection = true;
-	$('#createRun').button('enable').removeAttr('disabled');
-	$('[data-online=true]').each(function () { $(this).removeAttr('disabled'); });
+	$('#createRun').button('enable').prop('disabled', false);
+	$('[data-online="true"]').each(function () { $(this).prop('disabled', false); });
 }
 // Load config file
 function _loadConfig() {
@@ -222,11 +226,13 @@ function _loadConfig() {
 			"Device": device.model,
 			"Platform": device.platform,
 			"Version": device.version,
-			"Registered": false,
-			"RegistrationID": undefined
+			"DeviceId": device.uuid,
+			"Registration": {
+				"isRegistered": false,
+				"RegistrationId": undefined,
+				"Status": undefined
+			}
 		};
-		// Open welcome & settings pages
-		$('#pnl_Settings').panel('open');
 	}).always(function () {
 		// bind config properties to the proper UI elements
 		$('#userName').val(config.Name);
@@ -244,38 +250,28 @@ function _loadConfig() {
 		} else {
 			$('#email').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 		}
-
 		if (config.Phone && config.Phone.indexOf('@') == 10) {
 			$('#text').prop('disabled', false).flipswitch('enable');
 		} else {
 			$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 		}
 
-	    _enableRegister();
-
-	    // Only show the Registration page if the user isn't registered
-		console.log("CONFIG OBJECT: ");
-		console.log(config);
-		if (config.Registered) {
-		    console.log("Already registered, hiding registration page...");
-		    //_hideRegistrationPage();
-		} else {
-		    console.log("User not registered");
-		}
+		_checkRegistration();
 	});
 }
 // Save config file
-function _saveConfig(alert, registration) {
-    if (registration == undefined) {
-        // Save UI elements to the config object
-        config.Name = $('#userName').val();
-        config.Email = $('#userEmail').val();
-        config.Phone = $('#userPhone').val().replace(/\D/g, '') + '@' + $('#provider').val();
-    } else {
-        // Save Registration elements to config object
-        config.Name = $('#registrationName').val();
-        config.Email = $('#registrationEmail').val();
-    }
+function _saveConfig(alert) {
+	// Save UI elements to the config object
+	config.Name = $('#userName').val();
+	config.Email = $('#userEmail').val();
+	config.Phone = $('#userPhone').val().replace(/\D/g, '') + '@' + $('#provider').val();
+
+	// If there's no values, try setting from the registration information
+	if (!config.Name)
+		config.Name = $('#registrationName').val();
+	if (!config.Email)
+		config.Email = config.Registration.RegistrationId;
+
 
 	config.Outputs = {
 		"vector": $('#vectorOutput').prop('checked'),
@@ -294,12 +290,14 @@ function _saveConfig(alert, registration) {
 	} else {
 		$('#email').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 	}
-
 	if (config.Phone.indexOf('@') == 10) {
 		$('#text').prop('disabled', false).flipswitch('enable');
 	} else {
 		$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
+		config.Phone = '';
 	}
+
+	console.info(config);
 
 	configDir.getFile('config.json', { create: true, exclusive: false }, function (file) {
 		file.createWriter(function (fileWriter) {
@@ -311,66 +309,122 @@ function _saveConfig(alert, registration) {
 	});
 }
 // Check if the 'Register' button should be enabled
-function _enableRegister() {
-	if (config.Registered) {
-		$('#register').prop('disabled', true).button('disable').button('refresh');
+function _checkRegistration() {
+	if (config.Registration.isRegistered) {
+		$('#register').remove();
 		$('#sbmtFeedback').prop('disabled', false).button('enable').button('refresh');
-		_hideRegistrationPage();
-		return
-    }
-	if ($('#userName').val() !== '' && $('#userEmail').val() !== '') {
-		$('#register').prop('disabled', false).button('enable').button('refresh');
-    }
-	return
+
+		var url = serverURL + 'api/account/' + config.Registration.RegistrationId;
+		// Registered, check status
+		$.ajax({
+			url: url
+		}).done(function (data) {
+			config.Registration.Status = data.status;
+		}).fail(function (data) {
+			navigator.notification.alert('There was an error checking your account status. Please verify network connectivity. ' + data.status + ' :: ' + data.state(), null, 'Account Status');
+		}).always(function () {
+			switch (config.Registration.Status) {
+				case 'accepted':
+					_registrationAccepted()
+					break;
+				case 'pending':
+					_registrationPending()
+					break;
+				case 'disabled':
+					_registrationDisabled()
+					break;
+			}
+		});
+	} else {
+		// Not registered, show registration page
+		_showRegistrationPage();
+	}
 }
 // display the registration page
 function _showRegistrationPage() {
-    $("#registration").show();
-    $("#mapPage").hide();
+	$("#registration").popup('open');
+	setmapsize();
 }
 // hide the registration page
 function _hideRegistrationPage() {
-    $("#registration").hide();
-    $("#mapPage").show();
+	$("#registration").popup('close');
+}
+// User is fully registered
+function _registrationAccepted() {
+	// Allow the draw button to work properly
+	$('#btn_draw').unbind('click');
+	$('#btn_draw').on('click', function () {
+		console.group('#btn_draw.onClick');
+		$('#draw').hide();
+		$('#sketch').show();
+		_removeSketch();
+		_cleanSketch();
+		map.addLayer(sketchLayer);
+		map.addInteraction(sketch);
+		console.groupEnd();
+	});
+}
+// User's registration is pending
+function _registrationPending() {
+	$('#btn_draw').unbind('click');
+	$('#btn_draw').on('click', _showPendingRegistration);
+}
+// User's registration is disabled
+function _registrationDisabled() {
+	$('#btn_draw').unbind('click');
+	$('#btn_draw').on('click', _showDisabledRegistration);
+	$('#sbmtFeedback').prop('disabled', true).button('disable').button('refresh');
+}
+// Show the Registration Pending notification
+function _showPendingRegistration() {
+	navigator.notification.alert('Your registration is pending approval. You will not be able to create/submit any new runs until your account is verified.', null, 'Registration', 'Ok');
+}
+// Show Disabled Account notification
+function _showDisabledRegistration() {
+	navigator.notification.alert('Your account has been disabled. You will not be able to create/submit runs, but will still be able to display any runs already created.', null, 'Registration', 'Ok');
 }
 // Register device for support and feedback
 function _registerInstall() {
 	var registration = {
-		"name": config.Name,
-		"email": config.Email,
-		"device": config.Device,
+		"name": $('#registrationName').val(),
+		"email": $("#registrationEmail").val(),
+		"model": config.Device,
 		"platform": config.Platform,
-		"version": config.Version
+		"version": config.Version,
+		"deviceId": config.DeviceId
 	};
-	config.RegistrationID = $("#registrationEmail").val();
-	config.Registered = true;
-	_saveConfig(false, true);
-    /*
+
 	$.ajax({
-		url: serverURL + 'api/register',
+		url: serverURL + 'services/registration/register',
 		method: 'POST',
 		contentType: 'application/json',
 		dataType: 'json',
 		data: JSON.stringify(registration)
 	}).done(function (data) {
 		console.log(data);
-		config.RegistrationID = data.id;
-		config.Registered = true;
+		config.Registration.RegistrationId = data.account;
+		config.Registration.isRegistered = true;
+		config.Registration.Status = data.status;
+		if ($('#userEmail').val() == '') {
+			$('#userEmail').val(data.account);
+		}
+		if ($('#userName').val() == '') {
+			$('#userName').val($('#registrationName').val());
+		}
 		_saveConfig(false);
-		$('#sbmtFeedback').button('enable').button('refresh');
-		navigator.notification.alert('Thank you for registering your install of WindNinja Mobile.');
-	}).fail(function () {
-		config.RegistrationID = null;
-		config.Registered = false;
+		navigator.notification.alert(data.message, null, 'Registration Complete');
+		$('#pnl_Settings').panel('open');
+	}).fail(function (data) {
+		console.log(data);
+		config.Registration.isRegistered = false;
 		_saveConfig(false);
 		navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
-	});
-    */
+	}).always(_checkRegistration);
 }
 // Submit feedback
 function _submitFeedback(feedback) {
 	var data = {
-		'registerId': config.RegistrationID,
+		'account': config.Registration.RegistrationId,
 		'comments': feedback
 	};
 	$.ajax({
@@ -380,9 +434,9 @@ function _submitFeedback(feedback) {
 		dataType: 'json',
 		data: JSON.stringify(data)
 	}).done(function (data) {
-		navigator.notification.alert('Your feedback has been submitted.', null, 'Feedback');
+		navigator.notification.alert('Thanks, your feedback has been submitted.', null, 'Feedback');
 	}).fail(function () {
-		navigator.notification.alert('Error submitting feedback. Please try again shortly.');
+		navigator.notification.alert('Error submitting feedback. Please verify internet connectivity and try again shortly.');
 	});
 }
 // Initialize map objects
@@ -392,77 +446,37 @@ function _initMap() {
 	mapProj = ol.proj.get('EPSG:3857'); // Web-Mercator
 	latLonProj = ol.proj.get('EPSG:4326'); // Lat/Lon
 	var center = ol.proj.transform([-98.579404, 39.828127], latLonProj, mapProj);
-	var size = ol.extent.getWidth(mapProj.getExtent()) / 256;
-	var resolutions = new Array();
-	var matrixIds = new Array();
-
-	for (var z = 0; z < 14; z++) {
-		resolutions[z] = size / Math.pow(2, z);
-		matrixIds[z] = z;
-	}
 	baseMaps = [];
 
 	/*
 	 * Basemaps
 	 */
-	// Shaded Relief (shared by all online basemaps)
-	var shadow = new ol.layer.Tile({
-		source: new ol.source.WMTS({
-			url: "http://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/WMTS/",
-			layer: '0',
-			matrixSet: 'EPSG:3857',
-			format: 'image/png',
-			projection: mapProj,
-			tileGrid: new ol.tilegrid.WMTS({
-				origin: ol.extent.getTopLeft(mapProj.getExtent()),
-				resolutions: resolutions,
-				matrixIds: matrixIds
-			}),
-			style: 'default',
-			wrapX: true
-		})
-	})
 	// OSM
-	baseMaps.push(new ol.layer.Group({
+	baseMaps.push(new ol.layer.Tile({
 		id: 'osm',
 		visible: true,
 		preload: Infinity,
-		layers: [
-			//shadow,
-			new ol.layer.Tile({
-				source: new ol.source.OSM({
-					url: 'http://{a-c}.tile.opencyclemap.org/landscape/{z}/{x}/{y}.png'
-				})
-			})
-		]
+		source: new ol.source.OSM({
+			url: 'http://{a-c}.tile.opencyclemap.org/landscape/{z}/{x}/{y}.png'
+		})
 	}));
 	// Satellite
-	baseMaps.push(new ol.layer.Group({
+	baseMaps.push(new ol.layer.Tile({
 		id: 'sat',
 		visible: false,
 		preload: Infinity,
-		layers: [
-			//shadow,
-			new ol.layer.Tile({
-				source: new ol.source.MapQuest({
-					layer: 'sat'
-				})
-			})
-		]
+		source: new ol.source.MapQuest({
+			layer: 'sat'
+		})
 	}));
 	// TopoFire
-	baseMaps.push(new ol.layer.Group({
+	baseMaps.push(new ol.layer.Tile({
 		id: 'topofire',
 		visible: false,
-		layers: [
-			//shadow,
-			new ol.layer.Tile({
-				source: new ol.source.OSM({
-					url: 'http://topofire.dbs.umt.edu/topomap/relief/{z}/{x}/{y}.jpg',
-					crossOrigin: 'anonymous'
-				})
-			})
-		]
+		source: new ol.source.OSM({
+			url: 'http://topofire.dbs.umt.edu/topomap/relief/{z}/{x}/{y}.jpg',
+			crossOrigin: 'anonymous'
+		})
 	}));
 	// Local TopoFire Tiles (must be downloaded with each run - cached locally)
 	baseMaps.push(new ol.layer.Tile({
@@ -603,14 +617,35 @@ function _initMap() {
 	});
 
 	//add GPS button to 'zoom' controls (have to add this here because UI initialization has already occured)
-	$('div.ol-zoom.ol-unselectable.ol-control').append($('<button id="btn_GPS" title="GPS" />').on('click', function () {
-		_onGPSOn();
-		//if ($(this).hasClass('on')) {
-		//	_onGPSOff();
-		//} else {
-		//	_onGPSOn();
-		//}
-	}).addClass('off'));
+	$('div.ol-zoom.ol-unselectable.ol-control').append($('<button id="btn_GPS" title="GPS" />').on('click', _onGPSOn));
+
+	// Start GPS location
+	_onGPSOn();
+}
+// Check the size of the domain for the sketch (too small or too big)
+function _checkSketchSize() {
+	var geom = sketchPolyFeature.getGeometry();
+	if (!geom)
+		return -1;
+	var area = getArea(geom);
+	console.log(area);
+	if (area > 0) {
+		if (area > 10000) {
+			// if the area is > 2331 sq km, it's too large (900 sq mi)
+			if ((Math.round(area / 1000000 * 100) / 100) > 2331)
+				return 1;
+		}
+		return 0;
+	}
+	return -1;
+}
+// Get the geodesic area of a polygon in km
+function getArea(polygon) {
+	var geom = (polygon.clone().transform(mapProj, latLonProj));
+	var coordinates = geom.getLinearRing(0).getCoordinates();
+	if (coordinates.length > 0)
+		return Math.abs(wgs84Sphere.geodesicArea(coordinates));
+	else return 0;
 }
 // Remove map sketch layer
 function _removeSketch() {
@@ -630,13 +665,12 @@ function _cleanSketch() {
 // Initialize Runs list
 function _initRunList() {
 	console.info('initializing run list.');
-	$('#loadRun').button('disable').removeAttr('disabled');
 	var dir = dataDir.nativeURL;
 	var directoryReader = dataDir.createReader();
-	var select = $('#runSelect');
+	var container = $('#runs_list');
 	var defs = [];
 
-	select.empty();
+	container.empty();
 	directoryReader.readEntries(function (entries) {
 		$.each(entries, function (i, entry) {
 			if (entry.isDirectory && entry.name !== 'Documents') {
@@ -648,14 +682,56 @@ function _initRunList() {
 					url: url,
 					dataType: 'json'
 				}).done(function (job) {
-					var opt = $('<option />')
-						.val(job.id)
-						.text(job.name);
+					// create the buttons for the run (action button and delete button)
+					var actionBtn = $('<span />').addClass('actionBtn').data({ 'runId': job.id, 'runName': job.name });
+					var delBtn = $('<span />').text('Delete').addClass('deleteBtn').data({ 'runId': job.id, 'runName': job.name });
 
-					select.append(opt);
+					// parse and create the submitted and last updated dates from the messages
+					if (job.messages.length > 0) {
+						var submitDate = new Date(job.messages[0].split(' | ')[0]);
+						var updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
+					} else {
+						var submitDate = new Date();
+						var updateDate = new Date();
+					}
+
+					// Create the run panel
+					var pnl = $('<div />').attr('id', job.id).data('runName', job.name)
+						.append($('<h3 />').text(job.name))
+						.append($('<div data-role="controlgroup" data-type="horizontal">')
+							.css({ 'text-align': 'right' })
+							.append(actionBtn)
+							.append(delBtn)
+						)
+						.append($('<span />').addClass('runTime').text('Submitted: ' + submitDate.toLocaleDateString() + ' ' + submitDate.toLocaleTimeString()))
+						.append('<br />')
+						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString()));
+
+					// add the panel to the parent element and initialize it
+					container.append(pnl);
+					pnl.collapsible({
+						mini: true,
+						corners: true,
+						expand: function () {
+							console.log('expanding/initializing run: ' + $(this).data('runName'));
+							initRun($(this).attr('id'), $(this).data('runName'));
+						},
+						collapse: function () {
+							console.log('collapsing/removing run: ' + $(this).data('runName'));
+							removeRun();
+						}
+					});
+
+					// setup action button title and click events
+					delBtn.button({ mini: true, corners: true }).on('click', function () {
+						if (confirm('Are you sure you wish to delete the run ' + $(this).data('runName') + '?')) {
+							deleteEvent($(this).data('runId'), $(this).data('runName'));
+						}
+					});
+					actionBtn.button({ mini: true, corners: true });
+					toggleActionButton(job.id, job.status);
 
 					console.log(job.name + ' added to run list');
-
 					def.resolve();
 				}).fail(function (err) {
 					def.reject([err.statusText]);
@@ -664,14 +740,8 @@ function _initRunList() {
 		});
 
 		$.when.apply($, defs).done(function () {
-			select.selectmenu('refresh').prop('selectedIndex', 0);
-			if (select.length > 0) {
-				select.selectmenu('enable').removeAttr('disbled').selectmenu('refresh');
-				initRun();
-			}
-			else {
-				select.selectmenu('disable').attr({ 'disbled': 'disabled' }).selectmenu('refresh');
-			}
+			// trigger the 'create' event on the parent container to properly initialze the collapsible panes
+			container.trigger('create');
 		}).fail(function (err) {
 			fail(new Error(err).stack);
 		});
@@ -680,9 +750,18 @@ function _initRunList() {
 // Initialize UI elements and handlers
 function initUI() {
 	console.info('document loaded, initializing UI.');
-	// Setup UI elements and event handlers
+	$('#version').text(version);
 
-	// buttons first
+	// Registration popup
+	$("#registration").popup({
+		theme: 'a',
+		positionTo: 'window',
+		transition: 'pop',
+		tolerance: 0,
+		dismissible: false,
+		history: false
+	});//.popup('open').popup('close');
+
 	// Footer Buttons
 	$('#btn_layers').button({
 		icon: 'grid',
@@ -694,25 +773,21 @@ function initUI() {
 		$('#pnl_layers').panel('toggle');
 
 	});
-	$('#btn_draw').on('click', function () {
-	    if (config.Registered) {
-	        console.group('#btn_draw.onClick');
-	        $('#draw').hide();
-	        $('#sketch').show();
-	        _cleanSketch();
-	        map.addLayer(sketchLayer);
-	        map.addInteraction(sketch);
-	        console.groupEnd();
-	    } else {
-	        _showRegistrationPage();
-	    }
-	});
+	// by default, the draw button should open the registration page
+	$('#btn_draw').on('click', _showRegistrationPage);
 	$('#btn_submit').on('click', function () {
 		console.group('#btn_submit.onClick');
+		map.removeInteraction(sketch);
 		$('#draw').show();
 		$('#sketch').hide();
-		_removeSketch();
-		$('#request-panel').panel('open');
+		var size = _checkSketchSize();
+		if (size === 0) {
+			$('#request-panel').panel('open');
+		} else if (size === -1) {
+			navigator.notification.alert('The selected run size is too small (single point), please redraw your area and try again.', null, 'Run Size');
+		} else if (size === 1) {
+			navigator.notification.alert('The selected run size is too large (> 900sq mi), please redraw your area and try again.', null, 'Run Size');
+		}
 		console.groupEnd();
 	});
 	$('#btn_cancel').on('click', function () {
@@ -721,15 +796,14 @@ function initUI() {
 		$('#draw').show();
 	});
 	$('#btn_run-opts').button({
-		icon: 'bullets',
-		iconpos: 'right',
 		mini: true,
 		disabled: true
 	}).on('click', function () {
 		console.info('#btn_run-opts.onClick');
 		$('#pnl_run-opts').panel('toggle');
 	});
-	// run options panel buttons
+
+	// Run Options panel buttons
 	$('#btn_time').button({ mini: true }).on('click', function () {
 		console.info('#btn_time.onClick');
 		$(this).parent().toggleClass('ui-btn-on');
@@ -779,7 +853,6 @@ function initUI() {
 	});
 	$('#btn_weather').button({ mini: true }).on('click', function () {
 		console.info('#btn_weather.onClick');
-		//$('#pnl_run-opts').panel('close');
 		$(this).parent().toggleClass('ui-btn-on');
 		ninjaRun.LoadForecasts = $(this).parent().hasClass('ui-btn-on');
 		var i = $('#timeSlider').val();
@@ -792,6 +865,7 @@ function initUI() {
 			}
 		}
 	});
+
 	// not really buttons, but inputs
 	$('input[name="layers"]').on('change', function () {
 		var ids = [];
@@ -812,7 +886,6 @@ function initUI() {
 		});
 	});
 
-	// panels next
 	// Basemap/Layers Panel
 	$('#pnl_layers').panel({
 		display: 'overlay',
@@ -824,7 +897,8 @@ function initUI() {
 		beforeclose: function (evt, ui) {
 			$('#btn_layers').parent().removeClass('ui-btn-on');
 		}
-	}).panel('open').panel('close');
+	});//.panel('open').panel('close');
+
 	// Run Options Panel
 	$('#pnl_run-opts').panel({
 		position: 'right',
@@ -839,7 +913,9 @@ function initUI() {
 		}
 	});
 
-	// popups last
+	// Run Request Panel
+	$('#request-panel').on('panelbeforeclose', _removeSketch);
+
 	// Legend Popup
 	$('#pnl_legend').popup({
 		theme: 'b',
@@ -853,6 +929,7 @@ function initUI() {
 		$('#btn_legend').trigger('click');
 	});
 	$('#pnl_legend-screen').remove();
+
 	// Forecast Slider Popup
 	$('#pnl_time').popup({
 		theme: 'none',
@@ -863,21 +940,9 @@ function initUI() {
 		history: false
 	}).popup('open').popup('close');
 	$('#pnl_time-screen').remove();
-
 	$('#createRun').on('click', function () {
 		$(this).button('refresh');
 		submitJob();
-	});
-	$('#runSelect').on('change', function () {
-		$(this).selectmenu('refresh');
-		removeRun();
-		initRun();
-	});
-	$('#deleteEvent').on('click', function () {
-		$(this).button('refresh');
-		if (confirm('Are you sure you wish to delete this run?')) {
-			deleteEvent();
-		}
 	});
 	$('#forecastModel').on('change', function () {
 		var model = $(this).val();
@@ -898,25 +963,6 @@ function initUI() {
 				break;
 		}
 	});
-	$('#loadRun').on('click', function () {
-		$(this).button('disable').prop('disabled', true).button('refresh');
-		$('#removeRun').button('enable').prop('disabled', false).button('refresh');
-		$('#pnl_Runs').panel('close');
-		$('#spinner').spin('windninja');
-
-		var displayType = $('#displayType').val();
-		loadRun(displayType);
-	});
-	$('#removeRun').on('click', function () {
-		$(this).button('disable').button('refresh');
-		$('#loadRun').button('enable').removeAttr('disabled').button('refresh');
-
-		removeRun();
-	});
-	$('#getJobStatus').on('click', function () {
-		$(this).button('refresh');
-		getJobStatus();
-	});
 	$('#timeSlider').slider({
 		start: function () {
 			$('#spinner').spin('windninja');
@@ -928,41 +974,17 @@ function initUI() {
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
 			if (outputLayer !== undefined) {
 				$('#runDate').text('').text(new Date(outputLayer.get('date')).toLocaleString());
-				//updateLegend();
 			}
 
 			$('#spinner').spin(false);
-		}
-	});
-	$('#displayType').on('change', function () {
-		var type = $(this).val();
-
-		if (ninjaRun.Outputs.hasOwnProperty(type)) {
-			var count = ninjaRun.Outputs[type].length;
-			$('#timeSlider').attr({ 'min': 1, 'max': count }).val(1);
-			$('#layerSliderStart').attr({ 'min': 1, 'max': count }).val(1);
-			$('#layerSliderEnd').attr({ 'min': 1, 'max': count }).val(count);
-			$('#loadRun').button('enable').prop('disabled', false).button('refresh');
-			$('#layerSlider').rangeslider('enable').rangeslider('refresh');
-		} else {
-			$('#timeSlider').attr({ 'min': 0, 'max': 0 }).val(0);
-			$('#layerSliderStart').attr({ 'min': 0, 'max': 0 }).val(0);
-			$('#layerSliderEnd').attr({ 'min': 0, 'max': 0 }).val(0);
-			$('#loadRun').button('diable').prop('disabled', true).button('refresh');
-			$('#layerSlider').rangeslider('disable').rangeslider('refresh');
 		}
 	});
 	$('#gotItBtn').button({ mini: true }).on('click', function () {
 		$(this).button('refresh');
 		$('#splash').popup('close');
 	});
-	$('#btn_ok').button({ mini: true }).on('click', function () {
-		$(this).button('refresh');
-	});
 
 	// Initialize Settings Panel
-	$('#userName').on('keyup', _enableRegister);
-	$('#userEmail').on('keyup', _enableRegister);
 	$('#vectorOutput').flipswitch({ mini: true });
 	$('#rasterOutput').flipswitch({ mini: true });
 	$('#topoOutput').flipswitch({ mini: true });
@@ -972,18 +994,18 @@ function initUI() {
 		$(this).button('refresh');
 		_saveConfig(true);
 	});
-	$('#register').button({ mini:true, disabled: false }).prop('disabled', false).on('click', function () {
-		//$(this).prop('disabled', true).button('disable').button('refresh');
-	    //_registerInstall();
-	    _showRegistrationPage();
-	});
+	$('#register').button({ mini: true }).on('click', _showRegistrationPage);
 	$('#sbmtFeedback').button({ mini: true, disabled: true }).on('click', function () {
 		$(this).button('refresh');
 		$('#feedback-panel').popup('open');
 	});
 	$('#help').button({ mini: true }).on('click', function () {
-	    $(this).button('refresh');
-	    $('#splash').popup('open');
+		$(this).button('refresh');
+		$('#splash').popup('open');
+	});
+	$('#about').button({ mini: true }).on('click', function () {
+		$(this).button('refresh');
+		$('#pop_about').popup('open');
 	});
 	$('#submit').on('click', function () {
 		$(this).button('refresh');
@@ -997,23 +1019,66 @@ function initUI() {
 		$('#feedback-panel').popup('close');
 		$('#feedbackInfo').val('');
 	});
-	$("#skip").button().on('click', function () {
-	    $(this).button('refresh');
-	    _hideRegistrationPage();
+	$("#skip").on('click', function () {
+		$(this).button('refresh');
+		$('#registration').popup('close');
 	});
-	$("#execute_register").button().on('click', function () {
-	    $("#register").prop('disabled', true).button('disable').button('refresh');
-	    _registerInstall()
-	    _hideRegistrationPage();
+	$("#execute_register").on('click', function () {
+		_registerInstall()
+		$('#registration').popup('close');
 	});
+
 	// Handle window resizing (rotating device)
 	$(window).on('resize', setmapsize);
 	setmapsize();
 }
+// Toggle the text/functionality of the 'Action' button for a run
+function toggleActionButton(id, status) {
+	var btn = $('#' + id + ' .actionBtn');
+	btn.unbind('click');
+
+	switch (status) {
+		default:
+		case 'created':
+		case 'submitted':
+		case 'executing':
+			btn.text('Status').on('click', function () {
+				console.log('Checking run status: ' + $(this).data('runName'));
+				_checkStatus($(this).data('runId'));
+			});
+			break;
+		case 'downloaded':
+			btn.text('Plot').on('click', function () {
+				console.log('Loading run to map: ' + $(this).data('runName'));
+				$('#pnl_Runs').panel('close');
+				$('#spinner').spin('windninja');
+				toggleActionButton($(this).data('runId'), 'loaded');
+				loadRun('raster');
+			});
+			break;
+		case 'succeeded':
+			btn.text('Download').on('click', function () {
+				console.log('Downloading run data: ' + $(this).data('runName'));
+				getData($(this).data('runId'));
+			});
+			break;
+		case 'loaded':
+			btn.text('Clear').on('click', function () {
+				console.log('Removing run from map: ' + $(this).data('runName'));
+				removeRun();
+			});
+			break;
+		case 'failed':
+			btn.text('Failed').button('disable').prop('disabled', true).button('refresh');
+			break;
+	}
+
+	btn.button('refresh');
+}
 // Set map element size
 function setmapsize() {
-    var scrnHeight = $.mobile.getScreenHeight(); // total available screen height
-    var srcnWidth = $(window).width(); // total available screen width
+	var scrnHeight = $.mobile.getScreenHeight(); // total available screen height
+	var scrnWidth = $(window).width(); // total available screen width
 	var headHeight = $('#head').outerHeight(); // outer most height of the header (title bar)
 	var footHeight = $('#foot').outerHeight(); // outer most height of the footer (action buttons)
 	var helpHead = $('#helpHeader').outerHeight(); // outer most height of the 'help' header
@@ -1025,46 +1090,59 @@ function setmapsize() {
 	}
 
 	// map should only be between the bottom of the header to the top of the footer
-	// add one because the 'footer' is set to 'bottom: -1px', so we adjust..
-	var mapHeight = scrnHeight - headHeight - footHeight + 1;
+	var mapHeight = scrnHeight - headHeight - footHeight + 2;
 	// panels should not scroll over the header, but covering the footer is ok
-	var panelHeight = scrnHeight - headHeight - ($(1.25).toPx());
+	var panelHeight = scrnHeight - headHeight - ($(1.5).toPx());
 	// 0.5em buffer on the top and bottom of the 'help' dialog/popup (so it still looks like a dialog box)
 	var helpHeight = panelHeight - helpHead - helpFoot - ($(0.5).toPx());
 
-	$('#map').height(mapHeight);
+	var popupHeight = scrnHeight - $(0.5).toPx();
+
+	$('#map').css({ 'height': mapHeight + 'px', 'max-height': mapHeight + 'px' });
+	$('body').css({ 'max-height': mapHeight + 'px', 'height': mapHeight + 'px' });
 	$('#menuContent').height(panelHeight);
 	$('#requestContent').height(panelHeight);
+	$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
 	$('#settingsContent').height(panelHeight);
 	$('#helpContent').css({ 'max-height': helpHeight + 'px' });
+	$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px' });
+	$('#registration-popup').css({ 'max-height': scrnHeight, 'height': scrnHeight });
+	$('#registrationContent').outerHeight(((scrnHeight - 1 - $('#registration-popup #head').outerHeight()) - $(1.5).toPx()) + 'px');
+
+
+	// if there are any panels open, toggle visibility so heights get set properly
+	if ($('#pnl_Settings').hasClass('ui-panel-open')) {
+		$('#pnl_Settings').panel('close').panel('open');
+	}
+	if ($('#pnl_Runs').hasClass('ui-panel-open')) {
+		$('#pnl_Runs').panel('close').panel('open');
+	}
+	if ($('#pnl_run-opts').hasClass('ui-panel-open')) {
+		$('#pnl_run-opts').panel('close').panel('open');
+	}
+	if ($('#pnl_layers').hasClass('ui-panel-open')) {
+		$('#pnl_layers').panel('close').panel('open');
+	}
 }
 // Generic fail method
 function fail(err) {
 	console.error(err.message, Error().stack);
 }
 // Initialize WindNinja run data
-function initRun() {
+function initRun(id, name) {
 	console.info('initRun()');
-	var id = $('#runSelect').val();
-	var name = $('#runSelect option:selected').text();
 	if (guidRegex.test(id)) {
-		$('#displayType').empty();
-		$('#loadRun').button('disable').prop('disabled', true);
-		$('#removeRun').button('disable').prop('disabled', true);
+		//$('#displayType').empty();
+		//$('#loadRun').button('disable').prop('disabled', true);
+		//$('#removeRun').button('disable').prop('disabled', true);
 		$('#timeSlider').attr({ 'min': 0, 'max': 0, 'value': 0 });
-		$('#inputWind').flipswitch('disable').prop('disabled', true).flipswitch('refresh');
-		$('#layerSlider').rangeslider('disable');
-		$('#layerSliderStart').attr({ 'min': 0, 'max': 0 }).val(0);
-		$('#layerSliderEnd').attr({ 'min': 0, 'max': 0 }).val(0);
-		$('#layerSlider').rangeslider('refresh');
 
-		//@TODO move the run removal logic to the WinNinja object
 		removeRun();
 		ninjaRun = new WindNinjaRun(id, name);
 
 		ninjaRun.InitRun().done(function () {
+			/*
 			$('#displayType').selectmenu('enable').prop('disabled', false);
-
 			for (var type in this.Outputs) {
 				if (this.Outputs.hasOwnProperty(type)) {
 					if (type !== 'vector') {
@@ -1076,34 +1154,23 @@ function initRun() {
 				}
 			}
 			type = undefined;
-
 			$('#displayType').selectmenu('refresh');
+			*/
 			var displayType = 'raster';//$('#displayType').val();
 
 			if (this.Outputs.hasOwnProperty(displayType)) {
-				var count = this.Outputs[displayType].length;
-				$('#loadRun').button('enable').prop('disabled', false);
-
-				if (this.Forecasts.hasOwnProperty(displayType)) {
-					$('#inputWind').flipswitch('enable').prop('disabled', false).flipswitch('refresh');
-				}
-
-				$('#layerSlider').rangeslider('enable');
-				$('#layerSliderStart').attr({ 'min': 1, 'max': count }).val(1);
-				$('#layerSliderEnd').attr({ 'min': 1, 'max': count }).val(count);
-				$('#layerSlider').rangeslider('refresh');
+				//$('#loadRun').button('enable').prop('disabled', false);
+				this.LoadForecasts = $('#btn_weather').parent().hasClass('ui-btn-on');
 			}
 		});
 	}
 }
 // Delete a WindNinja run from the device
-function deleteEvent() {
-	var run = $('#runSelect').val();
-
-	dataDir.getDirectory(run, null, function (dir) {
+function deleteEvent(id, name) {
+	dataDir.getDirectory(id, null, function (dir) {
 		dir.removeRecursively(function (entry) {
 			console.info('removed entry ' + entry);
-			navigator.notification.alert("Deleted Run " + run, null, 'Run Deleted', 'Ok');
+			navigator.notification.alert("Run '" + name + "' deleted.", null, 'Run Deleted', 'Ok');
 			_initRunList();
 		}, fail);
 	}, fail);
@@ -1122,22 +1189,33 @@ function toggleLayers(IDs) {
 	}
 }
 // Get the status of a WindNinja run
-function getJobStatus() {
-	var selectedJob = $('#runSelect').val();
-	// check if the run has already been downloaded
+function _checkStatus(id) {
+	$('#spinner').spin('windninja');
+	// download the latest copy of the job.json file
+	var url = serverURL + "api/job/" + String(id).replace(/-/g, "");
 	$.ajax({
-		url: ninjaRun.BaseURL + '/job.json',
-		dataType: 'json'
+		type: 'GET',
+		url: url
 	}).done(function (job) {
-		if (job.status === 'Succeeded') {
-			navigator.notification.confirm('This run is finished and has already been downloaded to your device, would you like to re-download the data?', function (index) {
-				if (index === 1) {
-					_onDownloadReady(job, selectedJob);
-				}
-			}, 'WindNinja Run Status', ['Download', 'Cancel']);
-		} else {
-			getData(selectedJob);
-		}
+		dataDir.getDirectory(job.id, { create: true, exclusive: false }, function (dir) {
+			dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
+				file.createWriter(function (fileWriter) {
+					var blob = new Blob([JSON.stringify(job)], { type: 'application/json' });
+					fileWriter.write(blob);
+
+					$('#spinner').spin(false);
+					navigator.notification.alert(job.status, null, 'Run "' + job.name + '" Status', 'Ok');
+
+					var update = $('#' + job.id + ' [data-runId="' + job.id + '"]');
+					var updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
+					update.text(updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString());
+
+					toggleActionButton(job.id, job.status);
+				});
+			});
+		}, fail);
+	}).fail(function (data) {
+		navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'Ok');
 	});
 }
 // Submit a WindNinja run to the server for creation
@@ -1207,6 +1285,7 @@ function submitJob() {
 
 		var mesh = 'fine';
 		var params = {
+			'account': config.Registration.RegistrationId,
 			'xmin': xmin,
 			'ymin': ymin,
 			'xmax': xmax,
@@ -1219,14 +1298,13 @@ function submitJob() {
 		if (notify) {
 			params['email'] = notify;
 		}
-		var url = serverURL + "api/jobs?" + $.param(params);
+		var url = serverURL + "api/job?" + $.param(params);
 
 		$.ajax({
 			type: 'POST',
 			url: url,
 			contentType: 'application/x-www-form-urlencoded'
 		}).done(function (data) {
-			$('#spinner').spin(false);
 			$('#request-panel').panel('close');
 
 			dataDir.getDirectory(data.id, { create: true, exclusive: false }, function (dir) {
@@ -1235,17 +1313,19 @@ function submitJob() {
 						var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
 						fileWriter.write(blob);
 						navigator.notification.alert("Run '" + data.name + "' has been sent to the server for computation. \n The results will be ready shortly in the Runs tab.", function () {
+							_removeSketch();
 							_cleanSketch();
 							_initRunList();
+							_checkStatus(data.id);
 						}, 'Run Created', 'Ok');
 					});
 				});
 			}, fail);
 		}).fail(function (data) {
-			$('#spinner').spin(false);
 			navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'Ok');
 		}).always(function () {
 			$('#runName').val('');
+			$('#spinner').spin(false);
 		});
 	} else {
 		navigator.notification.alert("You must enter a name for this run.", null, 'Error', 'Ok');
@@ -1253,17 +1333,13 @@ function submitJob() {
 }
 // Get the WindNinja run status from the server
 function getData(id) {
-	var url = serverURL + "api/jobs/" + String(id).replace(/-/g, "");
+	var url = serverURL + "api/job/" + String(id).replace(/-/g, "");
 	$.ajax({
 		type: 'GET',
 		url: url
 	}).done(function (data) {
-		if (data.status === 'Succeeded') {
-			navigator.notification.confirm('Files ready to download', function (index) {
-				if (index === 1) {
-					_onDownloadReady(data, id);
-				}
-			}, 'WindNinja Overlay Download', ['Download', 'Cancel']);
+		if (data.status === 'succeeded') {
+			_onDownloadReady(data, id);
 		} else {
 			navigator.notification.alert(data.status, null, 'Event Status', 'Ok');
 		}
@@ -1275,14 +1351,11 @@ function getData(id) {
 function _onDownloadReady(results, id) {
 	console.log(results);
 	var downloadSize = results.output.products.length || 0
-	, doneOutputs = 0
 	, files = 0
 	, done = 0
 	, outputs = [];
 	$('#loader').popup('open', { positionTo: 'window', transition: 'pop' });
-	$('#totalLabel').text('Outputs: 0/' + downloadSize);
 	$('#productLabel').text('Files: 0/..');
-	$('#totalprogress').progressbar({ value: 0, max: downloadSize });
 	$('#productProgress').progressbar({ value: 0 });
 
 	// Create job file and initialize run.
@@ -1290,6 +1363,7 @@ function _onDownloadReady(results, id) {
 		dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
 			console.log("created job.json", file);
 			file.createWriter(function (fileWriter) {
+				results.status = 'Downloaded';
 				var blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
 				fileWriter.write(blob);
 
@@ -1304,16 +1378,20 @@ function _onDownloadReady(results, id) {
 						$('#productLabel').text('Files: ' + done + '/' + files);
 						$('#productProgress').progressbar({ value: done });
 					}).done(function () {
-						doneOutputs++;
-						$('#totalLabel').text('Outputs: ' + doneOutputs + '/' + downloadSize);
-						$('#totalprogress').progressbar({ value: doneOutputs });
 						def.resolve();
 					});
 				});
 
 				$.when.apply($, outputs).done(function () {
 					$('#loader').popup('close');
-					initRun();
+
+					var update = $('#' + results.id + ' [data-runId="' + results.id + '"]');
+					var updateDate = new Date(results.messages[results.messages.length - 1].split(' | ')[0]);
+					update.text(updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString());
+
+					toggleActionButton(results.id, 'downloaded');
+
+					initRun(results.id, results.name);
 				});
 			});
 		});
@@ -1329,7 +1407,7 @@ function downloadProduct(id, product) {
 	if (product.package !== '') {
 		var fileTransfer = new FileTransfer();
 
-		fileTransfer.download(URL + '/' + product.package, DIR + '/' + product.package, function (entry) {
+		fileTransfer.download(URL + product.package, DIR + '/' + product.package, function (entry) {
 			if (product.type === 'basemap') {
 				var name = product.name.split(' Basemap')[0];
 				zip.unzip(DIR + '/' + product.package, cacheDir.nativeURL + name + '/', function (s) {
@@ -1360,7 +1438,7 @@ function downloadProduct(id, product) {
 			var def = $.Deferred()
 			, fileTransfer = new FileTransfer();
 			defs.push(def.promise());
-			fileTransfer.download(URL + '/' + f, DIR + '/' + f, function (entry) {
+			fileTransfer.download(URL + f, DIR + '/' + f, function (entry) {
 				console.log(entry.name + ' downloaded.');
 				deferred.notify();
 				def.resolve();
@@ -1376,10 +1454,6 @@ function downloadProduct(id, product) {
 }
 // Load a WindNinja run (create layers)
 function loadRun(displayType) {
-	$('#spinner').spin('windninja');
-	var min = parseInt($('#layerSliderStart').val());
-	var max = parseInt($('#layerSliderEnd').val());
-
 	ninjaRun.RemoveRun();
 	ninjaRun.OutputLayers = [];
 	ninjaRun.ForecastLayers = [];
@@ -1387,7 +1461,7 @@ function loadRun(displayType) {
 	mapView.fit(ninjaRun.Extent, map.getSize());
 	map.renderSync();
 
-	ninjaRun.LoadRun(min, max, displayType).done(function () {
+	ninjaRun.LoadRun(displayType).done(function () {
 		console.log('ninjaRun.loadRun() :: done, updating UI');
 		$.each([this.OutputLayers, this.ForecastLayers], function (i, g) {
 			$.each(g, function (j, layer) {
@@ -1413,11 +1487,18 @@ function removeRun() {
 	var loaded = ninjaRun && ninjaRun.Loaded();
 
 	$('#tbl_Date').hide();
-	$('#removeRun').button('disable').button('refresh');
 	if (loaded) {
 		ninjaRun.RemoveRun();
+		toggleActionButton(ninjaRun.ID, 'downloaded');
 		navigator.notification.alert("All layers have been removed", null, 'Layers Removed', 'Ok');
 		$('#btn_run-opts').button('disable');
+
+		if ($('#pnl_legend').parent().hasClass('ui-popup-active')) {
+			$('#btn_legend').trigger('click');
+		}
+		if ($('#pnl_time').parent().hasClass('ui-popup-active')) {
+			$('#btn_time').trigger('click');
+		}
 	}
 }
 // Zoom to the extents of a WindNinja run
@@ -1536,21 +1617,22 @@ function WindNinjaRun(id, name) {
 			this.__fail(new Error(err).stack);
 		});
 	};
-	this.LoadRun = function (min, max, displayType) {
+	this.LoadRun = function (displayType) {
 		console.group('Loading WindNinja run.');
 		console.time('Run load time');
-		console.info('LoadRun(' + min + ', ' + max + ', ' + displayType + ')');
+		console.info('LoadRun(' + displayType + ')');
 		this.__resetLayers();
 		var deferred = $.Deferred()
 		, self = this
-		, count = (max - min) + 1;
-		// subtract 1 from min and max to adjust from 'real' numbers to array indicies
-		min--;
-		max--;
+		, count = 0;
+
+		if (this.Outputs.hasOwnProperty(displayType)) {
+			count = this.Outputs[displayType].length;
+		}
 
 		//always create vector forecast layers
-		var fLayers = this.__loadForecastLayers(min, max, 'vector');
-		var oLayers = this.__loadOutputLayers(min, max, displayType);
+		var fLayers = this.__loadForecastLayers('vector');
+		var oLayers = this.__loadOutputLayers(displayType);
 
 		fLayers.progress(function (i) {
 			console.info('WindNinjaRun.LoadRun() :: Done creating Forecast Layer (' + i + '/' + count + ')');
@@ -1637,7 +1719,7 @@ WindNinjaRun.prototype = {
 		this.OutputLayers.sort(this.layerSort);
 		this.ForecastLayers.sort(this.layerSort);
 	}
-	, __loadForecastLayers: function (min, max, displayType) {
+	, __loadForecastLayers: function (displayType) {
 		if (this.__verbose) {
 			console.log('__loadForecastLayers()');
 			console.time('load forecast layers');
@@ -1669,30 +1751,28 @@ WindNinjaRun.prototype = {
 				console.info('creating ' + displayType + ' forecast layers');
 
 			for (var i = 0; i < fileList.length; i++) {
-				if (min <= i && i <= max) {
-					var file = fileList[i];
-					if (dataType !== 'dir') {
-						defs.push($.ajax({
-							url: this.BaseURL + file.Name,
-							dataType: dataType,
-							context: file
-						}).done(function (data) {
-							self.__makeLayer('weather', data, this.Date).done(function (layer) {
-								self.ForecastLayers.push(layer);
-								items++;
-								deferred.notifyWith(self, [items]);
-							});
-						}));
-					} else {
-						var def = $.Deferred();
-						defs.push(def.promise());
-						this.__makeLayer(displayType, file.Data + ':true', file.Date).done(function (layer) {
-							this.ForecastLayers.push(layer);
+				var file = fileList[i];
+				if (dataType !== 'dir') {
+					defs.push($.ajax({
+						url: this.BaseURL + file.Name,
+						dataType: dataType,
+						context: file
+					}).done(function (data) {
+						self.__makeLayer('weather', data, this.Date).done(function (layer) {
+							self.ForecastLayers.push(layer);
 							items++;
-							deferred.notifyWith(this, [items]);
-							def.resolveWith(this);
+							deferred.notifyWith(self, [items]);
 						});
-					}
+					}));
+				} else {
+					var def = $.Deferred();
+					defs.push(def.promise());
+					this.__makeLayer(displayType, file.Data + ':true', file.Date).done(function (layer) {
+						this.ForecastLayers.push(layer);
+						items++;
+						deferred.notifyWith(this, [items]);
+						def.resolveWith(this);
+					});
 				}
 			}
 
@@ -1706,7 +1786,7 @@ WindNinjaRun.prototype = {
 
 		return deferred.promise();
 	}
-	, __loadOutputLayers: function (min, max, displayType) {
+	, __loadOutputLayers: function (displayType) {
 		if (this.__verbose) {
 			console.log('__loadOutputLayers()');
 			console.time('load output layers');
@@ -1737,33 +1817,31 @@ WindNinjaRun.prototype = {
 			if (this.__verbose)
 				console.info('creating ' + displayType + ' output layers');
 			for (var i = 0; i < fileList.length; i++) {
-				if (min <= i && i <= max) {
-					var file = fileList[i];
-					if (dataType !== 'dir') {
-						defs.push($.ajax({
-							url: this.BaseURL + file.Name,
-							dataType: dataType,
-							context: file
-						}).done(function (data) {
-							self.__makeLayer(displayType, data, this.Date).done(function (layer) {
-								if (items === self.VisibleLayer) {
-									self.RunSpeeds = layer.get('speeds');
-								}
-								self.OutputLayers.push(layer);
-								items++;
-								deferred.notifyWith(self, [items]);
-							});
-						}));
-					} else {
-						var def = $.Deferred();
-						defs.push(def.promise());
-						this.__makeLayer(displayType, file.Data + ':false', file.Date).done(function (layer) {
-							this.OutputLayers.push(layer);
+				var file = fileList[i];
+				if (dataType !== 'dir') {
+					defs.push($.ajax({
+						url: this.BaseURL + file.Name,
+						dataType: dataType,
+						context: file
+					}).done(function (data) {
+						self.__makeLayer(displayType, data, this.Date).done(function (layer) {
+							if (items === self.VisibleLayer) {
+								self.RunSpeeds = layer.get('speeds');
+							}
+							self.OutputLayers.push(layer);
 							items++;
-							deferred.notifyWith(this, [items]);
-							def.resolveWith(this);
+							deferred.notifyWith(self, [items]);
 						});
-					}
+					}));
+				} else {
+					var def = $.Deferred();
+					defs.push(def.promise());
+					this.__makeLayer(displayType, file.Data + ':false', file.Date).done(function (layer) {
+						this.OutputLayers.push(layer);
+						items++;
+						deferred.notifyWith(this, [items]);
+						def.resolveWith(this);
+					});
 				}
 			};
 
@@ -2073,7 +2151,7 @@ WindNinjaRun.prototype = {
 	}
 	, __vectorStyle: function (feat, res) {
 		var angle = feat.get('AM_dir').toRad();
-		var scale = res * ((clusterDistance * 2) * 0.75);
+		var scale = res * ((this.__clusterDistance * 2) * 0.75);
 		var arrow = this.__makeVectorArrow(feat, angle, scale);
 		var color = this.__getArrowColor(feat.get('speed'));
 
@@ -2091,7 +2169,7 @@ WindNinjaRun.prototype = {
 	, __clusterVectorStyle: function (feat, res) {
 		var feature = feat.get('features')[0];
 		var angle = feature.get('AM_dir').toRad();
-		var scale = res * (clusterDistance * 0.75);
+		var scale = res * (this.__clusterDistance * 0.75);
 		var arrow = this.__makeVectorArrow(feat, angle, scale);
 		var color = this.__getArrowColor(feature.get('speed'));
 

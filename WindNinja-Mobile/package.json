@@ -1,6 +1,6 @@
 {
-  "dependencies": {
-  },
-  "name": "WindNinja-Mobile",
-  "version": "1.0.0"
+	"name": "WindNinja Mobile",
+	"version": "0.2.0",
+	"dependencies": {
+	}
 }
