@@ -27,8 +27,8 @@ var _DEBUG = false
 	, connection
 	, dataDir
 	, cacheDir
-	//, serverURL = 'http://10.20.1.141:8088/'
-	, serverURL = 'http://windninja.wfmrda.org/'
+	, serverURL = 'http://10.20.1.121/'
+	//, serverURL = 'http://windninja.wfmrda.org/'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,2}(?:\.\d{1,2})?-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -138,8 +138,8 @@ function _onDeviceReady() {
 		StatusBar.styleDefault();
 		StatusBar.backgroundColorByName('lightGray');
 
-		var btm = ($(20).toEm() + 3.25)
-		$('#foot').css({ 'bottom': btm + 'em' });
+		//var btm = ($(20).toEm() + 3.25)
+		//$('#foot').css({ 'bottom': btm + 'em' });
 
 		// Reset our map size to account for the statusbar
 		setmapsize();
@@ -163,7 +163,7 @@ function _onDeviceReady() {
 			directoryEntry.getDirectory('runs', { create: true, exclusive: false }, function (dir) {
 				console.info('run data directory created/set.');
 				dataDir = dir;
-				WindNinjaRun.prototype.__dir = dataDir.nativeURL;
+				WindNinjaRun.prototype.__dir = dataDir.toURL();
 				// is a demo run included?
 				if (_includeDemo) {
 					console.info('including demo run');
@@ -203,7 +203,7 @@ function _onOnline() {
 // Load config file
 function _loadConfig() {
 	return $.ajax({
-		url: configDir.nativeURL + 'config.json',
+		url: configDir.toURL() + 'config.json',
 		dataType: 'json',
 		method: 'GET'
 	}).done(function (configData) {
@@ -394,32 +394,34 @@ function _registerInstall() {
 		"deviceId": config.DeviceId
 	};
 
-	$.ajax({
-		url: serverURL + 'services/registration/register',
-		method: 'POST',
-		contentType: 'application/json',
-		dataType: 'json',
-		data: JSON.stringify(registration)
-	}).done(function (data) {
-		console.log(data);
-		config.Registration.RegistrationId = data.account;
-		config.Registration.isRegistered = true;
-		config.Registration.Status = data.status;
-		if ($('#userEmail').val() == '') {
-			$('#userEmail').val(data.account);
-		}
-		if ($('#userName').val() == '') {
-			$('#userName').val($('#registrationName').val());
-		}
-		_saveConfig(false);
-		navigator.notification.alert(data.message, null, 'Registration Complete');
-		$('#pnl_Settings').panel('open');
-	}).fail(function (data) {
-		console.log(data);
-		config.Registration.isRegistered = false;
-		_saveConfig(false);
-		navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
-	}).always(_checkRegistration);
+	if (registration.email !== '' && registration.name !== '') {
+		$.ajax({
+			url: serverURL + 'services/registration/register',
+			method: 'POST',
+			contentType: 'application/json',
+			dataType: 'json',
+			data: JSON.stringify(registration)
+		}).done(function (data) {
+			console.log(data);
+			config.Registration.RegistrationId = data.account;
+			config.Registration.isRegistered = true;
+			config.Registration.Status = data.status;
+			if ($('#userEmail').val() == '') {
+				$('#userEmail').val(data.account);
+			}
+			if ($('#userName').val() == '') {
+				$('#userName').val($('#registrationName').val());
+			}
+			_saveConfig(false);
+			navigator.notification.alert(data.message, null, 'Registration Complete');
+			$('#pnl_Settings').panel('open');
+		}).fail(function (data) {
+			console.log(data);
+			config.Registration.isRegistered = false;
+			_saveConfig(false);
+			navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
+		}).always(_checkRegistration);
+	}
 }
 // Submit feedback
 function _submitFeedback(feedback) {
@@ -483,7 +485,7 @@ function _initMap() {
 		id: 'local',
 		visible: false,
 		source: new ol.source.XYZ({
-			url: cacheDir.nativeURL + 'TopoFire/{z}/{x}/{y}.jpg'
+			url: cacheDir.toURL() + 'TopoFire/{z}/{x}/{y}.jpg'
 		})
 	}));
 
@@ -665,7 +667,7 @@ function _cleanSketch() {
 // Initialize Runs list
 function _initRunList() {
 	console.info('initializing run list.');
-	var dir = dataDir.nativeURL;
+	var dir = dataDir.toURL();
 	var directoryReader = dataDir.createReader();
 	var container = $('#runs_list');
 	var defs = [];
@@ -743,7 +745,7 @@ function _initRunList() {
 			// trigger the 'create' event on the parent container to properly initialze the collapsible panes
 			container.trigger('create');
 		}).fail(function (err) {
-			fail(new Error(err).stack);
+			fail(err);
 		});
 	});
 }
@@ -1037,7 +1039,7 @@ function toggleActionButton(id, status) {
 	var btn = $('#' + id + ' .actionBtn');
 	btn.unbind('click');
 
-	switch (status) {
+	switch (status.toLowerCase()) {
 		default:
 		case 'created':
 		case 'submitted':
@@ -1086,7 +1088,7 @@ function setmapsize() {
 
 	// If this is iOS 7+, reduce the total height by 20px to account for the status bar that can't be hidden
 	if (isIOS7) {
-		scrnHeight -= 20;
+		//scrnHeight -= 20;
 	}
 
 	// map should only be between the bottom of the header to the top of the footer
@@ -1401,7 +1403,7 @@ function _onDownloadReady(results, id) {
 function downloadProduct(id, product) {
 	var deferred = $.Deferred()
 	, URL = product.baseUrl
-	, DIR = dataDir.nativeURL + id;
+	, DIR = dataDir.toURL() + id;
 
 	// There is a package for this product, download it instead of each individual file (or folder)
 	if (product.package !== '') {
@@ -1410,7 +1412,7 @@ function downloadProduct(id, product) {
 		fileTransfer.download(URL + product.package, DIR + '/' + product.package, function (entry) {
 			if (product.type === 'basemap') {
 				var name = product.name.split(' Basemap')[0];
-				zip.unzip(DIR + '/' + product.package, cacheDir.nativeURL + name + '/', function (s) {
+				zip.unzip(DIR + '/' + product.package, cacheDir.toURL() + name + '/', function (s) {
 					if (s === 0) {
 						console.log('Basemap package extracted successfully to /' + name)
 					} else {
@@ -1439,7 +1441,7 @@ function downloadProduct(id, product) {
 			, fileTransfer = new FileTransfer();
 			defs.push(def.promise());
 			fileTransfer.download(URL + f, DIR + '/' + f, function (entry) {
-				console.log(entry.name + ' downloaded.');
+				console.log(entry.name + ' downloaded to: "' + DIR + '/' + f + '/"');
 				deferred.notify();
 				def.resolve();
 			});

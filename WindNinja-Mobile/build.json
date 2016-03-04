@@ -6,13 +6,12 @@
 			"alias": "windninja",
 			"password": "windninja",
 			"keystoreType": "jks"
-		},
+		}
+	},
+	"ios": {
 		"release": {
-			"keystore": "C:\\keystores\\windninja.jks",
-			"storePassword": "windninja",
-			"alias": "windninja",
-			"password": "windninja",
-			"keystoreType": "jks"
+			"codeSignIdentitiy": "iOS Team Provisioning Profile: *",
+			"provisioningProfile": "ff1e9aab-e231-47c7-a3f0-ea3eeb130fe9"
 		}
 	}
 }

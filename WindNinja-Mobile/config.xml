@@ -121,17 +121,18 @@
       <vs:name>WindNinja Mobile</vs:name>
     </vs:platformSpecificWidget>
   </vs:platformSpecificValues>
-  <vs:plugin name="cordova-plugin-zip" version="3.0.0" src="https://github.com/MobileChromeApps/cordova-plugin-zip" />
-  <vs:plugin name="cordova-plugin-device" version="1.1.0" />
-  <vs:plugin name="cordova-plugin-file" version="3.0.0" />
-  <vs:plugin name="cordova-plugin-file-transfer" version="1.4.0" />
-  <vs:plugin name="cordova-plugin-geolocation" version="1.0.1" />
-  <vs:plugin name="cordova-plugin-network-information" version="1.1.0" />
-  <vs:plugin name="cordova-plugin-dialogs" version="1.2.0" />
-  <vs:plugin name="cordova-plugin-statusbar" version="2.0.0" />
-  <vs:plugin name="cordova-plugin-vibration" version="2.0.0" />
-  <vs:plugin name="cordova-plugin-whitelist" version="1.2.0" />
-  <vs:plugin name="cordova-plugin-splashscreen" version="3.0.0" />
+  <preference name="deployment-target" value="" />
+  <plugin name="cordova-plugin-file" version="4.1.1" />
+  <plugin name="cordova-plugin-file-transfer" version="1.5.0" />
+  <plugin name="cordova-plugin-device" version="1.1.1" />
+  <plugin name="cordova-plugin-geolocation" version="2.1.0" />
+  <plugin name="cordova-plugin-network-information" version="1.2.0" />
+  <plugin name="cordova-plugin-dialogs" version="1.2.0" />
+  <plugin name="cordova-plugin-splashscreen" version="3.1.0" />
+  <plugin name="cordova-plugin-statusbar" version="2.1.1" />
+  <plugin name="cordova-plugin-vibration" version="2.1.0" />
+  <plugin name="cordova-plugin-whitelist" version="1.2.1" />
+  <plugin name="cordova-plugin-zip" version="3.1.0" src="https://github.com/MobileChromeApps/cordova-plugin-zip" />
 </widget>
 <!--
   
