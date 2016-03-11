@@ -27,8 +27,7 @@ var _DEBUG = false
 	, connection
 	, dataDir
 	, cacheDir
-	, serverURL = 'http://10.20.1.121/'
-	//, serverURL = 'http://windninja.wfmrda.org/'
+	, serverURL = 'http://windninja.wfmrda.org/'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,2}(?:\.\d{1,2})?-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -120,7 +119,7 @@ var _DEBUG = false
 			"forecast": "UCAR-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.1';
+	, version = '1.0.0-pre';
 
 // Initialize UI
 $(document).ready(initUI);
@@ -975,7 +974,7 @@ function initUI() {
 
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
 			if (outputLayer !== undefined) {
-				$('#runDate').text('').text(new Date(outputLayer.get('date')).toLocaleString());
+				$('#runDate').text('').text(new Date(outputLayer.get('date').replace(/-/g, '/')).toLocaleString());
 			}
 
 			$('#spinner').spin(false);
@@ -1478,7 +1477,7 @@ function loadRun(displayType) {
 
 		var count = this.OutputLayers.length;
 		$('#timeSlider').attr({ 'min': 0, 'max': count - 1 }).val(0).slider('refresh');
-		$('#runDate').text(new Date(this.OutputLayers[this.VisibleLayer].get('date')).toLocaleString());
+		$('#runDate').text(new Date(this.OutputLayers[this.VisibleLayer].get('date').replace(/-/g, '/')).toLocaleString());
 		$('#btn_run-opts').button('enable');
 		updateLegend();
 		navigator.vibrate(200);
