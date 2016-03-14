@@ -1,0 +1,18 @@
+2015-12-15T11:29:22.783000 | INFO | Begin - version 2015.07.01.1
+2015-12-15T11:29:29.827000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\dem_12-15-2015_1400_29m.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\dem_12-15-2015_1400_29m.json
+2015-12-15T11:29:36.100000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\dem_12-15-2015_1700_29m.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\dem_12-15-2015_1700_29m.json
+2015-12-15T11:29:42.282000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\dem_12-15-2015_2000_29m.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\dem_12-15-2015_2000_29m.json
+2015-12-15T11:29:48.444000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\dem_12-15-2015_2300_29m.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\dem_12-15-2015_2300_29m.json
+2015-12-15T11:29:55.158000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\UCAR-NAM-CONUS-12-KM-12-15-2015_1400.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-12-15-2015_1400.json
+2015-12-15T11:29:55.358000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\UCAR-NAM-CONUS-12-KM-12-15-2015_1700.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-12-15-2015_1700.json
+2015-12-15T11:29:55.550000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\UCAR-NAM-CONUS-12-KM-12-15-2015_2000.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-12-15-2015_2000.json
+2015-12-15T11:29:55.746000 | DEBUG | Converting C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-dem.tif\20151215T2100\UCAR-NAM-CONUS-12-KM-12-15-2015_2300.shp to C:\WindNinja\Output\23becdaadf7c4ec2993497261e63d813\UCAR-NAM-CONUS-12-KM-12-15-2015_2300.json
+2015-12-15T11:30:23.888000 | INFO | attempting to send notification text Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: WindNinja Run Complete
+From:
+To: 
+
+Your run 'Point Six (test)' has been completed
+2015-12-15T11:30:25.065000 | INFO | Complete - total processing: 0:00:59.454000
