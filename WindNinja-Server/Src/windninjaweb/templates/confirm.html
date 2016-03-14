@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h2>WindNinja Mobile Account Confirmation</h2>
+<h3>
+	{% if result.code == 200 %}
+	SUCCESS
+	{% else %}
+	FAILED - {{ result.data.message }}
+	{% endif %}
+</h3>
+
+{% endblock %}
