@@ -122,7 +122,7 @@ var _DEBUG = false
 	, version = '0.2.2';
 
 // Initialize UI
-$(document).ready(initUI);
+//$(document).ready(initUI);
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
 $(document).on('offline', _onOffilne);
@@ -130,6 +130,7 @@ $(document).on('online', _onOnline);
 
 // Cordova Device ready
 function _onDeviceReady() {
+	initUI();
 	// Fix for iOS 7 and the statusbar overlaying the webview
 	if (device.platform === 'iOS' && (parseFloat(device.version) >= 7)) {
 		isIOS7 = true;
@@ -182,6 +183,9 @@ function _onDeviceReady() {
 					// Initialize run list
 					_initRunList();
 				}
+
+				// Make sure the splashscreen is hidden
+				navigator.splashscreen.hide();
 			}, fail);
 		});
 	}, fail);
