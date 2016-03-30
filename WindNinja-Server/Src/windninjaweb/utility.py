@@ -33,9 +33,10 @@ def send_email(server, to_addresses, from_address, subject, body):
     # connect to server and send
     s = smtplib.SMTP(server["address"])
     s.ehlo()
-    s.starttls()
-    s.ehlo()
-    s.login(server["user"], server["password"])
+    if server["user"] and server["password"]:
+        s.starttls()
+        s.ehlo()
+        s.login(server["user"], server["password"])
     s.sendmail(from_address, to_addresses.split(','), msg.as_string())
     s.close()
 

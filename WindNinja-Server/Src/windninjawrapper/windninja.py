@@ -17,7 +17,7 @@ from rastertilemaker import make_tiles_for_output
 import config
 import logger
 
-VERSION = "2016.03.11.01"
+VERSION = "2016.03.01.11"
 
 class Project:
     def __init__(self, path):
@@ -111,9 +111,11 @@ class Project:
 
             s = smtplib.SMTP(config.MAIL["server"])
             s.ehlo()
-            s.starttls()
-            s.ehlo()
-            s.login(config.MAIL["user"], config.MAIL["pass"])
+            if config.MAIL["user"] and config.MAIL["pass"]:
+                logger.verbose("server requires login")  
+                s.starttls()
+                s.ehlo()
+                s.login(config.MAIL["user"], config.MAIL["pass"])
             logger.verbose("attempting to send notification text: {}".format(msg.as_string()))
             s.sendmail(config.MAIL["fromAddr"], self.job['email'].split(','), msg.as_string())
             s.close()
@@ -381,6 +383,7 @@ def main():
 
     project = None
     status = "failed"
+    msg = None
 
     try: 
 
@@ -503,7 +506,8 @@ def main():
         except Exception as ex:
             logger.info("ERROR\tsend notification failed:\t{}".format(str(ex)))
     
-    logger.info(msg)
+    if msg is not None:
+        logger.info(msg)
     
     try:
         dequeue(args.id)
