@@ -119,7 +119,7 @@ var _DEBUG = false
 			"forecast": "UCAR-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.0-pre';
+	, version = '0.2.2';
 
 // Initialize UI
 $(document).ready(initUI);
@@ -750,6 +750,7 @@ function _initRunList() {
 }
 // Initialize UI elements and handlers
 function initUI() {
+	//navigator.splashscreen.show();
 	console.info('document loaded, initializing UI.');
 	$('#version').text(version);
 
@@ -1032,6 +1033,9 @@ function initUI() {
 	// Handle window resizing (rotating device)
 	$(window).on('resize', setmapsize);
 	setmapsize();
+
+	// manually hide the splash screen (otherwise it stays up for ~1min)
+	navigator.splashscreen.hide();
 }
 // Toggle the text/functionality of the 'Action' button for a run
 function toggleActionButton(id, status) {
