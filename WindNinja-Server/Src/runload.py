@@ -4,8 +4,6 @@ import shutil
 import os
 import sys
 
-
-
 def _deployData(jobs, source_root, destination):
     
     data_foler_name = "Data"
