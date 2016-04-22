@@ -16,7 +16,7 @@
       },
       "products":"vector:true;raster:true;topofire:true;geopdf:false",
       "parameters":"forecast_duration:12;vegetation:trees;mesh_choice:fine",
-      "forecast":"UCAR-NAM-CONUS-12-KM"
+      "forecast":"NOMADS-NAM-CONUS-12-KM"
    },
    "email":""
 }
