@@ -218,3 +218,7 @@ build.json
 
 # Compiled files
 *.pyc
+
+# Configuration files
+windninjaserver.config.yaml
+windninjawrapper.config.yaml

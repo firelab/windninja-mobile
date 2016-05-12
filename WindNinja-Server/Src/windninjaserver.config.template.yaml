@@ -1,0 +1,27 @@
+#THIS FILE IS TEMPLATE FOR THE APPLICATION CONFIG
+#RENAME THE FILE TO: windninjaserver.config.yaml 
+#FOR USE IN THE APPLICATION
+---
+datastore: ../Data                                  #PATH TO THE DATASTORE FOLDER
+auto_register:                                      #ENABLING AUTO REGISTER FUNCTIONALITY
+    mode: EMAILS                                    #OPTIONS; ALL, EMAILS, NONE
+    domains:                                        #LIST OF EMAIL DOMAINS THAT WILL BE AUTO REGISTERED
+        - test.com
+    emails:                                         #LIST OF SPECIFIC EMAIL ADDRESS THAT WIIL BE AUTO REGISTERED 
+        - test@gmail.com
+mail:                                               #EMAIL SETTINGS
+    server:                                         #EMAIL SERVER PARAMETERS
+        address: smtp.gmail.com:587
+        password: password
+        user: test@gmail.com
+    from_address: test@gmail.com                    #FROM ADDRESS FOR CLIENT EMAILS
+    support_address: test@gmail.com                 #ADDRESS TO FORWARD SUPPORT AND FEEDBACK
+queue:
+    datastore: ../Data/queue                        #PATH TO THE QUEUE FOLDER
+    max_running_jobs: 5                             #MAX NUMBER OF RUNNING JOBS
+    loop_interval: 5                                #WAIT TIME BEFORE RECHECKING QUEUE
+    windninja_wrapper:                              
+        executable: /usr/bin/python                 #PATH TO THE PYTHON EXECUTABLE
+        script: windninjawrapper/windninja.py       #PATH THE JOB WRAPPER SCRIPT
+        options:                                    #LIST OF SCRIPT OPTION PARAMETER
+            - -i                                    #OPTIONS: -i -v -d 
