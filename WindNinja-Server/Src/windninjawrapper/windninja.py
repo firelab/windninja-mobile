@@ -6,10 +6,11 @@ import json
 import math
 import subprocess
 import smtplib
+import base64
 from string import Template
 from email.mime.text import MIMEText
 
-from osgeo import gdal, osr
+from osgeo import gdal, osr, ogr
 import ogr2ogr
 from tilegrabber import grab_tiles
 from rastertilemaker import make_tiles_for_output
@@ -17,7 +18,7 @@ from rastertilemaker import make_tiles_for_output
 import config
 import logger
 
-VERSION = "2016.03.01.11"
+VERSION = "2016.05.10.1"
 
 class Project:
     def __init__(self, path):
@@ -36,10 +37,10 @@ class Project:
     def openJob(self):
         with open(self.jobFile, "r") as json_file:
             json_string = json_file.read()
-            logger.verbose(json_string)
+            logger.debug(json_string)
     
         self.job = json.loads(json_string)
-        logger.verbose(self.job)
+        logger.debug(self.job)
         
         if self.job.has_key("input"):
             # get the forecast name
@@ -88,17 +89,18 @@ class Project:
             if not self.job.has_key("messages"):
                 self.job["messages"] = []
             
-            date_time_stamp = datetime.datetime.now(pytz.timezone('US/Mountain')).isoformat()
-            formatted_message = "{0} | {1} | {2}".format(date_time_stamp,    message_tuple[1], message_tuple[0])
-            self.job["messages"].append(formatted_message)
-
+            formatted_message = logger.log(*message_tuple)
+            if formatted_message:
+                self.job["messages"].append(formatted_message)
+            
+            
         if self.output is not None:
             self.job["output"] = {"products": self.output.values()}
 
-        logger.verbose(self.job)
+        logger.debug(self.job)
 
         if write:
-            pretty = 2 if logger.VERBOSE else None
+            pretty = 2 if logger.DEBUG_ENABLED else None
             with open(self.jobFile, "w") as json_file:
                 json_file.write(json.dumps(self.job, indent=pretty))
 
@@ -169,6 +171,24 @@ def _find_item(id):
         return None
 #--------------------------------------------
 
+def withinDEM(bbox):
+
+    #dem minimum bounding geometry
+    wkb = base64.b64decode(config.DEM_MIN_BOUNDING_GEOM_WKB)
+    dem_mbg = ogr.CreateGeometryFromWkb(wkb)
+    
+    #polygon from job bounding box 
+    ring = ogr.Geometry(ogr.wkbLinearRing)
+    ring.AddPoint(bbox[0], bbox[1])
+    ring.AddPoint(bbox[0], bbox[3])
+    ring.AddPoint(bbox[2], bbox[3])
+    ring.AddPoint(bbox[2], bbox[1])
+    ring.AddPoint(bbox[0], bbox[1])
+    polygon = ogr.Geometry(ogr.wkbPolygon)
+    polygon.AddGeometry(ring)
+    
+    return polygon.Within(dem_mbg)
+
 def utmZone(x, y):
     '''Return the EPSG code for a given latitude and longitude'''
     # Southern hemisphere
@@ -199,6 +219,10 @@ def utmZone(x, y):
 
 def createDem(bbox, project_path):
     '''Create a dem based on a bounding box'''
+    
+    if not withinDEM(bbox):
+        return False, config.MESSAGES.BBOX_OUTSIDE_DEM
+    
     center = [bbox[2] + ((bbox[0] - bbox[2]) / 2), bbox[3] + ((bbox[1] - bbox[3]) / 2)]
     logger.verbose("dem center: {0}".format(center))
     
@@ -222,16 +246,18 @@ def createDem(bbox, project_path):
     window[2] = x
     window[3] = y
 
-    input_dem_path = os.path.join(project_path, config.DEM_FILENAME)
-    input_dem_path = os.path.normpath(input_dem_path)
-    logger.verbose("dem path: {0}".format(input_dem_path))
-        
-    command = 'gdalwarp -tr 85 85 -t_srs epsg:%d -te %d %d %d %d %s %s -overwrite' % (utm, window[0], window[1], window[2], window[3], config.DEM_PATH, input_dem_path)
-    logger.verbose("dem command line: {0}".format(command))
+    input_dem_path = os.path.abspath(config.IN_DEM_PATH)
+    logger.verbose("input dem path: {}".format(input_dem_path))
 
+    output_dem_path = os.path.join(project_path, config.OUT_DEM_FILENAME)
+    output_dem_path = os.path.abspath(output_dem_path)
+    logger.verbose("output dem path: {0}".format(output_dem_path))
+        
+    command = 'gdalwarp -tr 85 85 -t_srs epsg:%d -te %d %d %d %d %s %s -overwrite' % (utm, window[0], window[1], window[2], window[3], input_dem_path, output_dem_path)
+    
     result = executeShellProcess(command, project_path)
     if result[0]:
-        result = (True, input_dem_path)
+        result = (True, output_dem_path)
     
     return result
 
@@ -241,19 +267,7 @@ def executeWNCLI(project):
     #TODO: validate parameters and values
     
     # defaults
-    cli = {
-        "forecast_duration": "3",
-        "vegetation": "grass",
-        "time_zone": "auto-detect",
-        "output_wind_height": "20.0",
-        "units_output_wind_height": "ft",
-        "output_speed_units": "mph",  #TODO: make this an output value
-        "mesh_choice": "fine",
-        "input_speed": "5",
-        "input_speed_units": "mph",
-        "input_wind_height": "20",
-        "units_input_wind_height": "ft"
-    }
+    cli = config.WN_CLI_DEFAULTS.copy()
     
     # overrides
     overide_args = project.parameters.split(";")
@@ -263,7 +277,6 @@ def executeWNCLI(project):
 
     # mandatory
     cli["initialization_method"] = "domainAverageInitialization" if (project.forecast == "NONE") else "wxModelInitialization"
-    cli["num_threads"] = 2
     cli["elevation_file"] = project.demPath
     cli["wx_model_type"] = project.forecast
     cli["write_shapefile_output"] = "true"
@@ -277,14 +290,13 @@ def executeWNCLI(project):
 
     # execute the command
     command = cli_template.substitute(cli)
-    logger.verbose("wn command line: {0}".format(command))
     shell_result = executeShellProcess(command, project.path)
 
     # process results
     if (shell_result[0]):
         
         # construct the output folder path
-        folder_name = "{0}-{1}".format(project.forecast, config.DEM_FILENAME)
+        folder_name = "{0}-{1}".format(project.forecast, os.path.basename(project.demPath))
         output_folder = os.path.join(project.path, folder_name)
         logger.verbose("Output Folder: {0}".format(output_folder))
         time_folder = os.listdir(output_folder)[0]
@@ -293,31 +305,44 @@ def executeWNCLI(project):
 
         # collect the output shapefiles
         all_shapefiles = [f for f in os.listdir(time_folder) if f.endswith(".shp")]
-        
-        # filter out any "past" results and forecasts
-        current_datetime = datetime.datetime.now()
-        current_datetime = datetime.datetime(current_datetime.year, current_datetime.month, current_datetime.day, current_datetime.hour)
+       
         weather_shapefiles = []
         windninja_shapefiles = []
+       
+        #NOTE: WindNinja outputs file times in Time Zone of the extent.  
+        #   for now, return all the results until we can determine the time zone for comparison 
         for shp in all_shapefiles:
             parts = os.path.splitext(shp)[0].split("_") 
             if shp.startswith(project.forecast):
-                parts_len = len(parts)
-                hour = parts[parts_len - 1]
-                date = parts[parts_len - 2][-10:]
-                list = weather_shapefiles
+                weather_shapefiles.append(shp)
             else:
-                hour = parts[2]
-                date = parts[1]
-                list = windninja_shapefiles
-        
-            shapefile_datetime = datetime.datetime.strptime("{0}T{1}".format(date, hour), "%m-%d-%YT%H%M")
-            if (shapefile_datetime >= current_datetime):
-                list.append(shp)
+                windninja_shapefiles.append(shp)
+               
+        # filter out any "past" results and forecasts
+        #current_datetime = datetime.datetime.now()
+        #current_datetime = datetime.datetime(current_datetime.year, current_datetime.month, current_datetime.day, current_datetime.hour)
+        #for shp in all_shapefiles:
+        #    parts = os.path.splitext(shp)[0].split("_") 
+        #    if shp.startswith(project.forecast):
+        #        parts_len = len(parts)
+        #        hour = parts[parts_len - 1]
+        #        date = parts[parts_len - 2][-10:]
+        #        list = weather_shapefiles
+        #    else:
+        #        hour = parts[2]
+        #        date = parts[1]
+        #        list = windninja_shapefiles
+        #   
+        #    shapefile_datetime = datetime.datetime.strptime("{0}T{1}".format(date, hour), "%m-%d-%YT%H%M")
+        #    if (shapefile_datetime >= current_datetime):
+        #        list.append(shp)
 
         logger.verbose("WindNinja output files: {0}".format(windninja_shapefiles))
         logger.verbose("Weather output files: {0}".format(weather_shapefiles))
-        result = (True, time_folder, windninja_shapefiles, weather_shapefiles)    
+        if len(windninja_shapefiles) == 0 or len(weather_shapefiles)==0:
+            result = (False, "WindNinjaCLI did not produce outputs for the job parameters")
+        else:
+            result = (True, time_folder, windninja_shapefiles, weather_shapefiles)    
 
     else:
         # pass error result back
@@ -326,6 +351,7 @@ def executeWNCLI(project):
     return result
 
 def executeShellProcess(command, working_directory):
+    logger.verbose("Shell command:{}".format(command))
     proc = subprocess.Popen(command, shell=True, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate(None)
     logger.verbose("Shell process result: {0}\r\n{1}\r\n{2}".format(proc.returncode, out, err))
@@ -338,7 +364,7 @@ def executeShellProcess(command, working_directory):
 
 def convertShpToJson(shapefiles, out_folder):
     result = (True, [])
-    converted = []
+    converted = result[1]
     try:
         for shp in shapefiles[1]:
             in_file = os.path.join(shapefiles[0], shp)
@@ -351,13 +377,9 @@ def convertShpToJson(shapefiles, out_folder):
                 break
             else:
                 converted.append(os.path.split(out_file)[1])
-        
-        if conversion:
-            result = (True, converted)
 
     except Exception as e:
         msg = str(e).replace("\n", " ")
-        logger.info("ERROR\t{0}".format(msg))
         result = (False, msg)
 
     return result
@@ -372,14 +394,15 @@ def main():
     parser.add_argument("-v", "--verbose", action='store_true', help="Print processing statements")
     parser.add_argument("-d", "--debug", action='store_true', help="Print processing statements")
     parser.add_argument("-i", "--info", action='store_true', help="Print processing statements")
-    parser.add_argument("-e", "--error", action='store_true', help="Print processing statements")
+    #parser.add_argument("-e", "--error", action='store_true', help="Print processing statements")
     args = parser.parse_args()
+    logger.debug(str(args))
     
     # set runtime configuration
-    logger.VERBOSE = args.verbose
-    logger.DEBUG = args.debug
-    logger.INFO = args.info
-    logger.ERROR = args.info
+    logger.VERBOSE_ENABLED = args.verbose
+    logger.DEBUG_ENABLED = args.debug
+    logger.INFO_ENABLED = args.info
+    #logger.ERROR_ENABLED = args.error
 
     project = None
     status = "failed"
@@ -397,19 +420,20 @@ def main():
         project = Project(project_path)
         project.openJob()
         if project.job["status"] != "new":
-            logger.info("Exiting: Project is not NEW: status={0}".format(project.job["status"]))
+            logger.error("Exiting: Project is not NEW: status={0}".format(project.job["status"]))
             project = None
         else:
-            project.updateJob("Executing", ("Initializing WindNinja Run", "INFO"), True)
+            project.updateJob("Executing", ("Initializing WindNinja Run", logger.LOG_LEVEL.INFO), True)
                 
             result = createDem(project.bbox, project.path)
             if result[0]:
                 project.demPath = result[1]
-                project.updateJob(None, ("DEM created", "INFO"), True)
+                
+                project.updateJob(None, ("DEM created", logger.LOG_LEVEL.INFO), True)
             
                 result = executeWNCLI(project)
                 if result[0]:
-                    project.updateJob(None, ("WindNinjaCLI executed", "INFO"), True)            
+                    project.updateJob(None, ("WindNinjaCLI executed", logger.LOG_LEVEL.INFO), True)            
                     
                     # generate the desired output products
                     project.output = {}
@@ -419,7 +443,7 @@ def main():
                         converted_windninja = convertShpToJson((result[1], result[2]), project.path)
                         converted_weather = convertShpToJson((result[1], result[3]), project.path)
                         if converted_windninja[0] and converted_weather[0]:
-                            project.updateJob(None, ("Output converted to geojson", "INFO"), True)
+                            project.updateJob(None, ("Output converted to geojson", logger.LOG_LEVEL.INFO), True)
                             #TODO create zip package
                             
                             project.output["windninja_vectors_json"] = {
@@ -440,15 +464,15 @@ def main():
                             
                         else:
                             if not converted_windninja[0]:
-                                project.updateJob(None, (converted_windninja[1], "ERROR"), True)
+                                project.updateJob(None, (converted_windninja[1], logger.LOG_LEVEL.ERROR), True)
                             if not converted_weather[0]:
-                                project.updateJob(None, (converted_weather[1], "ERROR"), True)
+                                project.updateJob(None, (converted_weather[1], logger.LOG_LEVEL.ERROR), True)
                     
                     # topofire tiles
                     #TODO: this one could be kicked off in a parrallel process as it doesn't rely on the WN output
                     if project.products.has_key("topofire") and project.products["topofire"]:
                         topofire_zip_file = grab_tiles(project.bbox, project.path, "topofire")
-                        project.updateJob(None, ("TopoFire tiles compiled", "INFO"), True)
+                        project.updateJob(None, ("TopoFire tiles compiled", logger.LOG_LEVEL.INFO), True)
                         
                         project.output["topofire_basemap_tiles"] = {
                             "name": "TopoFire Basemap",
@@ -460,7 +484,7 @@ def main():
 
                     if project.products.has_key("raster") and project.products["raster"]:
                         tile_zip,layer_info = make_tiles_for_output(project.path, (result[1], result[2], result[3]), project.forecast)
-                        project.updateJob(None, ("Output converted to raster tiles", "INFO"), True)
+                        project.updateJob(None, ("Output converted to raster tiles", logger.LOG_LEVEL.INFO), True)
                         
                         prd = project.output["windninja_raster_tiles"] = {
                             "name": "WindNinja Raster Tiles",
@@ -479,17 +503,18 @@ def main():
 
                     status = "succeeded"
                 else:
-                    project.updateJob(None, (result[1], "ERROR"), True)
+                    project.updateJob(None, (result[1], logger.LOG_LEVEL.ERROR), True)
 
             else:
-                project.updateJob(None, (result[1], "ERROR"), True)
+                project.updateJob(None, (result[1], logger.LOG_LEVEL.ERROR), True)
 
     except Exception as e:
         try: 
             msg = str(e).replace("\n", " ")
-            logger.info("ERROR\t{0}".format(msg))
             if project is not None:
-                project.updateJob(None, (msg, "ERROR"), True)
+                project.updateJob(None, (msg, logger.LOG_LEVEL.ERROR), True)
+            else:
+                logger.error(msg)
         except: pass
              
     finish = datetime.datetime.now()
@@ -498,22 +523,22 @@ def main():
     if project is not None:
         try:        
             msg = "Complete - total processing: {0}".format(delta)
-            project.updateJob(status, (msg, "INFO"), True)
+            project.updateJob(status, (msg, logger.LOG_LEVEL.INFO), True)
         except Exception as ex:
-            logger.info("ERROR\tjob update failed n failed:\t{}".format(str(ex)))
+            logger.error("job update failed n failed:\t{}".format(str(ex)))
     
         try: project.sendEmail()
         except Exception as ex:
-            logger.info("ERROR\tsend notification failed:\t{}".format(str(ex)))
+            logger.error("send notification failed:\t{}".format(str(ex)))
     
-    if msg is not None:
-        logger.info(msg)
+    #if msg is not None:
+    #    logger.info(msg)
     
     try:
         dequeue(args.id)
         logger.info("Job dueued")
     except Exception as ex:
-        logger.info("ERROR\tjob dequeue failed:\t{}".format(str(ex))) 
+        logger.error("job dequeue failed:\t{}".format(str(ex))) 
     
 if __name__ == "__main__":
     logger.debug("windninja run as main") #NOTE: THIS DEBUG STATEMENT WILL NEVER GET INTO THE LOG FILE BUT WILL OUTPUT TO STDOUT

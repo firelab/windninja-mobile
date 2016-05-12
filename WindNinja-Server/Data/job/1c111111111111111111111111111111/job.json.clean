@@ -1,0 +1,17 @@
+{
+   "status":"new",
+   "account":"test@test.com",
+   "name":"Domain within DEM but over water",
+   "messages":[
+      "2015-02-27T16:48:45.2949952-07:00 | INFO | job created"
+   ],
+   "id":"1c111111-1111-1111-1111-111111111111",
+   "output":{},
+   "input":{
+      "domain":{"xmin":-148.9544,"ymin":55.8268,"xmax":-145.2414,"ymax":58.3708},
+      "products":"vector:true;raster:true;topofire:true;geopdf:false",
+      "parameters":"forecast_duration:12;vegetation:trees;mesh_choice:fine",
+      "forecast":"NOMADS-NAM-CONUS-12-KM"
+   },
+   "email":""
+}
