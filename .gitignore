@@ -215,3 +215,6 @@ ModelManifest.xml
 
 # Build config file
 build.json
+
+# Compiled files
+*.pyc
