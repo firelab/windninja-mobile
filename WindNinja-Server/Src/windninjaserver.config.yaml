@@ -12,6 +12,7 @@ mail:
         password: password
         user: test@gmail.com
     from_address: test@gmail.com
+    support_address: test@gmail.com
 queue:
     datastore: ../Data/queue
     max_running_jobs: 5

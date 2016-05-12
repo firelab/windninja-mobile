@@ -7,6 +7,9 @@ from windninjaweb.app import app
 import windninjaweb.models as wnmodels
 import windninjaweb.filestore as wndb
 import windninjaqueue.queue as wnqueue
+import windninjaweb.utility as wnutil
+
+_email_parameters = app.config.get("MAIL", None)
 
 # controllers
 class EnumField(fields.Raw):
@@ -147,7 +150,20 @@ class FeedbackController(Resource):
         args = self.post_parser.parse_args()
         feedback = wnmodels.Feedback.create(args)
         success = wndb.save_feedback(feedback)
+        
         if success:
+            try:
+                # send the email
+                subject = "WindNinja Mobile - Feedback"
+                body = feedback.to_email_body()
+                wnutil.send_email(_email_parameters.get("server", {}), 
+                    _email_parameters.get("support_address", ""), 
+                    _email_parameters.get("from_address", ""), 
+                    subject, body)
+            except:
+                pass
+        
+        
             return marshal(feedback, self.feedback_fields)
         else:
             abort(500)
