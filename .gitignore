@@ -222,3 +222,7 @@ build.json
 # Configuration files
 windninjaserver.config.yaml
 windninjawrapper.config.yaml
+
+#DEM Files too big for github
+*_DEM.tfw
+*_DEM.tif
