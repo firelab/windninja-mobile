@@ -1,42 +1,44 @@
 #!/usr/bin/env python
-from math import pi,cos,sin,log,exp,atan
-from subprocess import call
-import sys
-import os
-import math
-from Queue import Queue
+import inspect
 import json
-import config
+from math import pi,cos,sin,tan,log,exp,atan,radians
+from subprocess import call
+import os
+from Queue import Queue
+import sys
 import threading
 import zipfile
-import logging
-import inspect
+
 from osgeo import ogr,osr
 import mapnik
+
+from config import CONFIG
+import logger
+
 
 DEG_TO_RAD = pi / 180
 RAD_TO_DEG = 180 / pi
 SUPERDIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) # script directory 
-ONE = os.path.join(SUPERDIR,"1.png")
-TWO = os.path.join(SUPERDIR,"2.png")
-THREE = os.path.join(SUPERDIR,"3.png")
-FOUR = os.path.join(SUPERDIR,"4.png")
-FIVE = os.path.join(SUPERDIR,"5.png")
-ONE_BIG = os.path.join(SUPERDIR,"1_big.png")
-TWO_BIG = os.path.join(SUPERDIR,"2_big.png")
-THREE_BIG = os.path.join(SUPERDIR,"3_big.png")
-FOUR_BIG = os.path.join(SUPERDIR,"4_big.png")
-FIVE_BIG = os.path.join(SUPERDIR,"5_big.png")
+ONE = os.path.join(SUPERDIR,"assets", "1.png")
+TWO = os.path.join(SUPERDIR,"assets","2.png")
+THREE = os.path.join(SUPERDIR,"assets","3.png")
+FOUR = os.path.join(SUPERDIR,"assets","4.png")
+FIVE = os.path.join(SUPERDIR,"assets","5.png")
+ONE_BIG = os.path.join(SUPERDIR,"assets","1_big.png")
+TWO_BIG = os.path.join(SUPERDIR,"assets","2_big.png")
+THREE_BIG = os.path.join(SUPERDIR,"assets","3_big.png")
+FOUR_BIG = os.path.join(SUPERDIR,"assets","4_big.png")
+FIVE_BIG = os.path.join(SUPERDIR,"assets","5_big.png")
 # Default number of rendering threads to spawn, should be roughly equal to number of CPU cores available
-NUM_THREADS = 4
+NUM_THREADS = CONFIG.TILE_RASTER_MAX_THREADS
 SIZE_X = 256
 SIZE_Y = 256
 
 def deg2num(lat_deg, lon_deg, zoom):
-  lat_rad = math.radians(lat_deg)
+  lat_rad = radians(lat_deg)
   n = 2.0 ** zoom
   xtile = int((lon_deg + 180.0) / 360.0 * n)
-  ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
+  ytile = int((1.0 - log(tan(lat_rad) + (1 / cos(lat_rad))) / pi) / 2.0 * n)
   return (xtile, ytile, zoom)
 
 def tiles4BBox(domain, levels):
@@ -45,7 +47,7 @@ def tiles4BBox(domain, levels):
                 tileset = []
                 tile_min = deg2num(domain[3],domain[0], level)
                 tile_max = deg2num(domain[1],domain[2], level)
-                print "tile min:\t{0}\tmax:\t{1}".format(tile_min, tile_max)
+                logger.debug("tile min:\t{0}\tmax:\t{1}".format(tile_min, tile_max))
                 for x in range(tile_min[0], tile_max[0] + 1):
                         for y in range(tile_min[1], tile_max[1] + 1):
                                 tile = (x, y, level)
@@ -288,7 +290,7 @@ class RenderThread:
 
         </Map>""".format(data=data_file,proj=proj4string,low=one,med=two,high=three,v_high=four,blue=ONE,green=TWO,yellow=THREE,orange=FOUR,red=FIVE)
 
-        #logging.debug(xml)
+        logger.debug(xml)
 
         mapnik.load_map_from_string(self.m, xml, True)
         #mapnik.load_map(self.m, mapfile, True)
@@ -351,12 +353,12 @@ class RenderThread:
             if bytes == 103:
                 empty = " Empty Tile "
             self.printLock.acquire()
-            print name, ":", z, x, y, exists, empty
+            logger.debug("{} : {} {} {} {} {}".format(name, z, x, y, exists, empty))
             self.printLock.release()
             self.q.task_done()
 
 def render_tiles(bbox, data_file, proj4string, max_speed, tile_dir, minZoom=1,maxZoom=18, name="unknown", num_threads=NUM_THREADS, tms_scheme=False):
-        print "render_tiles(",bbox, data_file, tile_dir, minZoom,maxZoom, name,")"
+        logger.verbose("render_tiles({} {} {} {} {} {})".format(bbox, data_file, tile_dir, minZoom, maxZoom, name))
 
         # Launch rendering threads
         queue = Queue(32)
@@ -378,10 +380,10 @@ def render_tiles(bbox, data_file, proj4string, max_speed, tile_dir, minZoom=1,ma
         for z in range(minZoom,maxZoom + 1):
                 px0 = gprj.fromLLtoPixel(ll0,z)
                 px1 = gprj.fromLLtoPixel(ll1,z)
-                print "\nZOOOOOOOOM: ",z
-                print "PX 0: ",px0
-                print "PX 1: ",px1
-                print "BBOX: ",bbox
+                logger.debug("\nZOOOOOOOOM: {}".format(z))
+                logger.debug("PX 0: {}".format(px0))
+                logger.debug("PX 1: {}".format(px1))
+                logger.debug("BBOX: {}".format(bbox))
                 for x in range(int(px0[0] / (SIZE_X * 1.0)),int(px1[0] / (SIZE_Y * 1.0)) + 1):
                         # Validate x co-ordinate
                         if (x < 0) or (x >= 2 ** z):
@@ -421,6 +423,7 @@ def render_tiles(bbox, data_file, proj4string, max_speed, tile_dir, minZoom=1,ma
                         renderers[i].join()
 
 def make_tiles_for_output(dir, wn_results, forecast):
+        logger.verbose("make_tiles_for_output({} {} {})".format(dir, wn_results, forecast))
         output_dir = wn_results[0]
         results = wn_results[1]
         layer_info_array = {}
@@ -437,22 +440,22 @@ def make_tiles_for_output(dir, wn_results, forecast):
                 time = res[:k]
                 time = time.replace("dem_","")
                 name = res.split(".")[0]
-                tile_dir = os.path.join(dir, config.TILE_RASTER_FILE_NAME, name)
+                tile_dir = os.path.join(dir, CONFIG.TILE_RASTER_FILE_NAME, name)
                 if not os.path.exists(tile_dir):
                         os.makedirs(tile_dir)
 
                 file_path = os.path.join(output_dir,res)
                 layer_info = getLayerInfo(file_path)
-                print "LAYER INFO: ",layer_info
+                logger.debug("LAYER INFO: {}".format(layer_info))
                 ext = layer_info['extents']['4326']
                 bbox = (ext['xmin'],ext['ymin'],ext['xmax'],ext['ymax'])
                 proj4string = layer_info['extents'][layer_info["native_wkid"]]["proj4string"]
-                print "Proj4String:", proj4string
+                logger.debug("Proj4String: {}".format(proj4string))
                 layer_info['max_speed'] = max_speed
                 layer_info_array[res] = layer_info
-                render_tiles(bbox, file_path, proj4string, max_speed, tile_dir, 0, 14, "WindNinja")
-        zipf = zipfile.ZipFile(str(os.path.join(dir, config.TILE_RASTER_ZIP_NAME)), 'w')
-        zipdir(os.path.join(dir, config.TILE_RASTER_FILE_NAME), zipf)
+                render_tiles(bbox, file_path, proj4string, max_speed, tile_dir, CONFIG.TILE_RASTER_MIN_LEVEL, CONFIG.TILE_RASTER_MAX_LEVEL, "WindNinja")
+        zipf = zipfile.ZipFile(str(os.path.join(dir, CONFIG.TILE_RASTER_ZIP_NAME)), 'w')
+        zipdir(os.path.join(dir, CONFIG.TILE_RASTER_FILE_NAME), zipf)
         zipf.close()
 
-        return config.TILE_RASTER_ZIP_NAME,layer_info_array
+        return CONFIG.TILE_RASTER_ZIP_NAME,layer_info_array
