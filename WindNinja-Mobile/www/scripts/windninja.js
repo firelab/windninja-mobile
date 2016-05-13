@@ -38,73 +38,9 @@ var _DEBUG = false
 	, demoJob = {
 		"status": "created",
 		"output": {
-			"products": [
-			{
-				"name": "Weather Json Vectors",
-				"type": "vector",
-				"format": "json",
-				"baseUrl": "",
-				"package": "",
-				"files": [
-					"UCAR-NAM-CONUS-12-KM-02-27-2015_1700.json",
-					"UCAR-NAM-CONUS-12-KM-02-27-2015_2000.json",
-					"UCAR-NAM-CONUS-12-KM-02-27-2015_2300.json",
-					"UCAR-NAM-CONUS-12-KM-02-28-2015_0200.json"
-				],
-				"data": null
-			},
-			{
-				"name": "TopoFire Basemap",
-				"type": "basemap",
-				"format": "tiles",
-				"baseUrl": "",
-				"package": "relief.zip",
-				"files": [],
-				"data": null
-			},
-			{
-				"name": "WindNinja Raster Tiles",
-				"type": "raster",
-				"format": "tiles",
-				"baseUrl": "",
-				"package": "tiles.zip",
-				"files": [
-					"dem_02-27-2015_1700_29m",
-					"dem_02-27-2015_2000_29m",
-					"dem_02-27-2015_2300_29m",
-					"dem_02-28-2015_0200_29m"
-				],
-				"data": [
-					"dem_02-27-2015_1700_29m:24.84",
-					"dem_02-27-2015_2000_29m:33.59",
-					"dem_02-27-2015_2300_29m:29.96",
-					"dem_02-28-2015_0200_29m:24.87"
-				]
-			},
-			{
-				"name": "WindNinja Json Vectors",
-				"type": "vector",
-				"format": "json",
-				"baseUrl": "",
-				"package": "",
-				"files": [
-					"dem_02-27-2015_1700_29m.json",
-					"dem_02-27-2015_2000_29m.json",
-					"dem_02-27-2015_2300_29m.json",
-					"dem_02-28-2015_0200_29m.json"
-				],
-				"data": null
-			}
-			]
+			"products": []
 		},
-		"messages": [
-			"2015-02-27T16:48:45.2949952-07:00 | INFO | job created",
-			"2015-02-27T16:48:46.251000-07:00 | INFO | Initializing WindNinja Run",
-			"2015-02-27T16:48:46.370000-07:00 | INFO | DEM created",
-			"2015-02-27T16:49:01.439000-07:00 | INFO | WindNinjaCLI executed",
-			"2015-02-27T16:49:19.481000-07:00 | INFO | Output converted to geojson",
-			"2015-02-27T16:49:19.527000-07:00 | INFO | Complete - total processing: 0:00:33.474000"
-		],
+		"messages": [],
 		"id": "23becdaa-df7c-4ec2-9934-97261e63d813",
 		"name": "Point Six (test)",
 		"input": {
@@ -119,10 +55,8 @@ var _DEBUG = false
 			"forecast": "UCAR-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.2';
+	, version = '0.2.3';
 
-// Initialize UI
-//$(document).ready(initUI);
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
 $(document).on('offline', _onOffilne);
@@ -130,7 +64,8 @@ $(document).on('online', _onOnline);
 
 // Cordova Device ready
 function _onDeviceReady() {
-	initUI();
+	// Initialize UI
+	$(document).ready(initUI);
 	// Fix for iOS 7 and the statusbar overlaying the webview
 	if (device.platform === 'iOS' && (parseFloat(device.version) >= 7)) {
 		isIOS7 = true;
@@ -418,6 +353,7 @@ function _registerInstall() {
 			_saveConfig(false);
 			navigator.notification.alert(data.message, null, 'Registration Complete');
 			$('#pnl_Settings').panel('open');
+			$('#qStart').popup('open');
 		}).fail(function (data) {
 			console.log(data);
 			config.Registration.isRegistered = false;
@@ -903,7 +839,7 @@ function initUI() {
 		beforeclose: function (evt, ui) {
 			$('#btn_layers').parent().removeClass('ui-btn-on');
 		}
-	});//.panel('open').panel('close');
+	});
 
 	// Run Options Panel
 	$('#pnl_run-opts').panel({
@@ -1038,7 +974,7 @@ function initUI() {
 	$(window).on('resize', setmapsize);
 	setmapsize();
 
-	// manually hide the splash screen (otherwise it stays up for ~1min)
+	// manually hide the splash screen (otherwise it stays up for ~1min on android and indefinitely on iOS)
 	navigator.splashscreen.hide();
 }
 // Toggle the text/functionality of the 'Action' button for a run
