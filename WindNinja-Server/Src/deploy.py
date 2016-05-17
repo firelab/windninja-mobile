@@ -41,10 +41,19 @@ def _deployConfig(source_root, destination):
     src_file = os.path.join(source_root, "windninjaserver.config.yaml")
     print("copying config file: {} to {}".format(src_file, dst_folder))
     shutil.copy(src_file, dst_folder)
+    
+    #job wrapper config
+    dst_folder = os.path.join(dst_folder, "windninjawrapper")
+    print("creating job wrapper folder: {}".format(dst_folder))
+    os.makedirs(dst_folder, exist_ok=True)
+    src_file = os.path.join(source_root, "windninjawrapper", "windninjawrapper.config.yaml")
+    print("copying config file: {} to {}".format(src_file, dst_folder))
+    shutil.copy(src_file, dst_folder)
+    
    
 def _deployApp(source_root, destination):
 
-    ignore = shutil.ignore_patterns("__pycache__", "*.pyc", "*.conf")
+    ignore = shutil.ignore_patterns("__pycache__", "*.pyc", "*.conf", "*.config.yaml", "*.config.template.yaml")
 
     #NOTE: destinations must not exist for shutil.copytree 
     # could use distutils.dir_utils.copytree() but that doesn't have ignore options
