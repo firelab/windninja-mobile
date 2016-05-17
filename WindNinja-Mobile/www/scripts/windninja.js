@@ -52,10 +52,10 @@ var _DEBUG = false
 			},
 			"parameters": "forecast_duration:12;vegetation:trees;mesh_choice:fine",
 			"products": "vector:true;raster:true;topofire:true;geopdf:false",
-			"forecast": "UCAR-NAM-CONUS-12-KM"
+			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.3';
+	, version = '0.2.4';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -119,8 +119,10 @@ function _onDeviceReady() {
 					_initRunList();
 				}
 
-				// Make sure the splashscreen is hidden
-				navigator.splashscreen.hide();
+				// Make sure the splashscreen is hidden after 10 seconds
+				setTimeout(function () {
+					navigator.splashscreen.hide();
+				}, 8000);
 			}, fail);
 		});
 	}, fail);
@@ -973,9 +975,6 @@ function initUI() {
 	// Handle window resizing (rotating device)
 	$(window).on('resize', setmapsize);
 	setmapsize();
-
-	// manually hide the splash screen (otherwise it stays up for ~1min on android and indefinitely on iOS)
-	navigator.splashscreen.hide();
 }
 // Toggle the text/functionality of the 'Action' button for a run
 function toggleActionButton(id, status) {
