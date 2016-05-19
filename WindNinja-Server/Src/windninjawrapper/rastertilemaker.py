@@ -117,7 +117,7 @@ def getLayerInfo(shp_file):
                         }
 
         # Get the min/max wind speed
-        sql = "SELECT MIN(speed), MAX(speed) FROM '{0}'".format(layer.GetName())
+        sql = "SELECT MIN(speed), MAX(speed) FROM \"{0}\"".format(layer.GetName())
         query = data_source.ExecuteSQL(sql)
         feature = query.GetFeature(0)
         layer_info["min_speed"] = feature.GetField("MIN_speed")
