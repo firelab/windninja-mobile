@@ -31,13 +31,20 @@ sudo apt-get install libapache2-mod-wsgi-py3
 sudo a2enmod wsgi
 ```
 
-14.x (mod-wsgi is 3.4 with thread error, get latest version from pip)
+14.x (default mod-wsgi package is v3.4 but has thread error, get latest version from pip)
+
+Disable the existing wsgi module if enabled (wsgi.conf and wsgi.load files are listed in the mods-enabled directry):
+```s
+ls /etc/apache2/mods-enabled
+sudo a2dismod wsgi
+```
+Install updated version
 ```s
 sudo apt-get install apache2-dev
 sudo pip3 install mod_wsgi
 sudo mod_wsgi-express install-module
 ```
-This will install the .so file and output the contents for .load (first line) and .conf (second line)
+The last command will install the .so file AND output the text content for .load (first line) and .conf (second line).  These files are NOT yet created.  Create them and add the text from the output.
 ```s
 sudo nano /etc/apache2/mods-available/wsgi_express.load
 	LoadModule ….
@@ -45,6 +52,7 @@ sudo nano /etc/apache2/mods-available/wsgi_express.conf
 	WSGIPythonHome ….
 
 sudo a2enmod wsgi_express
+sudo service apache2 restart
 ```
 
 #### SUPERVISOR
@@ -52,7 +60,7 @@ NOTE: supervisor is Python 2.x only
 
 15.x:  TODO
 
-14.x (apt-get doesn't install latest version, using pip and manual setup)
+14.x (apt-get doesn't install latest version, using pip and manual setup). The files listed below are pulled from the stock apt-get supervisor package. 
 ```s
 sudo pip install supervisor
 sudo mkdir /etc/supervisor
@@ -66,7 +74,7 @@ sudo chmod 755 /etc/init.d/supervisor
 
 sudo service supervisor start
 ```
-(TODO: auto starts on computer reboot)
+(TODO: verify supervisor auto starts on computer reboot)
 
 #### PYTHON MODULES
 Python2:
@@ -82,24 +90,47 @@ sudo pip3 install pyyaml
 ```
 #### MAPNIK (python2 only?)
 ```s
-sudo apt-get install python-mapnik
+sudo  apt-get python-mapnik
 ```
 
 #### WindNinja Mobile Server
 ```s
 git close [git-repo-url]
 ```
-Edit and rename the two .config.yaml files (remove 'template' from name)
+Perform the following edits in the local repo before deploy
+
+Config files:
+- Copy and rename the two .config.yaml files (remove 'template' from name)
+- Use absolute paths for safety
+- SMTP configuratin values
+- Performance values: job count, threads, etc
+- Auto register settings
+- remove comments
+
+Digital Elevation Model files:  
+- These files are two big to load to the GitHub repo.  
+- Copy these files to the local repo Data/dem folder.  
+- Edit the "min bounding geometry" setting in the config if not using AK and CONUS
+
+Edit WindNinjaApp.conf 
+- Edit server name and alias 
+- Edit paths to wsgi app if necessary
+- NOTE: this file is directly under git control but these edits do not need to be commited to GitHub (can use assume-nochange)
+- TODO: create a 'template' for this file and commit that to GitHub
+
 ```s
 sudo python3 Src/deploy.py all -d /srv/WindNinjaServer
 sudo chmod 777 -R /srv/WindWindServer/Data
 sudo mkdir /var/log/WindNinjaServer
 sudo a2ensite WindNinjaApp
 sudo service apache2 reload
+sudo supervisorctl -c /etc/supervisor/supervisord.conf
+>>>reload
+>>>status
+>>>quit
 ```
 
 #### WINDNINJA
-
 Follow build steps: https://github.com/firelab/windninja/wiki/Building-WindNinja-on-Linux. Except 'Build GDAL' step needs to include python:
 
 ```s
