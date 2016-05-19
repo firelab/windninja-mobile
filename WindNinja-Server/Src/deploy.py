@@ -25,7 +25,7 @@ def _deployData(source_root, destination):
     shutil.copytree(src_folder, dst_folder)
     
     # test data folders
-    for f in   ["23becdaadf7c4ec2993497261e63d813", "1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a"]:  
+    for f in   ["23becdaadf7c4ec2993497261e63d813", "1a111111111111111111111111111111"]:  
         dst_folder = os.path.join(destination, data_foler_name, "job", f)
         try: shutil.rmtree(dst_folder) 
         except: pass
