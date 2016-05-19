@@ -82,7 +82,7 @@ sudo pip3 install pyyaml
 ```
 #### MAPNIK (python2 only?)
 ```s
-sudo  apt-get python-mapnik
+sudo apt-get install python-mapnik
 ```
 
 #### WindNinja Mobile Server
