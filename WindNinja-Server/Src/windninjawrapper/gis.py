@@ -105,7 +105,9 @@ def convertShpToJson(shapefiles, out_folder):
     try:
         for shp in shapefiles[1]:
             in_file = os.path.join(shapefiles[0], shp)
-            out_file = os.path.join(out_folder, "{0}.{1}".format(os.path.splitext(shp)[0], "json"))
+            
+            #Remove any . characters from the output name
+            out_file = os.path.join(out_folder, "{0}.{1}".format(os.path.splitext(shp)[0].replace(".", ""), "json"))
             logger.debug("Converting {0} to {1}".format(in_file, out_file))
             conversion = ogr2ogr.main(["", "-f", "geojson", "-t_srs", "epsg:3857", out_file, in_file])
             
