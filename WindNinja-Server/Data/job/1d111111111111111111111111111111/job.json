@@ -9,9 +9,9 @@
    "output":{},
    "input":{
       "domain":{"xmin":-150.5534,"ymin":60.451,"xmax":-149.9397,"ymax":60.662},
-      "products":"vector:true;raster:false;topofire:false;geopdf:false",
+      "products":"vector:true;raster:false;topofire:true;geopdf:false",
       "parameters":"forecast_duration:12;vegetation:trees;mesh_choice:fine",
-      "forecast":"NOMADS-NAM-CONUS-12-KM"
+      "forecast":"NOMADS-NAM-ALASKA-11.25-KM"
    },
    "email":""
 }

@@ -117,6 +117,7 @@ def main():
     parser.add_argument("-d", "--debug", action='store_true', help="Print processing statements")
     parser.add_argument("-i", "--info", action='store_true', help="Print processing statements")
     #parser.add_argument("-e", "--error", action='store_true', help="Print processing statements")
+    #parser.add_argument("-w", "--warn", action='store_true', help="Print processing statements")
     args = parser.parse_args()
     logger.debug(str(args))
     
@@ -125,6 +126,7 @@ def main():
     logger.DEBUG_ENABLED = args.debug
     logger.INFO_ENABLED = args.info
     #logger.ERROR_ENABLED = args.error
+    #logger.WARNING_ENABLED = args.warn
 
     project = None
     status = "failed"
@@ -195,15 +197,19 @@ def main():
                     #TODO: this one could be kicked off in a parrallel process as it doesn't rely on the WN output
                     if project.products.has_key("topofire") and project.products["topofire"]:
                         topofire_zip_file = grab_tiles(project.bbox, project.path, "topofire")
-                        project.updateJob(None, ("TopoFire tiles compiled", logger.LOG_LEVEL.INFO), True)
                         
-                        project.output["topofire_basemap_tiles"] = {
-                            "name": "TopoFire Basemap",
-                            "type": "basemap",
-                            "format": "tiles",
-                            "package": topofire_zip_file,
-                            "files": []
-                        }
+                        if topofire_zip_file:
+                            project.updateJob(None, ("TopoFire tiles compiled", logger.LOG_LEVEL.INFO), True)
+                        
+                            project.output["topofire_basemap_tiles"] = {
+                                "name": "TopoFire Basemap",
+                                "type": "basemap",
+                                "format": "tiles",
+                                "package": topofire_zip_file,
+                                "files": []
+                            }
+                        else:
+                            project.updateJob(None, ("TopoFire tiles unavailable", logger.LOG_LEVEL.WARNING), True)
 
                     if project.products.has_key("raster") and project.products["raster"]:
                         tile_zip,layer_info = make_tiles_for_output(project.path, (result[1], result[2], result[3]), project.forecast)

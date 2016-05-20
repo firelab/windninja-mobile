@@ -7,11 +7,13 @@ DEBUG_ENABLED = True
 VERBOSE_ENABLED = True
 INFO_ENABLED = True
 ERROR_ENABLED = True
+WARNING_ENABLED = True
 
 class LOG_LEVEL:
     DEBUG = "DEBUG"
     VERBOSE = "VERBOSE"
     INFO = "INFO"
+    WARNING = "WARNING"
     ERROR = "ERROR"
 
 MESSAGE_TEMPLATE = "{} | {} | {}"
@@ -23,6 +25,8 @@ def log(msg, level):
         return verbose(msg)
     elif level==LOG_LEVEL.INFO:
         return info(msg)
+    elif level==LOG_LEVEL.WARNING:
+        return warn(msg)
     elif level==LOG_LEVEL.ERROR:
         return error(msg)
     else:
@@ -46,6 +50,12 @@ def error(e):
     else:
         return None
 
+def warn(e):
+    if WARNING_ENABLED:
+        return _write_formatted(LOG_LEVEL.WARNING, e)
+    else:
+        return None
+
 def info(msg):
     if INFO_ENABLED:
         return _write_formatted(LOG_LEVEL.INFO, msg)
@@ -53,7 +63,7 @@ def info(msg):
         return None
 
 def _format_message(message, type):
-    date_time_stamp = datetime.datetime.now(pytz.timezone('US/Mountain')).isoformat()
+    date_time_stamp = datetime.datetime.now(pytz.timezone('UTC')).isoformat()
     formatted_message = MESSAGE_TEMPLATE.format(date_time_stamp, type.ljust(7), message)
     return formatted_message
 
