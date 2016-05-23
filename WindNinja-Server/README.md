@@ -17,6 +17,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install python-pip
 sudo apt-get install python3-pip
+sudo apt-get install python-dev
 ```
 
 #### APACHE
@@ -163,3 +164,27 @@ sudo supervisorctl -c /etc/supervisor/supervisord.conf
 
 sudo ./WindNinjaServer/Src/deploy.py [all, app, data, config, apache, supervisor] -d /srv/WindNinjaServer
 ```
+
+#### Testing System
+Verify queue manager & job wrapper
+- Drop the job queue file into the queue stroe 
+```s
+cp Data/job/1a1111111111111111111111111111/1a1111111111111111111111111111.pending Data/queue
+```
+- If file extension should change to .running, if the manager picks it up.  It will change to .complete or .fail depending on the result 
+- Check the job folder for artificats being created
+- Check the wnqueue log file for manager issues 
+    - /var/log/WindNinjaServer/wnqueue.log
+- Truncate the queue log with:
+```s
+sudo truncate -s0 /var/log/WindNinjaServer/wnqueue.log 
+```
+- Review the job log file and job json
+    - Data/job/1a1111111111111111111111111111/log.txt
+    - Data/job/1a1111111111111111111111111111/job.json
+- Clean up the job to run again
+```s
+Data/job/1a1111111111111111111111111111/clean-job.sh
+rm Data/queue/1a1111111111111111111111111111.complete 
+```
+
