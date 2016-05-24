@@ -30,7 +30,7 @@ var _DEBUG = false
 	, serverURL = 'http://windninja.wfmrda.org/'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
-	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,2}(?:\.\d{1,2})?-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
+	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,4}-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
 	, dRegex = /(domain)/
 	, rRegex = /(relief)/
 	, rasRegex = /(tiles)/
@@ -55,7 +55,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.4';
+	, version = '0.2.5';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -190,7 +190,7 @@ function _loadConfig() {
 		} else {
 			$('#email').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 		}
-		if (config.Phone && config.Phone.indexOf('@') == 10) {
+		if (config.Phone && config.Phone.indexOf('@') === 10) {
 			$('#text').prop('disabled', false).flipswitch('enable');
 		} else {
 			$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
@@ -230,7 +230,7 @@ function _saveConfig(alert) {
 	} else {
 		$('#email').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
 	}
-	if (config.Phone.indexOf('@') == 10) {
+	if (config.Phone.indexOf('@') === 10) {
 		$('#text').prop('disabled', false).flipswitch('enable');
 	} else {
 		$('#text').prop({ 'checked': false, 'disabled': true }).flipswitch('disable').flipswitch('refresh');
@@ -346,10 +346,10 @@ function _registerInstall() {
 			config.Registration.RegistrationId = data.account;
 			config.Registration.isRegistered = true;
 			config.Registration.Status = data.status;
-			if ($('#userEmail').val() == '') {
+			if ($('#userEmail').val() === '') {
 				$('#userEmail').val(data.account);
 			}
-			if ($('#userName').val() == '') {
+			if ($('#userName').val() === '') {
 				$('#userName').val($('#registrationName').val());
 			}
 			_saveConfig(false);
@@ -1067,6 +1067,10 @@ function setmapsize() {
 	if ($('#pnl_layers').hasClass('ui-panel-open')) {
 		$('#pnl_layers').panel('close').panel('open');
 	}
+	if ($('#pnl_time-popup').hasClass('ui-popup-active')) {
+		$('#pnl_time').popup('close');
+		setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
+	}
 }
 // Generic fail method
 function fail(err) {
@@ -1111,6 +1115,12 @@ function initRun(id, name) {
 }
 // Delete a WindNinja run from the device
 function deleteEvent(id, name) {
+	// First check to see if the run to be deleted is 'active' and if so, remove it.
+	if (ninjaRun && ninjaRun.ID === id) {
+		removeRun();
+	}
+
+	// Delete all the run data
 	dataDir.getDirectory(id, null, function (dir) {
 		dir.removeRecursively(function (entry) {
 			console.info('removed entry ' + entry);
@@ -1437,6 +1447,8 @@ function removeRun() {
 		navigator.notification.alert("All layers have been removed", null, 'Layers Removed', 'Ok');
 		$('#btn_run-opts').button('disable');
 
+		$('#baseMap').val('osm').trigger('change');
+
 		if ($('#pnl_legend').parent().hasClass('ui-popup-active')) {
 			$('#btn_legend').trigger('click');
 		}
@@ -1523,9 +1535,9 @@ function WindNinjaRun(id, name) {
 				for (var j = 0; j < len; j++) {
 					var f = product.files[j];
 					if (isOutput)
-						fileParts = f.split('.')[0].split(oRegex);
+						fileParts = f.split('.json')[0].split(oRegex);
 					else
-						fileParts = f.split('.')[0].split(fRegex);
+						fileParts = f.split('.json')[0].split(fRegex);
 
 					min = fileParts[3].slice(-2);
 					hour = fileParts[3].slice(-4, -2);
@@ -2043,7 +2055,7 @@ WindNinjaRun.prototype = {
 			var y1 = y - (dist * Math.sin(angle));
 
 			var __createPoint = function (pt, angle, num) {
-				var brng = (num == 3) ? (angle + (135).toRad()) : (num == 4) ? (angle - (135).toRad()) : null;
+				var brng = (num === 3) ? (angle + (135).toRad()) : (num === 4) ? (angle - (135).toRad()) : null;
 				var len = dist / 3;
 				var x = pt[0];
 				var y = pt[1];
