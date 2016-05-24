@@ -42,6 +42,9 @@ def executeWNCLI(project):
     else:
         cli_template = Template("{0} {1}".format(CONFIG.WN_CLI_PATH, CONFIG.WN_CLI_ARGS_WX))
 
+    # set env variables
+    executeShellProcess("export NINJA_FILL_DEM_NO_DATA=ON")
+
     # execute the command
     command = cli_template.substitute(cli)
     shell_result = executeShellProcess(command, project.path)
