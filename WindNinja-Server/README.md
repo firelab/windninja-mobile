@@ -72,10 +72,17 @@ sudo cp supervisord.conf /etc/supervisor/supervisord.conf
 sudo cp supervisor.default /etc/default/supervisor
 sudo cp supervisor.init /etc/init.d/supervisor 
 sudo chmod 755 /etc/init.d/supervisor
+```
 
+Start the supervisor service 
+```s
 sudo service supervisor start
 ```
-(TODO: verify supervisor auto starts on computer reboot)
+Configur supervisor auto start on boot:
+```s
+sudo update-rc.d supervisor defaults
+```
+
 
 #### PYTHON MODULES
 Python2:
