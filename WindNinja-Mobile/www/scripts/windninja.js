@@ -25,6 +25,7 @@ var _DEBUG = false
 	, startPixel
 	, holdPromise
 	, connection
+	, downloading = false
 	, dataDir
 	, cacheDir
 	, serverURL = 'http://windninja.wfmrda.org/'
@@ -55,12 +56,14 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.5';
+	, version = '0.2.6';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
 $(document).on('offline', _onOffilne);
 $(document).on('online', _onOnline);
+$(document).on('pause', _onPause);
+$(document).on('resume', _onResume);
 
 // Cordova Device ready
 function _onDeviceReady() {
@@ -132,13 +135,33 @@ function _onOffilne() {
 	connection = false;
 	$('#createRun').button('disable').prop({ 'disabled': true });
 	$('[data-online="true"]').each(function () { $(this).prop({ 'disabled': true }); });
-	navigator.notification.alert('Network Connection lost', null, 'Network Status', 'Ok');
+	//navigator.notification.alert('Network Connection lost', null, 'Network Status', 'Ok');
 }
 // Reacquire network connection
 function _onOnline() {
 	connection = true;
 	$('#createRun').button('enable').prop('disabled', false);
 	$('[data-online="true"]').each(function () { $(this).prop('disabled', false); });
+}
+// Phone in 'sleep mode'
+function _onPause() {
+	console.log('_onPause()');
+
+	_onOffilne();
+}
+// Phone wakes from 'sleep mode'
+function _onResume() {
+	console.log('_onResume()');
+	if (navigator.connection.type !== Connection.NONE) {
+		_onOnline();
+	}
+
+	if ($('#loader-popup').hasClass('ui-popup-active') && !downloading) {
+		$('#loader').popup('close');
+	}
+
+	$('#spinner').spin(false);
+	map.renderSync();
 }
 // Load config file
 function _loadConfig() {
@@ -497,7 +520,7 @@ function _initMap() {
 		target: 'map',
 		view: mapView,
 		zoom: 10,
-		controls: [new ol.control.Rotate(), new ol.control.Zoom()]
+		controls: [new ol.control.Rotate(), new ol.control.Zoom(), new ol.control.ScaleLine]
 	});
 
 	var l = mapLayers.length;
@@ -1316,6 +1339,7 @@ function _onDownloadReady(results, id) {
 	dataDir.getDirectory(id, { create: true, exclusive: false }, function (dir) {
 		dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
 			console.log("created job.json", file);
+			downloading = true;
 			file.createWriter(function (fileWriter) {
 				results.status = 'Downloaded';
 				var blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
@@ -1338,6 +1362,7 @@ function _onDownloadReady(results, id) {
 
 				$.when.apply($, outputs).done(function () {
 					$('#loader').popup('close');
+					downloading = false;
 
 					var update = $('#' + results.id + ' [data-runId="' + results.id + '"]');
 					var updateDate = new Date(results.messages[results.messages.length - 1].split(' | ')[0]);
