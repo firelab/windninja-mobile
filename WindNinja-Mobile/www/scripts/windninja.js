@@ -56,7 +56,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.6';
+	, version = '0.2.7';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -67,6 +67,7 @@ $(document).on('resume', _onResume);
 
 // Cordova Device ready
 function _onDeviceReady() {
+	window.open = cordova.InAppBrowser.open;
 	// Initialize UI
 	$(document).ready(initUI);
 	// Fix for iOS 7 and the statusbar overlaying the webview
@@ -467,15 +468,26 @@ function _initMap() {
 		})
 	});
 	// GeoMac (Current Fires & Perimeters)
-	mapLayers.push(new ol.layer.Image({
+	mapLayers.push(new ol.layer.Group({
 		name: 'geomac',
 		id: 'geomac',
 		visible: false,
-		source: new ol.source.ImageWMS({
-			url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomac_dyn/MapServer/WMSServer',
-			params: { 'LAYERS': '26,25' }, //Current Fires(26), Current Fire Perimeters(25)
-			crossOrigin: 'anonymous'
-		})
+		layers: [
+			new ol.layer.Image({ // CONUS Modis
+				source: new ol.source.ImageWMS({
+					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomac_dyn/MapServer/WMSServer',
+					params: { 'LAYERS': '24,23' }, //Current Fires(24), Current Fire Perimeters(23)
+					crossOrigin: 'anonymous'
+				})
+			}),
+			new ol.layer.Image({ // Alaska Modis
+				source: new ol.source.ImageWMS({
+					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomacAK_dyn/MapServer/WMSServer',
+					params: { 'LAYERS': '23,22' }, //Current Fires(23), Current Fire Perimeters(22)
+					crossOrigin: 'anonymous'
+				})
+			})
+		]
 	}));
 	// MODIS
 	mapLayers.push(new ol.layer.Tile({
@@ -640,8 +652,10 @@ function _initRunList() {
 	directoryReader.readEntries(function (entries) {
 		$.each(entries, function (i, entry) {
 			if (entry.isDirectory && entry.name !== 'Documents') {
-				var def = $.Deferred();
-				var url = dir + entry.name + '/' + 'job.json';
+				var def = $.Deferred(),
+					url = dir + entry.name + '/' + 'job.json',
+					submitDate,
+					updateDate;
 				defs.push(def.promise());
 
 				$.ajax({
@@ -654,11 +668,11 @@ function _initRunList() {
 
 					// parse and create the submitted and last updated dates from the messages
 					if (job.messages.length > 0) {
-						var submitDate = new Date(job.messages[0].split(' | ')[0]);
-						var updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
+						submitDate = new Date(job.messages[0].split(' | ')[0]);
+						updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
 					} else {
-						var submitDate = new Date();
-						var updateDate = new Date();
+						submitDate = new Date();
+						updateDate = new Date();
 					}
 
 					// Create the run panel
@@ -1200,14 +1214,15 @@ function submitJob() {
 	var name = $('#runName').val();
 	if (name !== '') {
 		$('#spinner').spin('windninja');
-		var extent;
+		var extent,
+			diff;
 		try {
 			extent = sketchPolyFeature.getGeometry().getExtent();
 		} catch (err) {
 			extent = mapView.calculateExtent(map.getSize());
 
 			// make the extent square
-			var diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
+			diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
 
 			extent[3] -= (diff);
 			extent[1] += (diff);
@@ -1219,7 +1234,7 @@ function submitJob() {
 			extent = mapView.calculateExtent(map.getSize());
 
 			// make the extent square
-			var diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
+			diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
 
 			extent[3] -= (diff);
 			extent[1] += (diff);
