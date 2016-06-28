@@ -361,7 +361,7 @@ class Feedback:
         
     def to_email_body(self):
         template = "ID:{}\nACCOUNT:{}\nDATE:{}\nCOMMENTS:\n{}"
-        return template.format(self.id, self.account, self.dateTimeStamp, self.comments)
+        return template.format(self.id, self.account, self.date_time_stamp.isoformat(), self.comments)
 
 #----------ACCOUNT----------------
 class AccountStatus(Enum):
