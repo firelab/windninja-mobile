@@ -683,8 +683,8 @@ function _initRunList() {
 
 					// parse and create the submitted and last updated dates from the messages
 					if (job.messages.length > 0) {
-						submitDate = new Date(job.messages[0].split(' | ')[0]);
-						updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
+						submitDate = job.messages[0].split(' | ')[0];
+						updateDate = job.messages[job.messages.length - 1].split(' | ')[0];
 					} else {
 						submitDate = new Date();
 						updateDate = new Date();
@@ -698,9 +698,9 @@ function _initRunList() {
 							.append(actionBtn)
 							.append(delBtn)
 						)
-						.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate.toLocaleString())))
+						.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate)))
 						.append('<br />')
-						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + prettyDate(updateDate.toLocaleString())));
+						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + prettyDate(updateDate)));
 
 					// add the panel to the parent element and initialize it
 					container.append(pnl);
@@ -993,7 +993,7 @@ function initUI() {
 
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
 			if (outputLayer !== undefined) {
-				$('#runDate').text('').text(prettyDate(outputLayer.get('date')));
+				$('#runDate').text('').text(prettyDate(outputLayer.get('date').replace(/-/g, '/')));
 			}
 
 			$('#spinner').spin(false);
@@ -1523,7 +1523,7 @@ function loadRun(displayType) {
 
 		var count = this.OutputLayers.length;
 		$('#timeSlider').attr({ 'min': 0, 'max': count - 1 }).val(0).slider('refresh');
-		$('#runDate').text(prettyDate(this.OutputLayers[this.VisibleLayer].get('date')));
+		$('#runDate').text(prettyDate(this.OutputLayers[this.VisibleLayer].get('date').replace(/-/g, '/')));
 		$('#btn_run-opts').button('enable');
 		updateLegend();
 		navigator.vibrate(200);
@@ -1591,7 +1591,12 @@ function _onGPSOff() {
 // Return a 'pretty' formatted date string for display
 function prettyDate(date) {
 	// Returns date in format MM/DD/YYYY, HH:MM:SS
-	var dt = new Date(date.replace(/-/g, '/'));
+	var dt;
+	if (date instanceof Date)
+		dt = date
+	else
+		dt = new Date(date);
+
 	return dt.getMonth() + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ':' + dt.getSeconds().toString().padLeft(2);
 }
 
