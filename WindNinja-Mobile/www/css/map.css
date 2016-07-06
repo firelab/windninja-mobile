@@ -8,7 +8,8 @@ body,
   overflow: hidden !important;
 }
 #map {
-  position: fixed;
+  position: absolute;
+  top: 44px;
 }
 #btn_GPS {
   background-repeat: round;
@@ -71,6 +72,8 @@ body,
 }
 #pnl_legend-popup {
   z-index: 1000 !important;
+  bottom: 100px !important;
+  top: unset !important;
 }
 #foot .ui-block-b {
   text-align: center;

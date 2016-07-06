@@ -26,6 +26,10 @@ var _DEBUG = false
 	, holdPromise
 	, connection
 	, downloading = false
+	, legendOpen = false
+	, legendWasOpen = false
+	, sliderOpen = false
+	, sliderWasOpen = false
 	, dataDir
 	, cacheDir
 	, serverURL = 'http://windninja.wfmrda.org/'
@@ -56,7 +60,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.7';
+	, version = '0.2.9';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -71,7 +75,7 @@ function _onDeviceReady() {
 	// Initialize UI
 	$(document).ready(initUI);
 	// Fix for iOS 7 and the statusbar overlaying the webview
-	if (device.platform === 'iOS' && (parseFloat(device.version) >= 7)) {
+	if (device.platform === 'iOS' && parseFloat(device.version) >= 7) {
 		isIOS7 = true;
 		StatusBar.overlaysWebView(false);
 		StatusBar.styleDefault();
@@ -126,6 +130,7 @@ function _onDeviceReady() {
 				// Make sure the splashscreen is hidden after 10 seconds
 				setTimeout(function () {
 					navigator.splashscreen.hide();
+					setmapsize();
 				}, 8000);
 			}, fail);
 		});
@@ -289,13 +294,13 @@ function _checkRegistration() {
 		}).always(function () {
 			switch (config.Registration.Status) {
 				case 'accepted':
-					_registrationAccepted()
+					_registrationAccepted();
 					break;
 				case 'pending':
-					_registrationPending()
+					_registrationPending();
 					break;
 				case 'disabled':
-					_registrationDisabled()
+					_registrationDisabled();
 					break;
 			}
 		});
@@ -378,7 +383,7 @@ function _registerInstall() {
 			}
 			_saveConfig(false);
 			navigator.notification.alert(data.message, null, 'Registration Complete');
-			$('#pnl_Settings').panel('open');
+			//$('#pnl_Settings').panel('open');
 			$('#qStart').popup('open');
 		}).fail(function (data) {
 			console.log(data);
@@ -476,14 +481,14 @@ function _initMap() {
 			new ol.layer.Image({ // CONUS Modis
 				source: new ol.source.ImageWMS({
 					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomac_dyn/MapServer/WMSServer',
-					params: { 'LAYERS': '24,23' }, //Current Fires(24), Current Fire Perimeters(23)
+					params: { 'LAYERS': 'Current Fire Perimeters,Current Fires' }, //Current Fires(24), Current Fire Perimeters(23)
 					crossOrigin: 'anonymous'
 				})
 			}),
 			new ol.layer.Image({ // Alaska Modis
 				source: new ol.source.ImageWMS({
 					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomacAK_dyn/MapServer/WMSServer',
-					params: { 'LAYERS': '23,22' }, //Current Fires(23), Current Fire Perimeters(22)
+					params: { 'LAYERS': 'Current Fire Perimeters,Current Fires' }, //Current Fires(23), Current Fire Perimeters(22)
 					crossOrigin: 'anonymous'
 				})
 			})
@@ -501,6 +506,16 @@ function _initMap() {
 				'LAYERS': 'Last 24 hour fire detections,Last 12 hour fire detections,Current Large incidents',
 				'VERSION': '1.1.0'
 			}
+		})
+	}));
+	// VIIRS
+	mapLayers.push(new ol.layer.Image({
+		name: 'viirs',
+		id: 'viirs',
+		visible: false,
+		source: new ol.source.ImageWMS({
+			url: 'https://firms.modaps.eosdis.nasa.gov/wms/viirs/?',
+			params: { 'LAYERS': 'fires48,fires24', 'SRS': '3857', 'VERSION': '1.1.1' }
 		})
 	}));
 	// Sketch layer
@@ -532,7 +547,7 @@ function _initMap() {
 		target: 'map',
 		view: mapView,
 		zoom: 10,
-		controls: [new ol.control.Rotate(), new ol.control.Zoom(), new ol.control.ScaleLine]
+		controls: [new ol.control.Rotate(), new ol.control.Zoom(), new ol.control.ScaleLine({ units: 'us' })]
 	});
 
 	var l = mapLayers.length;
@@ -610,7 +625,7 @@ function _checkSketchSize() {
 	if (area > 0) {
 		if (area > 10000) {
 			// if the area is > 2331 sq km, it's too large (900 sq mi)
-			if ((Math.round(area / 1000000 * 100) / 100) > 2331)
+			if (Math.round(area / 1000000 * 100) / 100 > 2331)
 				return 1;
 		}
 		return 0;
@@ -619,7 +634,7 @@ function _checkSketchSize() {
 }
 // Get the geodesic area of a polygon in km
 function getArea(polygon) {
-	var geom = (polygon.clone().transform(mapProj, latLonProj));
+	var geom = polygon.clone().transform(mapProj, latLonProj);
 	var coordinates = geom.getLinearRing(0).getCoordinates();
 	if (coordinates.length > 0)
 		return Math.abs(wgs84Sphere.geodesicArea(coordinates));
@@ -683,9 +698,9 @@ function _initRunList() {
 							.append(actionBtn)
 							.append(delBtn)
 						)
-						.append($('<span />').addClass('runTime').text('Submitted: ' + submitDate.toLocaleDateString() + ' ' + submitDate.toLocaleTimeString()))
+						.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate.toLocaleString())))
 						.append('<br />')
-						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString()));
+						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + prettyDate(updateDate.toLocaleString())));
 
 					// add the panel to the parent element and initialize it
 					container.append(pnl);
@@ -704,7 +719,7 @@ function _initRunList() {
 
 					// setup action button title and click events
 					delBtn.button({ mini: true, corners: true }).on('click', function () {
-						if (confirm('Are you sure you wish to delete the run ' + $(this).data('runName') + '?')) {
+						if (confirm('Are you sure you want to delete the run ' + $(this).data('runName') + '?')) {
 							deleteEvent($(this).data('runId'), $(this).data('runName'));
 						}
 					});
@@ -787,18 +802,20 @@ function initUI() {
 	// Run Options panel buttons
 	$('#btn_time').button({ mini: true }).on('click', function () {
 		console.info('#btn_time.onClick');
+		sliderOpen = !sliderOpen;
 		$(this).parent().toggleClass('ui-btn-on');
 
-		if ($('#btn_legend').parent().hasClass('ui-btn-on')) {
+		if (legendOpen) {
+			legendOpen = false;
 			$('#btn_legend').parent().removeClass('ui-btn-on');
 			$('#pnl_legend').popup('close').on('popupafterclose', function (evt, ui) {
-				if ($('#btn_time').parent().hasClass('ui-btn-on')) {
+				if (sliderOpen) {
 					$('#pnl_time').popup('open');
 				}
 				$('#pnl_legend').unbind('popupafterclose');
 			});
 		} else {
-			if ($(this).parent().hasClass('ui-btn-on')) {
+			if (sliderOpen) {
 				$('#pnl_time').popup('open');
 			} else {
 				$('#pnl_time').popup('close');
@@ -807,18 +824,20 @@ function initUI() {
 	});
 	$('#btn_legend').button({ mini: true }).on('click', function () {
 		console.info('#btn_legend.onClick');
+		legendOpen = !legendOpen;
 		$(this).parent().toggleClass('ui-btn-on');
 
-		if ($('#btn_time').parent().hasClass('ui-btn-on')) {
+		if (sliderOpen) {
+			sliderOpen = false;
 			$('#btn_time').parent().removeClass('ui-btn-on');
 			$('#pnl_time').popup('close').on('popupafterclose', function (evt, ui) {
-				if ($('#btn_legend').parent().hasClass('ui-btn-on')) {
+				if (legendOpen) {
 					$('#pnl_legend').popup('open');
 				}
 				$('#pnl_time').unbind('popupafterclose');
 			});
 		} else {
-			if ($(this).parent().hasClass('ui-btn-on')) {
+			if (legendOpen) {
 				$('#pnl_legend').popup('open');
 			} else {
 				$('#pnl_legend').popup('close');
@@ -894,6 +913,26 @@ function initUI() {
 		}
 	});
 
+	// setup beforeOpen and close handlers on settings panel to close/re-open any popups
+	$('#pnl_Settings').on('panelbeforeopen', function () {
+		if (sliderOpen) {
+			sliderWasOpen = true;
+			//close slider
+			$('#btn_time').trigger('click');
+		} else if (legendOpen) {
+			legendWasOpen = true;
+			//close legend
+			$('#btn_legend').trigger('click');
+		}
+	}).on('panelclose', function () {
+		if (sliderWasOpen) {
+			$('#btn_time').trigger('click');
+		} else if (legendWasOpen) {
+			$('#btn_legend').trigger('click');
+		}
+		sliderWasOpen = false;
+		legendWasOpen = false;
+	});
 	// Run Request Panel
 	$('#request-panel').on('panelbeforeclose', _removeSketch);
 
@@ -954,7 +993,7 @@ function initUI() {
 
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
 			if (outputLayer !== undefined) {
-				$('#runDate').text('').text(new Date(outputLayer.get('date').replace(/-/g, '/')).toLocaleString());
+				$('#runDate').text('').text(prettyDate(outputLayer.get('date')));
 			}
 
 			$('#spinner').spin(false);
@@ -1005,8 +1044,19 @@ function initUI() {
 		$('#registration').popup('close');
 	});
 	$("#execute_register").on('click', function () {
-		_registerInstall()
+		_registerInstall();
 		$('#registration').popup('close');
+	});
+
+	$('#hlpLink').on('click', function () {
+		window.open('http://www.firelab.org/project/windninja-mobile', '_system');
+	});
+	$('#emailLink').on('click', function () {
+		cordova.plugins.email.open({
+			'to': 'wind.ninja.support@gmail.com',
+			'subject': 'WindNinja Mobile Help',
+			'isHtml': true
+		});
 	});
 
 	// Handle window resizing (rotating device)
@@ -1066,21 +1116,20 @@ function setmapsize() {
 	var helpFoot = $('#helpFooter').outerHeight(); // outer most height of the 'help' footer
 
 	// If this is iOS 7+, reduce the total height by 20px to account for the status bar that can't be hidden
-	if (isIOS7) {
-		//scrnHeight -= 20;
-	}
+	//if (isIOS7) { scrnHeight -= 20; }
 
 	// map should only be between the bottom of the header to the top of the footer
 	var mapHeight = scrnHeight - headHeight - footHeight + 2;
 	// panels should not scroll over the header, but covering the footer is ok
-	var panelHeight = scrnHeight - headHeight - ($(1.5).toPx());
+	var panelHeight = scrnHeight - headHeight - $(1.5).toPx();
 	// 0.5em buffer on the top and bottom of the 'help' dialog/popup (so it still looks like a dialog box)
-	var helpHeight = panelHeight - helpHead - helpFoot - ($(0.5).toPx());
+	var helpHeight = panelHeight - helpHead - helpFoot - $(0.5).toPx();
 
 	var popupHeight = scrnHeight - $(0.5).toPx();
 
-	$('#map').css({ 'height': mapHeight + 'px', 'max-height': mapHeight + 'px' });
-	$('body').css({ 'max-height': mapHeight + 'px', 'height': mapHeight + 'px' });
+	//$('body').css({ 'max-height': scrnHeight + 'px', 'height': scrnHeight + 'px', 'min-height': scrnHeight + 'px' });
+	$('#map').css({ 'min-height': mapHeight, 'max-height': mapHeight });
+	$('[data-role="page"]').css({ 'min-height': mapHeight, 'max-height': mapHeight });
 	$('#menuContent').height(panelHeight);
 	$('#requestContent').height(panelHeight);
 	$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
@@ -1088,7 +1137,7 @@ function setmapsize() {
 	$('#helpContent').css({ 'max-height': helpHeight + 'px' });
 	$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px' });
 	$('#registration-popup').css({ 'max-height': scrnHeight, 'height': scrnHeight });
-	$('#registrationContent').outerHeight(((scrnHeight - 1 - $('#registration-popup #head').outerHeight()) - $(1.5).toPx()) + 'px');
+	$('#registrationContent').outerHeight(scrnHeight - 1 - $('#registration-popup #head').outerHeight() - $(1.5).toPx() + 'px');
 
 
 	// if there are any panels open, toggle visibility so heights get set properly
@@ -1104,9 +1153,13 @@ function setmapsize() {
 	if ($('#pnl_layers').hasClass('ui-panel-open')) {
 		$('#pnl_layers').panel('close').panel('open');
 	}
-	if ($('#pnl_time-popup').hasClass('ui-popup-active')) {
+	if (sliderOpen) {
 		$('#pnl_time').popup('close');
 		setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
+	}
+	if (legendOpen) {
+		$('#pnl_legend').popup('close');
+		setTimeout(function () { $('#pnl_legend').popup('open'); }, 500);
 	}
 }
 // Generic fail method
@@ -1222,10 +1275,10 @@ function submitJob() {
 			extent = mapView.calculateExtent(map.getSize());
 
 			// make the extent square
-			diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
+			diff = (extent[2] - extent[0] - (extent[3] - extent[1])) / 2;
 
-			extent[3] -= (diff);
-			extent[1] += (diff);
+			extent[3] -= diff;
+			extent[1] += diff;
 
 		}
 		// If the user accidentally selects a single point, the extent will be infinite.
@@ -1234,10 +1287,10 @@ function submitJob() {
 			extent = mapView.calculateExtent(map.getSize());
 
 			// make the extent square
-			diff = ((extent[2] - extent[0]) - (extent[3] - extent[1])) / 2;
+			diff = (extent[2] - extent[0] - (extent[3] - extent[1])) / 2;
 
-			extent[3] -= (diff);
-			extent[1] += (diff);
+			extent[3] -= diff;
+			extent[1] += diff;
 		}
 		var newExtent = ol.proj.transformExtent(extent, mapProj, latLonProj);
 
@@ -1264,7 +1317,7 @@ function submitJob() {
 			if (outputs.hasOwnProperty(type) && config.Outputs.hasOwnProperty(type)) {
 				outputs[type] = config.Outputs[type];
 			}
-		};
+		}
 
 		if (email && config.Email)
 			notify = config.Email;
@@ -1406,7 +1459,7 @@ function downloadProduct(id, product) {
 				var name = product.name.split(' Basemap')[0];
 				zip.unzip(DIR + '/' + product.package, cacheDir.toURL() + name + '/', function (s) {
 					if (s === 0) {
-						console.log('Basemap package extracted successfully to /' + name)
+						console.log('Basemap package extracted successfully to /' + name);
 					} else {
 						console.log('Failed to extract basemap package.');
 					}
@@ -1416,7 +1469,7 @@ function downloadProduct(id, product) {
 			} else if (product.type === 'raster') {
 				zip.unzip(DIR + '/' + product.package, DIR + '/tiles/', function (s) {
 					if (s === 0) {
-						console.log('Raster package: ' + product.package + ' extracted successfully to ' + DIR + '/tiles/')
+						console.log('Raster package: ' + product.package + ' extracted successfully to ' + DIR + '/tiles/');
 					} else {
 						console.log('Failed to extract raster package ' + product.package);
 					}
@@ -1470,7 +1523,7 @@ function loadRun(displayType) {
 
 		var count = this.OutputLayers.length;
 		$('#timeSlider').attr({ 'min': 0, 'max': count - 1 }).val(0).slider('refresh');
-		$('#runDate').text(new Date(this.OutputLayers[this.VisibleLayer].get('date').replace(/-/g, '/')).toLocaleString());
+		$('#runDate').text(prettyDate(this.OutputLayers[this.VisibleLayer].get('date')));
 		$('#btn_run-opts').button('enable');
 		updateLegend();
 		navigator.vibrate(200);
@@ -1535,6 +1588,12 @@ function _onGPSOff() {
 	$('#btn_GPS').removeClass('on').addClass('off');
 	map.removeLayer(gpsLayer);
 }
+// Return a 'pretty' formatted date string for display
+function prettyDate(date) {
+	// Returns date in format MM/DD/YYYY, HH:MM:SS
+	var dt = new Date(date.replace(/-/g, '/'));
+	return dt.getMonth() + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ':' + dt.getSeconds().toString().padLeft(2);
+}
 
 //
 // WindNinja Functions/classes
@@ -1581,7 +1640,7 @@ function WindNinjaRun(id, name) {
 
 					min = fileParts[3].slice(-2);
 					hour = fileParts[3].slice(-4, -2);
-					date = fileParts[2] + ' ' + hour + ':' + min;
+					date = fileParts[2] + ' ' + hour + ':' + min + ':00';
 					file = new this.resultFile(f, date);
 					file.Type = product.type;
 
@@ -1793,7 +1852,7 @@ WindNinjaRun.prototype = {
 		, defs = []
 		, items = 0
 		, fileList
-		, dataType
+		, dataType;
 
 		if (this.Outputs.hasOwnProperty(displayType)) {
 			fileList = this.Outputs[displayType];
@@ -1839,7 +1898,7 @@ WindNinjaRun.prototype = {
 						def.resolveWith(this);
 					});
 				}
-			};
+			}
 
 			$.when.apply($, defs).done(function () {
 				if (self.__verbose)
@@ -1894,13 +1953,13 @@ WindNinjaRun.prototype = {
 			var ranges = []
 			, name = data.split(':')[0]
 			, speed = parseFloat(data.split(':')[1])
-			, isForecast = (data.split(':')[2] === 'true');
+			, isForecast = data.split(':')[2] === 'true';
 
 			if (this.__verbose) {
 				console.groupCollapsed('Raster');
 			}
 
-			this.MaxSpeed = (speed > this.MaxSpeed) ? speed : this.MaxSpeed;
+			this.MaxSpeed = speed > this.MaxSpeed ? speed : this.MaxSpeed;
 
 			if (this.__verbose) {
 				console.time('creating source');
@@ -1947,7 +2006,7 @@ WindNinjaRun.prototype = {
 				}
 
 				var speed = feat.properties.speed;
-				self.MaxSpeed = (speed > self.MaxSpeed) ? speed : self.MaxSpeed;
+				self.MaxSpeed = speed > self.MaxSpeed ? speed : self.MaxSpeed;
 				return true;
 			});
 
@@ -2001,7 +2060,7 @@ WindNinjaRun.prototype = {
 				}
 
 				var speed = feat.properties.speed;
-				self.MaxSpeed = (speed > self.MaxSpeed) ? speed : self.MaxSpeed;
+				self.MaxSpeed = speed > self.MaxSpeed ? speed : self.MaxSpeed;
 				return true;
 			});
 
@@ -2091,17 +2150,17 @@ WindNinjaRun.prototype = {
 			var points = [];
 			var x = pt.getCoordinates()[0];
 			var y = pt.getCoordinates()[1];
-			var x1 = x + (dist * Math.cos(angle));
-			var y1 = y - (dist * Math.sin(angle));
+			var x1 = x + dist * Math.cos(angle);
+			var y1 = y - dist * Math.sin(angle);
 
 			var __createPoint = function (pt, angle, num) {
-				var brng = (num === 3) ? (angle + (135).toRad()) : (num === 4) ? (angle - (135).toRad()) : null;
+				var brng = num === 3 ? angle + (135).toRad() : num === 4 ? angle - (135).toRad() : null;
 				var len = dist / 3;
 				var x = pt[0];
 				var y = pt[1];
 				try {
-					var x1 = x + (Math.cos(brng) * len);
-					var y1 = y - (Math.sin(brng) * len);
+					var x1 = x + Math.cos(brng) * len;
+					var y1 = y - Math.sin(brng) * len;
 					return [x1, y1];
 				} catch (err) {
 					return [0, 0];
@@ -2147,7 +2206,7 @@ WindNinjaRun.prototype = {
 	}
 	, __vectorStyle: function (feat, res) {
 		var angle = feat.get('AM_dir').toRad();
-		var scale = res * ((this.__clusterDistance * 2) * 0.75);
+		var scale = res * (this.__clusterDistance * 2 * 0.75);
 		var arrow = this.__makeVectorArrow(feat, angle, scale);
 		var color = this.__getArrowColor(feat.get('speed'));
 
@@ -2204,6 +2263,7 @@ WindNinjaRun.prototype = {
 		return new Date(a.Date).getTime() - new Date(b.Date).getTime();
 	}
 	, layerSort: function (a, b) {
-		return new Date(a.get('date')).getTime() - new Date(b.get('date')).getTime();
+		console.log(a.get('date'), b.get('date'));
+		return new Date(a.get('date').replace(/-/g, '/')).getTime() - new Date(b.get('date').replace(/-/g, '/')).getTime();
 	}
-}
+};

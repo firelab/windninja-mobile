@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="css/map.min.css" type="text/css">
 
 </head>
-<body data-theme="a" data-role="page">
+<body data-theme="a">
 	<!-- Registration -->
 	<div id="registration" data-role="popup" class="ui-corner-all">
 		<div id="head" data-role="header" role="banner" class="ui-corner-top ui-header">
@@ -97,9 +97,9 @@
 				</ul>
 				<br />
 				<span>
-					For more information on WindNinja go to <a href="http://www.firelab.org/project/windninja">http://www.firelab.org/project/windninja</a>.
+					For more information on WindNinja go to <a id="hlpLink" href="http://www.firelab.org/project/windninja-mobile">http://www.firelab.org/project/windninja-mobile</a>.
 					<br />
-					Contact us at <a href="mailto:wind.ninja.support@gmail.com">wind.ninja.support@gmail.com</a> with questions or feedback.
+					Contact us at <a id="emailLink" href="mailto:wind.ninja.support@gmail.com">wind.ninja.support@gmail.com</a> with questions or feedback.
 				</span>
 			</div>
 		</div>
@@ -114,8 +114,8 @@
 			<div style="margin:5px;">
 				<ol>
 					<li>Click the red pen and draw around the area you want to be included in the run.</li>
-					<li>Click the checkmark to accept the drawn area</li>
-					<li>Enter the run information when prompted and click 'Submit'</li>
+					<li>Click the checkmark to accept the drawn area.</li>
+					<li>Enter the run information when prompted and click 'Submit'.</li>
 				</ol>
 			</div>
 		</div>
@@ -340,8 +340,9 @@
 			</fieldset>
 			<fieldset data-role="controlgroup" id="LAYERS">
 				<legend>Layers:</legend>
-				<label><input type="checkbox" name="layers" value="geomac" /> GeoMac</label>
-				<label><input type="checkbox" name="layers" value="modis" /> MODIS</label>
+				<label><input type="checkbox" name="layers" value="geomac" />GeoMac</label>
+				<label><input type="checkbox" name="layers" value="modis" />MODIS</label>
+				<label><input type="checkbox" name="layers" value="viirs" />VIIRS</label>
 			</fieldset>
 		</div>
 	</div>
@@ -367,25 +368,25 @@
 		<div data-role="content" data-theme="none" class="ui-content ui-corner-bottom" style="margin: 0.5em;">
 			<ul style="list-style: none; padding: 0; margin: 0; font-size: 12px;">
 				<li>
-					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAADFBMVEX///8AAAAAAP8AAP8Li+sxAAAAA3RSTlMAAAYTFWHrAAAAJElEQVQI12NgYJA+wMDAIP4BSDD8YfgPBBACzGVgYAdJiB8AAAmZDaEeVMGRAAAAAElFTkSuQmCC" class="legendIcon" />
-					<span id="spd_0"></span>
-					<span id="w_spd_0"></span>
-				</li>
-				<li>
-					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAAA/wDtdVQvAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
-					<span id="spd_1"></span>
-				</li>
-				<li>
-					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAD//wBT7WDCAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
-					<span id="spd_2"></span>
+					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIBAMAAAACWGKkAAAAFVBMVEX///8AAAAIAAAAAAD/AAD/AAD7AADmFRtAAAAABXRSTlMAABgEAcM1AesAAAAnSURBVAjXY2AAAka1AAYIMA2FMhhCAxhCoQDBgEuBAStUgNE1gAEALEAIjIr3qUkAAAAASUVORK5CYII=" class="legendIcon" />
+					<span id="spd_4"></span>
 				</li>
 				<li>
 					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAADFBMVEUAAAD/////pQD/pQD5MLBgAAAAA3RSTlMAAAGNcfRIAAAAH0lEQVQI12MIDXW+ygAkvgKJ0L8M/4EAQoC5UAnvqwB7cxNBByGKwgAAAABJRU5ErkJggg==" class="legendIcon" />
 					<span id="spd_3"></span>
 				</li>
 				<li>
-					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIBAMAAAACWGKkAAAAFVBMVEX///8AAAAIAAAAAAD/AAD/AAD7AADmFRtAAAAABXRSTlMAABgEAcM1AesAAAAnSURBVAjXY2AAAka1AAYIMA2FMhhCAxhCoQDBgEuBAStUgNE1gAEALEAIjIr3qUkAAAAASUVORK5CYII=" class="legendIcon" />
-					<span id="spd_4"></span>
+					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAD//wBT7WDCAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
+					<span id="spd_2"></span>
+				</li>
+				<li>
+					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAACVBMVEX///8AAAAA/wDtdVQvAAAAAnRSTlMAAHaTzTgAAAAiSURBVAjXY2BgEGtgABILgATDCoZVQAAhwFwGBiaQhFgDALJ4CSUZn3bAAAAAAElFTkSuQmCC" class="legendIcon" />
+					<span id="spd_1"></span>
+				</li>
+				<li>
+					<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAIAgMAAACNGJcEAAAADFBMVEX///8AAAAAAP8AAP8Li+sxAAAAA3RSTlMAAAYTFWHrAAAAJElEQVQI12NgYJA+wMDAIP4BSDD8YfgPBBACzGVgYAdJiB8AAAmZDaEeVMGRAAAAAElFTkSuQmCC" class="legendIcon" />
+					<span id="spd_0"></span>
+					<span id="w_spd_0"></span>
 				</li>
 			</ul>
 		</div>
@@ -401,12 +402,12 @@
 	<!-- Foot -->
 	<div id="foot" data-role="footer" data-theme="b" data-position="fixed" data-tap-toggle="false">
 		<div class="ui-grid-b">
-			<div class="ui-block-a">
+			<div class="ui-block-a" style="width: 35%;">
 				<!-- Layers Button -->
 				<div id="btn_layers">Layers</div>
 				<!-- /Layers Button -->
 			</div>
-			<div id="pnl_Sketch" class="ui-block-b">
+			<div id="pnl_Sketch" class="ui-block-b" style="width: 30%;">
 				<!-- Sketch Buttons -->
 				<div id="draw">
 					<a id="btn_draw" data-role="button" data-icon="edit" data-iconpos="notext" data-mini="true"></a>
@@ -417,9 +418,9 @@
 				</div>
 				<!-- /Sketch Buttons -->
 			</div>
-			<div class="ui-block-c">
+			<div class="ui-block-c" style="width: 35%;">
 				<!-- Run Options -->
-				<div id="btn_run-opts">Viewing Options</div>
+				<div id="btn_run-opts">View Options</div>
 				<!-- /Run Options -->
 			</div>
 		</div>

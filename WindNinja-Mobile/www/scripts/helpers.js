@@ -28,7 +28,17 @@ Number.prototype.toDeg = function () {
 };
 String.prototype.toTitleCase = function () {
 	return this.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
-}
+};
+String.prototype.padLeft = function (len) {
+	var s = new String(this);
+	if (this.length < len) {
+		for (var i = 0; i < len - this.length; ++i) {
+			s = '0'.charAt(0).concat(s);
+		}
+	}
+
+	return s;
+};
 
 $.fn.spin.presets.windninja = {
 	lines: 9, // The number of lines to draw
