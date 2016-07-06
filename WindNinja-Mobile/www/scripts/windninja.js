@@ -60,7 +60,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '0.2.9';
+	, version = '1.0.0';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
