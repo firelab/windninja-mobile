@@ -60,7 +60,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.0';
+	, version = '1.0.1';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -324,6 +324,14 @@ function _registrationAccepted() {
 	$('#btn_draw').unbind('click');
 	$('#btn_draw').on('click', function () {
 		console.group('#btn_draw.onClick');
+		if (sliderOpen) {
+			//close slider
+			$('#btn_time').trigger('click');
+		} else if (legendOpen) {
+			//close legend
+			$('#btn_legend').trigger('click');
+		}
+
 		$('#draw').hide();
 		$('#sketch').show();
 		_removeSketch();
@@ -437,8 +445,8 @@ function _initMap() {
 		id: 'sat',
 		visible: false,
 		preload: Infinity,
-		source: new ol.source.MapQuest({
-			layer: 'sat'
+		source: new ol.source.XYZ({
+			url: 'http://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}'
 		})
 	}));
 	// TopoFire
@@ -892,9 +900,27 @@ function initUI() {
 		theme: 'b',
 		dismissible: false,
 		beforeopen: function (evt, ui) {
+			if (sliderOpen) {
+				sliderWasOpen = true;
+				//close slider
+				$('#btn_time').trigger('click');
+			} else if (legendOpen) {
+				legendWasOpen = true;
+				//close legend
+				$('#btn_legend').trigger('click');
+			}
+
 			$('#btn_layers').parent().addClass('ui-btn-on');
 		},
 		beforeclose: function (evt, ui) {
+			if (sliderWasOpen) {
+				$('#btn_time').trigger('click');
+			} else if (legendWasOpen) {
+				$('#btn_legend').trigger('click');
+			}
+			sliderWasOpen = false;
+			legendWasOpen = false;
+
 			$('#btn_layers').parent().removeClass('ui-btn-on');
 		}
 	});
@@ -1591,13 +1617,23 @@ function _onGPSOff() {
 // Return a 'pretty' formatted date string for display
 function prettyDate(date) {
 	// Returns date in format MM/DD/YYYY, HH:MM:SS
-	var dt;
+	var dt,
+		tz;
+
 	if (date instanceof Date)
-		dt = date
+		dt = date;
 	else
 		dt = new Date(date);
 
-	return dt.getMonth() + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ':' + dt.getSeconds().toString().padLeft(2);
+	tz = dt.toTimeString().match(/(\([\s\S]+\))$/)[0].split(' ');
+	if (tz.length > 1) {
+		tz = '(' + tz[0].substring(1, 2) + tz[1].substring(0, 1) + tz[2].substring(0, 1) + ')';
+	}
+	else {
+		tz = tz[0];
+	}
+
+	return dt.getMonth() + 1 + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ':' + dt.getSeconds().toString().padLeft(2) + ' ' + tz;
 }
 
 //
@@ -1971,7 +2007,7 @@ WindNinjaRun.prototype = {
 			}
 
 			var source = new ol.source.XYZ({
-				maxZoom: 16,
+				maxZoom: 17,
 				url: this.BaseURL + 'tiles/' + name + '/{z}/{x}/{y}.png'
 			});
 
