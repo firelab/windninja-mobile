@@ -2,10 +2,11 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src * 'self' data:;">
+	<!--<meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src * 'self' data:;">-->
+	<meta http-equiv="Content-Security-Policy" content="default-src * 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src * 'self' data: content:;">
 	<title>WindNinja Mobile</title>
 
-	<link rel="stylesheet" href="css/ol-3.17.css" type="text/css">
+	<link rel="stylesheet" href="css/ol-3.19.1.css" type="text/css">
 	<link rel="stylesheet" href="css/jquery.min.css" type="text/css">
 	<link rel="stylesheet" href="css/map.min.css" type="text/css">
 
@@ -61,6 +62,7 @@
 			<h1>Downloading</h1>
 		</div>
 		<div data-role="content" class="ui-corner-bottom" style="margin: 0.5em;">
+			<span style="font-size:smaller;">Please wait, as this may take several minutes to complete. During which time the progress bar may appear to be frozen.</span>
 			<label for="productProgress" id="productLabel">Files:</label>
 			<div id="productProgress" data-mini="true"></div>
 		</div>
@@ -168,7 +170,7 @@
 		</div>
 	</div>
 	<!-- Request -->
-	<div data-role="panel" data-position="right" data-position-fixed="true" data-display="overlay" id="request-panel">
+	<div data-role="panel" data-position="right" data-position-fixed="true" data-display="overlay" data-dismissible="false" id="request-panel">
 		<ul data-role="listview" class="nav-search">
 			<li data-icon="delete">
 				<a href="#" data-rel="close">WindNinja Run Creation</a>
@@ -242,6 +244,7 @@
 					<input type="email" id="userEmail" data-mini="true" placeholder="Email Address" />
 					<label for="userPhone">Phone:</label>
 					<input type="tel" id="userPhone" data-mini="true" placeholder="Mobile Number" />
+					<label for="provider"></label>
 					<select id="provider" data-mini="true">
 						<option value="">Cell Provider</option>
 						<option value="message.Alltel.com">Alltel Wireless</option>
@@ -427,9 +430,9 @@
 	</div>
 
 	<script type="text/javascript" src="cordova.js"></script>
-	<script type="text/javascript" src="scripts/ol-3.17.js"></script>
-	<script type="text/javascript" src="scripts/jquery-1.11.2.min.js"></script>
-	<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="scripts/ol-3.19.1.js"></script>
+	<script type="text/javascript" src="scripts/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery-ui.1.12.1.min.js"></script>
 	<script type="text/javascript" src="scripts/jquery.mobile-1.4.5.min.js"></script>
 	<script type="text/javascript" src="scripts/spin.min.js"></script>
 	<script type="text/javascript" src="scripts/jquery.spin.min.js"></script>

@@ -60,7 +60,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.1';
+	, version = '1.0.2';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -517,13 +517,23 @@ function _initMap() {
 		})
 	}));
 	// VIIRS
-	mapLayers.push(new ol.layer.Image({
+	//mapLayers.push(new ol.layer.Image({
+	//	name: 'viirs',
+	//	id: 'viirs',
+	//	visible: false,
+	//	source: new ol.source.ImageWMS({
+	//		url: 'https://firms.modaps.eosdis.nasa.gov/wms/viirs/?',
+	//		params: { 'LAYERS': 'fires48,fires24', 'SRS': '3857', 'VERSION': '1.1.1' }
+	//	})
+	//}));
+	mapLayers.push(new ol.layer.Tile({
 		name: 'viirs',
 		id: 'viirs',
 		visible: false,
-		source: new ol.source.ImageWMS({
-			url: 'https://firms.modaps.eosdis.nasa.gov/wms/viirs/?',
-			params: { 'LAYERS': 'fires48,fires24', 'SRS': '3857', 'VERSION': '1.1.1' }
+		source: new ol.source.TileWMS({
+			url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus_viirs_iband.map&',
+			params: { 'LAYERS': 'Last 24 hour fire detections,Current Large incidents', 'VERSION': '1.0.0' },
+			crossOrigin: 'anonymous'
 		})
 	}));
 	// Sketch layer
@@ -764,7 +774,7 @@ function initUI() {
 		tolerance: 0,
 		dismissible: false,
 		history: false
-	});//.popup('open').popup('close');
+	});
 
 	// Footer Buttons
 	$('#btn_layers').button({
@@ -1155,7 +1165,7 @@ function setmapsize() {
 
 	//$('body').css({ 'max-height': scrnHeight + 'px', 'height': scrnHeight + 'px', 'min-height': scrnHeight + 'px' });
 	$('#map').css({ 'min-height': mapHeight, 'max-height': mapHeight });
-	$('[data-role="page"]').css({ 'min-height': mapHeight, 'max-height': mapHeight });
+	$('[data-role="page"]').css({ 'min-height': mapHeight, 'max-height': mapHeight, 'overflow': 'hidden' });
 	$('#menuContent').height(panelHeight);
 	$('#requestContent').height(panelHeight);
 	$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
@@ -1167,18 +1177,20 @@ function setmapsize() {
 
 
 	// if there are any panels open, toggle visibility so heights get set properly
-	if ($('#pnl_Settings').hasClass('ui-panel-open')) {
-		$('#pnl_Settings').panel('close').panel('open');
-	}
-	if ($('#pnl_Runs').hasClass('ui-panel-open')) {
-		$('#pnl_Runs').panel('close').panel('open');
-	}
-	if ($('#pnl_run-opts').hasClass('ui-panel-open')) {
-		$('#pnl_run-opts').panel('close').panel('open');
-	}
-	if ($('#pnl_layers').hasClass('ui-panel-open')) {
-		$('#pnl_layers').panel('close').panel('open');
-	}
+	$('.ui-panel-dismiss').css({ 'height': scrnHeight });
+
+	//if ($('#pnl_Settings').hasClass('ui-panel-open')) {
+	//	$('#pnl_Settings').panel('close').panel('open');
+	//}
+	//if ($('#pnl_Runs').hasClass('ui-panel-open')) {
+	//	$('#pnl_Runs').panel('close').panel('open');
+	//}
+	//if ($('#pnl_run-opts').hasClass('ui-panel-open')) {
+	//	$('#pnl_run-opts').panel('close').panel('open');
+	//}
+	//if ($('#pnl_layers').hasClass('ui-panel-open')) {
+	//	$('#pnl_layers').panel('close').panel('open');
+	//}
 	if (sliderOpen) {
 		$('#pnl_time').popup('close');
 		setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
@@ -1425,7 +1437,7 @@ function _onDownloadReady(results, id) {
 	, files = 0
 	, done = 0
 	, outputs = [];
-	$('#loader').popup('open', { positionTo: 'window', transition: 'pop' });
+	$('#loader').popup('open', { positionTo: 'window', transition: 'pop', afterclose: function (evt) { console.debug('loader closed :: ', evt); } });
 	$('#productLabel').text('Files: 0/..');
 	$('#productProgress').progressbar({ value: 0 });
 
@@ -1455,7 +1467,7 @@ function _onDownloadReady(results, id) {
 				});
 
 				$.when.apply($, outputs).done(function () {
-					$('#loader').popup('close');
+					console.debug('this says you\'re done downloading...');
 					downloading = false;
 
 					var update = $('#' + results.id + ' [data-runId="' + results.id + '"]');
@@ -1465,6 +1477,7 @@ function _onDownloadReady(results, id) {
 					toggleActionButton(results.id, 'downloaded');
 
 					initRun(results.id, results.name);
+					$('#loader').popup('close');
 				});
 			});
 		});
@@ -1481,6 +1494,7 @@ function downloadProduct(id, product) {
 		var fileTransfer = new FileTransfer();
 
 		fileTransfer.download(URL + product.package, DIR + '/' + product.package, function (entry) {
+			deferred.notify();
 			if (product.type === 'basemap') {
 				var name = product.name.split(' Basemap')[0];
 				zip.unzip(DIR + '/' + product.package, cacheDir.toURL() + name + '/', function (s) {
@@ -1511,11 +1525,29 @@ function downloadProduct(id, product) {
 			var def = $.Deferred()
 			, fileTransfer = new FileTransfer();
 			defs.push(def.promise());
-			fileTransfer.download(URL + f, DIR + '/' + f, function (entry) {
-				console.log(entry.name + ' downloaded to: "' + DIR + '/' + f + '/"');
-				deferred.notify();
-				def.resolve();
+			$.ajax({
+				url: URL + f,
+				method: 'GET',
+				async: false
+			}).done(function (data) {
+				console.log(f + ' downloaded');
+				dataDir.getDirectory(id, { create: false, exclusive: false }, function (dir) {
+					dir.getFile(f, { create: true, exclusive: false }, function (file) {
+						file.createWriter(function (fileWriter) {
+							console.log('writing ' + f + ' to file');
+							var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+							fileWriter.write(blob);
+							deferred.notify();
+							def.resolve();
+						});
+					});
+				});
 			});
+			//fileTransfer.download(URL + f, DIR + '/' + f, function (entry) {
+			//	console.log(entry.name + ' downloaded to: "' + DIR + '/' + f + '/"');
+			//	deferred.notify();
+			//	def.resolve();
+			//});
 		});
 
 		$.when.apply($, defs).done(function () {

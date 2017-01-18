@@ -8,6 +8,10 @@ body,
 	overflow: hidden !important;
 }
 
+div[data-role='page'] {
+	overflow: hidden !important;
+}
+
 #map {
 	position: absolute;
 	top: 44px;
@@ -154,12 +158,12 @@ img.legendIcon {
 
 #settingsContent {
 	margin: 0.75em;
-	overflow-y: scroll;
+	//overflow-y: scroll;
 }
 
 #registrationContent {
 	margin: 0.75em;
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 #registration-popup {
@@ -170,5 +174,5 @@ img.legendIcon {
 
 #feedback-panel-popup {
 	overflow-x: hidden;
-	overflow-y: scroll;
+	//overflow-y: scroll;
 }
