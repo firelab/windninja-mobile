@@ -508,31 +508,25 @@ function _initMap() {
 		id: 'modis',
 		visible: false,
 		source: new ol.source.TileWMS({
-			url: 'http://activefiremaps.fs.fed.us/cgi-bin/mapserv.exe',
+			url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus.map&',
 			params: {
-				'map': 'conus.map',
 				'LAYERS': 'Last 24 hour fire detections,Last 12 hour fire detections,Current Large incidents',
 				'VERSION': '1.1.0'
-			}
+			},
+			crossOrigin: 'anonymous'
 		})
 	}));
 	// VIIRS
-	//mapLayers.push(new ol.layer.Image({
-	//	name: 'viirs',
-	//	id: 'viirs',
-	//	visible: false,
-	//	source: new ol.source.ImageWMS({
-	//		url: 'https://firms.modaps.eosdis.nasa.gov/wms/viirs/?',
-	//		params: { 'LAYERS': 'fires48,fires24', 'SRS': '3857', 'VERSION': '1.1.1' }
-	//	})
-	//}));
 	mapLayers.push(new ol.layer.Tile({
 		name: 'viirs',
 		id: 'viirs',
 		visible: false,
 		source: new ol.source.TileWMS({
 			url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus_viirs_iband.map&',
-			params: { 'LAYERS': 'Last 24 hour fire detections,Current Large incidents', 'VERSION': '1.0.0' },
+			params: {
+				'LAYERS': 'Last 24 hour fire detections,Current Large incidents',
+				'VERSION': '1.1.0'
+			},
 			crossOrigin: 'anonymous'
 		})
 	}));
@@ -754,9 +748,11 @@ function _initRunList() {
 
 		$.when.apply($, defs).done(function () {
 			// trigger the 'create' event on the parent container to properly initialze the collapsible panes
-			container.trigger('create');
+			//container.trigger('create');
 		}).fail(function (err) {
 			fail(err);
+		}).always(function () {
+			container.trigger('create');
 		});
 	});
 }
@@ -1163,7 +1159,6 @@ function setmapsize() {
 
 	var popupHeight = scrnHeight - $(0.5).toPx();
 
-	//$('body').css({ 'max-height': scrnHeight + 'px', 'height': scrnHeight + 'px', 'min-height': scrnHeight + 'px' });
 	$('#map').css({ 'min-height': mapHeight, 'max-height': mapHeight });
 	$('[data-role="page"]').css({ 'min-height': mapHeight, 'max-height': mapHeight, 'overflow': 'hidden' });
 	$('#menuContent').height(panelHeight);
@@ -1171,26 +1166,17 @@ function setmapsize() {
 	$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
 	$('#settingsContent').height(panelHeight);
 	$('#helpContent').css({ 'max-height': helpHeight + 'px' });
-	$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px' });
+	$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px', 'top': 1 + 'em' });
 	$('#registration-popup').css({ 'max-height': scrnHeight, 'height': scrnHeight });
+	//if (!isIOS7) {
+	//	$('#feedback-panel').top(0.5 + 'em');
+	//}
 	$('#registrationContent').outerHeight(scrnHeight - 1 - $('#registration-popup #head').outerHeight() - $(1.5).toPx() + 'px');
 
 
 	// if there are any panels open, toggle visibility so heights get set properly
 	$('.ui-panel-dismiss').css({ 'height': scrnHeight });
 
-	//if ($('#pnl_Settings').hasClass('ui-panel-open')) {
-	//	$('#pnl_Settings').panel('close').panel('open');
-	//}
-	//if ($('#pnl_Runs').hasClass('ui-panel-open')) {
-	//	$('#pnl_Runs').panel('close').panel('open');
-	//}
-	//if ($('#pnl_run-opts').hasClass('ui-panel-open')) {
-	//	$('#pnl_run-opts').panel('close').panel('open');
-	//}
-	//if ($('#pnl_layers').hasClass('ui-panel-open')) {
-	//	$('#pnl_layers').panel('close').panel('open');
-	//}
 	if (sliderOpen) {
 		$('#pnl_time').popup('close');
 		setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
@@ -1202,7 +1188,7 @@ function setmapsize() {
 }
 // Generic fail method
 function fail(err) {
-	console.error(err.message, Error().stack);
+	console.error(err);
 }
 // Initialize WindNinja run data
 function initRun(id, name) {
@@ -1405,7 +1391,13 @@ function submitJob() {
 				});
 			}, fail);
 		}).fail(function (data) {
-			navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'Ok');
+			var error;
+			if (data.statusMessage == 'undefined') {
+				error = 'There appears to be an error communicating with the server, please try again shortly or connect to WiFi and try submitting again.';
+			} else {
+				error = data.statusMessage;
+			}
+			navigator.notification.alert("Server Error: " + error, null, 'Error', 'Ok');
 		}).always(function () {
 			$('#runName').val('');
 			$('#spinner').spin(false);
@@ -1527,8 +1519,7 @@ function downloadProduct(id, product) {
 			defs.push(def.promise());
 			$.ajax({
 				url: URL + f,
-				method: 'GET',
-				async: false
+				method: 'GET'
 			}).done(function (data) {
 				console.log(f + ' downloaded');
 				dataDir.getDirectory(id, { create: false, exclusive: false }, function (dir) {
