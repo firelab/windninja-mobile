@@ -199,7 +199,7 @@ def _generate_registration_confirmation(account):
 
     # send the email
     subject = "WindNinja Mobile - account verification"
-    body = "Please verify this account by submitting the confirmation code at the following URL:\n\n\n{0}\n\n\nThis code is valid for {1} minutes.".format(url, _confirmation_delta_minutes)
+    body = "Welcome to WindNinja Mobile! Please click the link below to complete your registration.\n\n\n{0}\n\n\nThis code is valid for {1} minutes.".format(url, _confirmation_delta_minutes)
     wnutil.send_email(_email_parameters.get("server", {}), account.email, _email_parameters.get("from_address", ""), subject, body)
 
 def _validate_registration_confirmation(code):
