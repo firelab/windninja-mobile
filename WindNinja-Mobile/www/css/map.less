@@ -15,6 +15,10 @@ div[data-role='page'] {
 #map {
 	position: absolute;
 	top: 44px;
+
+	.ol-control {
+		z-index: 1000;
+	}
 }
 
 #btn_GPS {
@@ -37,10 +41,10 @@ div[data-role='page'] {
 
 #tbl_Date {
 	position: absolute;
-	left: 50%;
-	margin-left: -6.25em;
+	width: 100%;
+	margin: auto;
 	background-color: transparent;
-	z-index: 1000;
+	z-index: auto;
 	display: none;
 
 	#runDate {
@@ -52,7 +56,26 @@ div[data-role='page'] {
 		width: 14em;
 		height: 1.1em;
 		padding: 0.25em;
-		margin: 0.25em;
+		margin: 0.25em auto 0.25em auto;
+	}
+}
+
+#tbl_time {
+	position: absolute;
+	width: 100%;
+	top: 4.75em;
+
+	.ui-slider {
+		margin: 0 0 4px 0;
+
+		.ui-slider-track {
+			margin-left: 15px !important;
+		}
+	}
+
+	button {
+		width: 24px;
+		padding: 4px;
 	}
 }
 
@@ -75,8 +98,13 @@ div[data-role='page'] {
 }
 
 #pnl_time {
-	min-width: 13em;
-	max-width: 15em;
+	width: 100%;
+
+	button {
+		width: 24px;
+		height: 24px;
+		padding: 4px;
+	}
 }
 
 #pnl_time-popup {

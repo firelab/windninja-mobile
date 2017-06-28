@@ -39,6 +39,17 @@ String.prototype.padLeft = function (len) {
 
 	return s;
 };
+if (!String.prototype.format) {
+	String.prototype.format = function () {
+		var args = arguments;
+		return this.replace(/{(\d+)}/g, function (match, number) {
+			return typeof args[number] != 'undefined'
+			  ? args[number]
+			  : match
+			;
+		});
+	};
+}
 
 $.fn.spin.presets.windninja = {
 	lines: 9, // The number of lines to draw

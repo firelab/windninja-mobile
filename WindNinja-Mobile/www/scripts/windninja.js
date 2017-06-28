@@ -21,6 +21,7 @@ var _DEBUG = false
 	, wgs84Sphere = new ol.Sphere(6378137)
 	, baseMaps = []
 	, mapLayers = []
+	, runList = []
 	, ninjaRun
 	, startPixel
 	, holdPromise
@@ -30,6 +31,8 @@ var _DEBUG = false
 	, legendWasOpen = false
 	, sliderOpen = false
 	, sliderWasOpen = false
+	, curIndex = 0
+	, playTimeout
 	, dataDir
 	, cacheDir
 	, serverURL = 'http://windninja.wfmrda.org/'
@@ -60,13 +63,13 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.2';
+	, version = '1.0.3';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
 $(document).on('offline', _onOffilne);
 $(document).on('online', _onOnline);
-$(document).on('pause', _onPause);
+$(document).on('pause', _onSuspend);
 $(document).on('resume', _onResume);
 
 // Cordova Device ready
@@ -74,21 +77,18 @@ function _onDeviceReady() {
 	window.open = cordova.InAppBrowser.open;
 	// Initialize UI
 	$(document).ready(initUI);
-	// Fix for iOS 7 and the statusbar overlaying the webview
+	// Fix for iOS 7 and the status bar overlaying the web view
 	if (device.platform === 'iOS' && parseFloat(device.version) >= 7) {
 		isIOS7 = true;
 		StatusBar.overlaysWebView(false);
 		StatusBar.styleDefault();
 		StatusBar.backgroundColorByName('lightGray');
 
-		//var btm = ($(20).toEm() + 3.25)
-		//$('#foot').css({ 'bottom': btm + 'em' });
-
-		// Reset our map size to account for the statusbar
+		// Reset our map size to account for the status bar
 		setmapsize();
 	}
 
-	// Initialze cache directory (offilne map tiles), and initialize our map
+	// Initialize cache directory (offline map tiles), and initialize our map
 	window.resolveLocalFileSystemURL(cordova.file.cacheDirectory, function (directoryEntry) {
 		directoryEntry.getDirectory('tilesCache', { create: true, exclusive: false }, function (dir) {
 			console.info('tiles cache directory created/set.');
@@ -127,10 +127,11 @@ function _onDeviceReady() {
 					_initRunList();
 				}
 
-				// Make sure the splashscreen is hidden after 10 seconds
+				// Make sure the splash screen is hidden after 10 seconds
 				setTimeout(function () {
 					navigator.splashscreen.hide();
 					setmapsize();
+					//_initRunList();
 				}, 8000);
 			}, fail);
 		});
@@ -141,7 +142,7 @@ function _onOffilne() {
 	connection = false;
 	$('#createRun').button('disable').prop({ 'disabled': true });
 	$('[data-online="true"]').each(function () { $(this).prop({ 'disabled': true }); });
-	//navigator.notification.alert('Network Connection lost', null, 'Network Status', 'Ok');
+	//navigator.notification.alert('Network Connection lost', null, 'Network Status', 'OK');
 }
 // Reacquire network connection
 function _onOnline() {
@@ -150,8 +151,8 @@ function _onOnline() {
 	$('[data-online="true"]').each(function () { $(this).prop('disabled', false); });
 }
 // Phone in 'sleep mode'
-function _onPause() {
-	console.log('_onPause()');
+function _onSuspend() {
+	console.log('_onSuspend()');
 
 	_onOffilne();
 }
@@ -354,11 +355,11 @@ function _registrationDisabled() {
 }
 // Show the Registration Pending notification
 function _showPendingRegistration() {
-	navigator.notification.alert('Your registration is pending approval. You will not be able to create/submit any new runs until your account is verified.', null, 'Registration', 'Ok');
+	navigator.notification.alert('Your registration is pending approval. You will not be able to create/submit any new runs until your account is verified.', null, 'Registration', 'OK');
 }
 // Show Disabled Account notification
 function _showDisabledRegistration() {
-	navigator.notification.alert('Your account has been disabled. You will not be able to create/submit runs, but will still be able to display any runs already created.', null, 'Registration', 'Ok');
+	navigator.notification.alert('Your account has been disabled. You will not be able to create/submit runs, but will still be able to display any runs already created.', null, 'Registration', 'OK');
 }
 // Register device for support and feedback
 function _registerInstall() {
@@ -429,7 +430,7 @@ function _initMap() {
 	baseMaps = [];
 
 	/*
-	 * Basemaps
+	 * Base-maps
 	 */
 	// OSM
 	baseMaps.push(new ol.layer.Tile({
@@ -480,6 +481,52 @@ function _initMap() {
 			})
 		})
 	});
+	// Fuel Models (LANDFIRE)
+	mapLayers.push(new ol.layer.Group({
+		name: 'fuel',
+		id: 'fuel',
+		visible: false,
+		opacity: 0.55,
+		layers: [
+			new ol.layer.Image({
+				source: new ol.source.ImageWMS({
+					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
+					params: { 'LAYERS': 'US_140FBFM13' },
+					crossOrigin: 'anonymous'
+				})
+			}),
+			new ol.layer.Image({
+				source: new ol.source.ImageWMS({
+					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
+					params: { 'LAYERS': 'AK_140FBFM13' },
+					crossOrigin: 'anonymous'
+				})
+			})
+		]
+	}));
+	// Vegetation (LANDFIRE)
+	mapLayers.push(new ol.layer.Group({
+		name: 'vegetation',
+		id: 'vegetation',
+		visible: false,
+		opacity: 0.55,
+		layers: [
+			new ol.layer.Image({
+				source: new ol.source.ImageWMS({
+					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
+					params: { 'LAYERS': 'US_140CH,US_140CC' },
+					crossOrigin: 'anonymous'
+				})
+			}),
+			new ol.layer.Image({
+				source: new ol.source.ImageWMS({
+					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
+					params: { 'LAYERS': 'AK_140CH,AK_140CC' },
+					crossOrigin: 'anonymous'
+				})
+			})
+		]
+	}));
 	// GeoMac (Current Fires & Perimeters)
 	mapLayers.push(new ol.layer.Group({
 		name: 'geomac',
@@ -583,7 +630,7 @@ function _initMap() {
 		},
 		handleUpEvent: function (evt) {
 			sketchPolyFeature = new ol.Feature(new ol.geom.Polygon([sketchCoordinates]));
-			// Remove the linestring
+			// Remove the line string
 			sketchSource.removeFeature(sketchLineFeature);
 			sketchSource.addFeature(sketchPolyFeature);
 			return true;
@@ -621,7 +668,7 @@ function _initMap() {
 		}
 	});
 
-	//add GPS button to 'zoom' controls (have to add this here because UI initialization has already occured)
+	//add GPS button to 'zoom' controls (have to add this here because UI initialization has already occurred)
 	$('div.ol-zoom.ol-unselectable.ol-control').append($('<button id="btn_GPS" title="GPS" />').on('click', _onGPSOn));
 
 	// Start GPS location
@@ -670,6 +717,7 @@ function _cleanSketch() {
 // Initialize Runs list
 function _initRunList() {
 	console.info('initializing run list.');
+	runList = [];
 	var dir = dataDir.toURL();
 	var directoryReader = dataDir.createReader();
 	var container = $('#runs_list');
@@ -680,64 +728,14 @@ function _initRunList() {
 		$.each(entries, function (i, entry) {
 			if (entry.isDirectory && entry.name !== 'Documents') {
 				var def = $.Deferred(),
-					url = dir + entry.name + '/' + 'job.json',
-					submitDate,
-					updateDate;
+					url = dir + entry.name + '/' + 'job.json';
 				defs.push(def.promise());
 
 				$.ajax({
 					url: url,
 					dataType: 'json'
 				}).done(function (job) {
-					// create the buttons for the run (action button and delete button)
-					var actionBtn = $('<span />').addClass('actionBtn').data({ 'runId': job.id, 'runName': job.name });
-					var delBtn = $('<span />').text('Delete').addClass('deleteBtn').data({ 'runId': job.id, 'runName': job.name });
-
-					// parse and create the submitted and last updated dates from the messages
-					if (job.messages.length > 0) {
-						submitDate = job.messages[0].split(' | ')[0];
-						updateDate = job.messages[job.messages.length - 1].split(' | ')[0];
-					} else {
-						submitDate = new Date();
-						updateDate = new Date();
-					}
-
-					// Create the run panel
-					var pnl = $('<div />').attr('id', job.id).data('runName', job.name)
-						.append($('<h3 />').text(job.name))
-						.append($('<div data-role="controlgroup" data-type="horizontal">')
-							.css({ 'text-align': 'right' })
-							.append(actionBtn)
-							.append(delBtn)
-						)
-						.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate)))
-						.append('<br />')
-						.append($('<span />').addClass('runTime').data('runId', job.id).text('Updated: ' + prettyDate(updateDate)));
-
-					// add the panel to the parent element and initialize it
-					container.append(pnl);
-					pnl.collapsible({
-						mini: true,
-						corners: true,
-						expand: function () {
-							console.log('expanding/initializing run: ' + $(this).data('runName'));
-							initRun($(this).attr('id'), $(this).data('runName'));
-						},
-						collapse: function () {
-							console.log('collapsing/removing run: ' + $(this).data('runName'));
-							removeRun();
-						}
-					});
-
-					// setup action button title and click events
-					delBtn.button({ mini: true, corners: true }).on('click', function () {
-						if (confirm('Are you sure you want to delete the run ' + $(this).data('runName') + '?')) {
-							deleteEvent($(this).data('runId'), $(this).data('runName'));
-						}
-					});
-					actionBtn.button({ mini: true, corners: true });
-					toggleActionButton(job.id, job.status);
-
+					runList.push(job);
 					console.log(job.name + ' added to run list');
 					def.resolve();
 				}).fail(function (err) {
@@ -747,14 +745,75 @@ function _initRunList() {
 		});
 
 		$.when.apply($, defs).done(function () {
-			// trigger the 'create' event on the parent container to properly initialze the collapsible panes
-			//container.trigger('create');
+			console.log('runList length: ' + runList.length);
+			runList.sort(function (a, b) {
+				var an = a.name.toLowerCase(),
+					bn = b.name.toLowerCase();
+				return an < bn ? -1 : an > bn ? 1 : 0;
+			});
+
+			$.each(runList, _createRunMenuItem);
 		}).fail(function (err) {
 			fail(err);
 		}).always(function () {
+			console.log('creating container: ');
 			container.trigger('create');
 		});
 	});
+}
+// Create run menu item
+function _createRunMenuItem(index, jobJson) {
+	console.log('creating menu item: ' + jobJson.name);
+	// create the buttons for the run (action button and delete button)
+	var actionBtn = $('<span />').addClass('actionBtn').data({ 'runId': jobJson.id, 'runName': jobJson.name });
+	var delBtn = $('<span />').text('Delete').addClass('deleteBtn').data({ 'runId': jobJson.id, 'runName': jobJson.name });
+
+	// parse and create the submitted and last updated dates from the messages
+	if (jobJson.messages.length > 0) {
+		try {
+			submitDate = jobJson.messages[0].split(' | ')[0];
+			updateDate = jobJson.messages[jobJson.messages.length - 1].split(' | ')[0];
+		} catch (e) {
+			console.log(e);
+		}
+	} else {
+		submitDate = Date.now();
+		updateDate = Date.now();
+	}
+	// create the run panel
+	var pnl = $('<div />').attr('id', jobJson.id).data('runName', jobJson.name)
+		.append($('<h3 />').text(jobJson.name))
+		.append($('<div data-role="controlgroup" data-type="horizontal">')
+			.css({ 'text-align': 'right' })
+			.append(actionBtn)
+			.append(delBtn)
+		)
+		.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate)))
+		.append('<br />')
+		.append($('<span />').addClass('runTime').text('Updated: ' + prettyDate(updateDate)));
+
+	$('#runs_list').append(pnl);
+	pnl.collapsible({
+		mini: true,
+		corners: true,
+		expand: function () {
+			console.log('expanding/initializing run: ' + $(this).data('runName'));
+			initRun($(this).attr('id'), $(this).data('runName'));
+		},
+		collapse: function () {
+			console.log('collapsing/removing run: ' + $(this).data('runName'));
+			removeRun();
+		}
+	});
+
+	// setup action button title and click events
+	delBtn.button({ mini: true, corners: true }).on('click', function () {
+		if (confirm('Are you sure you want to delete the run ' + $(this).data('runName') + '?')) {
+			deleteEvent($(this).data('runId'), $(this).data('runName'));
+		}
+	});
+	actionBtn.button({ mini: true, corners: true });
+	toggleActionButton(jobJson.id, jobJson.status);
 }
 // Initialize UI elements and handlers
 function initUI() {
@@ -762,7 +821,7 @@ function initUI() {
 	console.info('document loaded, initializing UI.');
 	$('#version').text(version);
 
-	// Registration popup
+	// Registration pop-up
 	$("#registration").popup({
 		theme: 'a',
 		positionTo: 'window',
@@ -818,44 +877,17 @@ function initUI() {
 		console.info('#btn_time.onClick');
 		sliderOpen = !sliderOpen;
 		$(this).parent().toggleClass('ui-btn-on');
-
-		if (legendOpen) {
-			legendOpen = false;
-			$('#btn_legend').parent().removeClass('ui-btn-on');
-			$('#pnl_legend').popup('close').on('popupafterclose', function (evt, ui) {
-				if (sliderOpen) {
-					$('#pnl_time').popup('open');
-				}
-				$('#pnl_legend').unbind('popupafterclose');
-			});
-		} else {
-			if (sliderOpen) {
-				$('#pnl_time').popup('open');
-			} else {
-				$('#pnl_time').popup('close');
-			}
-		}
+		$('#tbl_time').toggle();
 	});
 	$('#btn_legend').button({ mini: true }).on('click', function () {
 		console.info('#btn_legend.onClick');
 		legendOpen = !legendOpen;
 		$(this).parent().toggleClass('ui-btn-on');
 
-		if (sliderOpen) {
-			sliderOpen = false;
-			$('#btn_time').parent().removeClass('ui-btn-on');
-			$('#pnl_time').popup('close').on('popupafterclose', function (evt, ui) {
-				if (legendOpen) {
-					$('#pnl_legend').popup('open');
-				}
-				$('#pnl_time').unbind('popupafterclose');
-			});
+		if (legendOpen) {
+			$('#pnl_legend').popup('open');
 		} else {
-			if (legendOpen) {
-				$('#pnl_legend').popup('open');
-			} else {
-				$('#pnl_legend').popup('close');
-			}
+			$('#pnl_legend').popup('close');
 		}
 	});
 	$('#btn_home').button({ mini: true }).on('click', function () {
@@ -906,11 +938,7 @@ function initUI() {
 		theme: 'b',
 		dismissible: false,
 		beforeopen: function (evt, ui) {
-			if (sliderOpen) {
-				sliderWasOpen = true;
-				//close slider
-				$('#btn_time').trigger('click');
-			} else if (legendOpen) {
+			if (legendOpen) {
 				legendWasOpen = true;
 				//close legend
 				$('#btn_legend').trigger('click');
@@ -945,7 +973,7 @@ function initUI() {
 		}
 	});
 
-	// setup beforeOpen and close handlers on settings panel to close/re-open any popups
+	// setup beforeOpen and close handlers on settings panel to close/re-open any pop-ups
 	$('#pnl_Settings').on('panelbeforeopen', function () {
 		if (sliderOpen) {
 			sliderWasOpen = true;
@@ -982,16 +1010,44 @@ function initUI() {
 	});
 	$('#pnl_legend-screen').remove();
 
-	// Forecast Slider Popup
-	$('#pnl_time').popup({
-		theme: 'none',
-		positionTo: '#foot',
-		transition: 'pop',
-		tolerance: '50, 15',
-		dismissible: false,
-		history: false
-	}).popup('open').popup('close');
-	$('#pnl_time-screen').remove();
+	// Play controls
+	$('#run_first').on('click', function () {
+		console.debug('run_first.onClick');
+		curIndex = 0;
+		setVisible(curIndex);
+	});
+	$('#run_back').on('click', function () {
+		console.debug('run_back.onClick');
+		curIndex = curIndex -= 1;
+		if (curIndex < 0) curIndex = 0;
+		setVisible(curIndex);
+	});
+	$('#run_pause').on('click', function () {
+		console.debug('run_pause.onClick');
+		$('#run_play').show();
+		$(this).hide();
+		if (playTimeout) {
+			clearTimeout(playTimeout);
+		}
+	});
+	$('#run_play').on('click', function () {
+		console.debug('run_play.onClick');
+		$('#run_pause').show();
+		$(this).hide();
+		play();
+	});
+	$('#run_next').on('click', function () {
+		console.debug('run_next.onClick');
+		curIndex = curIndex += 1;
+		if (curIndex >= ninjaRun.OutputLayers.length) curIndex = ninjaRun.OutputLayers.length - 1;
+		setVisible(curIndex);
+	});
+	$('#run_last').on('click', function () {
+		console.debug('run_last.onClick');
+		curIndex = ninjaRun.OutputLayers.length - 1;
+		setVisible(curIndex);
+	});
+
 	$('#createRun').on('click', function () {
 		$(this).button('refresh');
 		submitJob();
@@ -1020,7 +1076,9 @@ function initUI() {
 			$('#spinner').spin('windninja');
 		},
 		stop: function () {
-			ninjaRun.SetVisible(parseInt($(this).val()));
+			var index = parseInt($(this).val());
+			curIndex = index;
+			ninjaRun.SetVisible(index);
 			console.info('slider::stop - ' + ninjaRun.VisibleLayer);
 
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
@@ -1091,6 +1149,10 @@ function initUI() {
 		});
 	});
 
+	if (_DEBUG) {
+		$('#debugOptions').show();
+	}
+
 	// Handle window resizing (rotating device)
 	$(window).on('resize', setmapsize);
 	setmapsize();
@@ -1116,7 +1178,8 @@ function toggleActionButton(id, status) {
 				$('#pnl_Runs').panel('close');
 				$('#spinner').spin('windninja');
 				toggleActionButton($(this).data('runId'), 'loaded');
-				loadRun('raster');
+				//loadRun('raster');
+				loadRun($('#output').val());
 			});
 			break;
 		case 'succeeded':
@@ -1138,6 +1201,26 @@ function toggleActionButton(id, status) {
 
 	btn.button('refresh');
 }
+// 'Play' the ninja run
+function play() {
+	setVisible(curIndex);
+	playTimeout = setTimeout(function () {
+		curIndex += 1;
+		if (curIndex >= ninjaRun.OutputLayers.length) {
+			curIndex = 0;
+		}
+		play();
+	}, 650);
+}
+// set the proper layer visible and update UI
+function setVisible(index) {
+	ninjaRun.SetVisible(index);
+	var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
+	if (outputLayer !== undefined) {
+		$('#runDate').text('').text(prettyDate(outputLayer.get('date').replace(/-/g, '/')));
+	}
+	$('#timeSlider').val(index).slider('refresh');
+}
 // Set map element size
 function setmapsize() {
 	var scrnHeight = $.mobile.getScreenHeight(); // total available screen height
@@ -1147,12 +1230,9 @@ function setmapsize() {
 	var helpHead = $('#helpHeader').outerHeight(); // outer most height of the 'help' header
 	var helpFoot = $('#helpFooter').outerHeight(); // outer most height of the 'help' footer
 
-	// If this is iOS 7+, reduce the total height by 20px to account for the status bar that can't be hidden
-	//if (isIOS7) { scrnHeight -= 20; }
-
 	// map should only be between the bottom of the header to the top of the footer
 	var mapHeight = scrnHeight - headHeight - footHeight + 2;
-	// panels should not scroll over the header, but covering the footer is ok
+	// panels should not scroll over the header, but covering the footer is OK
 	var panelHeight = scrnHeight - headHeight - $(1.5).toPx();
 	// 0.5em buffer on the top and bottom of the 'help' dialog/popup (so it still looks like a dialog box)
 	var helpHeight = panelHeight - helpHead - helpFoot - $(0.5).toPx();
@@ -1178,8 +1258,8 @@ function setmapsize() {
 	$('.ui-panel-dismiss').css({ 'height': scrnHeight });
 
 	if (sliderOpen) {
-		$('#pnl_time').popup('close');
-		setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
+		//$('#pnl_time').popup('close');
+		//setTimeout(function () { $('#pnl_time').popup('open'); }, 500);
 	}
 	if (legendOpen) {
 		$('#pnl_legend').popup('close');
@@ -1198,32 +1278,13 @@ function initRun(id, name) {
 		//$('#loadRun').button('disable').prop('disabled', true);
 		//$('#removeRun').button('disable').prop('disabled', true);
 		$('#timeSlider').attr({ 'min': 0, 'max': 0, 'value': 0 });
+		curIndex = 0;
 
 		removeRun();
 		ninjaRun = new WindNinjaRun(id, name);
 
 		ninjaRun.InitRun().done(function () {
-			/*
-			$('#displayType').selectmenu('enable').prop('disabled', false);
-			for (var type in this.Outputs) {
-				if (this.Outputs.hasOwnProperty(type)) {
-					if (type !== 'vector') {
-						$('#displayType').append($('<option />')
-							.val(type)
-							.text(type.toTitleCase())
-						);
-					}
-				}
-			}
-			type = undefined;
-			$('#displayType').selectmenu('refresh');
-			*/
-			var displayType = 'raster';//$('#displayType').val();
-
-			if (this.Outputs.hasOwnProperty(displayType)) {
-				//$('#loadRun').button('enable').prop('disabled', false);
-				this.LoadForecasts = $('#btn_weather').parent().hasClass('ui-btn-on');
-			}
+			this.LoadForecasts = $('#btn_weather').parent().hasClass('ui-btn-on');
 		});
 	}
 }
@@ -1238,7 +1299,7 @@ function deleteEvent(id, name) {
 	dataDir.getDirectory(id, null, function (dir) {
 		dir.removeRecursively(function (entry) {
 			console.info('removed entry ' + entry);
-			navigator.notification.alert("Run '" + name + "' deleted.", null, 'Run Deleted', 'Ok');
+			navigator.notification.alert("Run '" + name + "' deleted.", null, 'Run Deleted', 'OK');
 			_initRunList();
 		}, fail);
 	}, fail);
@@ -1268,22 +1329,38 @@ function _checkStatus(id) {
 		dataDir.getDirectory(job.id, { create: true, exclusive: false }, function (dir) {
 			dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
 				file.createWriter(function (fileWriter) {
-					var blob = new Blob([JSON.stringify(job)], { type: 'application/json' });
+					var blob = new Blob([JSON.stringify(job)], { type: 'application/json' }),
+						updateDate,
+						submitDate;
 					fileWriter.write(blob);
 
 					$('#spinner').spin(false);
-					navigator.notification.alert(job.status, null, 'Run "' + job.name + '" Status', 'Ok');
+					navigator.notification.alert(job.status, null, 'Run "' + job.name + '" Status', 'OK');
 
-					var update = $('#' + job.id + ' [data-runId="' + job.id + '"]');
-					var updateDate = new Date(job.messages[job.messages.length - 1].split(' | ')[0]);
-					update.text(updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString());
+					var submit = $('#' + job.id + ' span.runTime')[0];
+					var update = $('#' + job.id + ' span.runTime')[1];
+
+					if (job.messages.length > 0) {
+						try {
+							submitDate = job.messages[0].split(' | ')[0];
+							updateDate = job.messages[job.messages.length - 1].split(' | ')[0];
+						} catch (e) {
+							console.log(e);
+						}
+					} else {
+						submitDate = Date.now();
+						updateDate = Date.now();
+					}
+
+					$(submit).text('Submitted: ' + prettyDate(submitDate));
+					$(update).text('Updated: ' + prettyDate(updateDate));
 
 					toggleActionButton(job.id, job.status);
 				});
 			});
 		}, fail);
 	}).fail(function (data) {
-		navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'Ok');
+		navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'OK');
 	});
 }
 // Submit a WindNinja run to the server for creation
@@ -1386,24 +1463,24 @@ function submitJob() {
 							_cleanSketch();
 							_initRunList();
 							_checkStatus(data.id);
-						}, 'Run Created', 'Ok');
+						}, 'Run Created', 'OK');
 					});
 				});
 			}, fail);
 		}).fail(function (data) {
 			var error;
-			if (data.statusMessage == 'undefined') {
+			if (data.statusMessage === 'undefined') {
 				error = 'There appears to be an error communicating with the server, please try again shortly or connect to WiFi and try submitting again.';
 			} else {
 				error = data.statusMessage;
 			}
-			navigator.notification.alert("Server Error: " + error, null, 'Error', 'Ok');
+			navigator.notification.alert("Server Error: " + error, null, 'Error', 'OK');
 		}).always(function () {
 			$('#runName').val('');
 			$('#spinner').spin(false);
 		});
 	} else {
-		navigator.notification.alert("You must enter a name for this run.", null, 'Error', 'Ok');
+		navigator.notification.alert("You must enter a name for this run.", null, 'Error', 'OK');
 	}
 }
 // Get the WindNinja run status from the server
@@ -1416,10 +1493,10 @@ function getData(id) {
 		if (data.status === 'succeeded') {
 			_onDownloadReady(data, id);
 		} else {
-			navigator.notification.alert(data.status, null, 'Event Status', 'Ok');
+			navigator.notification.alert(data.status, null, 'Event Status', 'OK');
 		}
 	}).fail(function (data) {
-		navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'Ok');
+		navigator.notification.alert("Server Error: " + data.statusMessage, null, 'Error', 'OK');
 	});
 }
 // Download WindNinja run data
@@ -1432,48 +1509,62 @@ function _onDownloadReady(results, id) {
 	$('#loader').popup('open', { positionTo: 'window', transition: 'pop', afterclose: function (evt) { console.debug('loader closed :: ', evt); } });
 	$('#productLabel').text('Files: 0/..');
 	$('#productProgress').progressbar({ value: 0 });
+	downloading = true;
 
-	// Create job file and initialize run.
-	dataDir.getDirectory(id, { create: true, exclusive: false }, function (dir) {
-		dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
-			console.log("created job.json", file);
-			downloading = true;
-			file.createWriter(function (fileWriter) {
-				results.status = 'Downloaded';
-				var blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
-				fileWriter.write(blob);
+	$.each(results.output.products, function (i, p) {
+		files += p.files.length;
+		$('#productLabel').text('Files: ' + done + '/' + files);
+		$('#productProgress').progressbar({ max: files });
+		var def = $.Deferred();
+		outputs.push(def.promise());
+		downloadProduct(id, p).progress(function () {
+			done++;
+			$('#productLabel').text('Files: ' + done + '/' + files);
+			$('#productProgress').progressbar({ value: done });
+		}).done(function () {
+			def.resolve();
+		});
+	});
 
-				$.each(results.output.products, function (i, p) {
-					files += p.files.length;
-					$('#productLabel').text('Files: ' + done + '/' + files);
-					$('#productProgress').progressbar({ max: files });
-					var def = $.Deferred();
-					outputs.push(def.promise());
-					downloadProduct(id, p).progress(function () {
-						done++;
-						$('#productLabel').text('Files: ' + done + '/' + files);
-						$('#productProgress').progressbar({ value: done });
-					}).done(function () {
-						def.resolve();
-					});
-				});
+	$.when.apply($, outputs).done(function () {
+		console.debug('this says you\'re done downloading...');
+		downloading = false;
 
-				$.when.apply($, outputs).done(function () {
-					console.debug('this says you\'re done downloading...');
-					downloading = false;
-
-					var update = $('#' + results.id + ' [data-runId="' + results.id + '"]');
-					var updateDate = new Date(results.messages[results.messages.length - 1].split(' | ')[0]);
-					update.text(updateDate.toLocaleDateString() + ' ' + updateDate.toLocaleTimeString());
-
-					toggleActionButton(results.id, 'downloaded');
-
-					initRun(results.id, results.name);
-					$('#loader').popup('close');
+		//update job.json file with 'downloaded' status
+		dataDir.getDirectory(id, { create: true, exclusive: false }, function (dir) {
+			dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
+				console.log("created job.json", file);
+				file.createWriter(function (fileWriter) {
+					results.status = 'Downloaded';
+					var blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
+					fileWriter.write(blob);
 				});
 			});
-		});
-	}, fail);
+		}, fail);
+
+		var submit = $('#' + results.id + ' span.runTime')[0];
+		var update = $('#' + results.id + ' span.runTime')[1];
+
+		if (results.messages.length > 0) {
+			try {
+				submitDate = results.messages[0].split(' | ')[0];
+				updateDate = results.messages[results.messages.length - 1].split(' | ')[0];
+			} catch (e) {
+				console.log(e);
+			}
+		} else {
+			submitDate = Date.now();
+			updateDate = Date.now();
+		}
+
+		$(submit).text('Submitted: ' + prettyDate(submitDate));
+		$(update).text('Updated: ' + prettyDate(updateDate));
+
+		toggleActionButton(results.id, 'downloaded');
+
+		initRun(results.id, results.name);
+		$('#loader').popup('close');
+	});
 }
 // Download a specific Product (Vectors, Rasters, etc.) and place it in the appropriate location
 function downloadProduct(id, product) {
@@ -1553,6 +1644,7 @@ function loadRun(displayType) {
 	ninjaRun.RemoveRun();
 	ninjaRun.OutputLayers = [];
 	ninjaRun.ForecastLayers = [];
+	curIndex = 0;
 
 	mapView.fit(ninjaRun.Extent, map.getSize());
 	map.renderSync();
@@ -1575,6 +1667,10 @@ function loadRun(displayType) {
 		$('#runDate').text(prettyDate(this.OutputLayers[this.VisibleLayer].get('date').replace(/-/g, '/')));
 		$('#btn_run-opts').button('enable');
 		updateLegend();
+
+		$('#btn_time').trigger('click');
+		$('#btn_legend').trigger('click');
+
 		navigator.vibrate(200);
 	});
 }
@@ -1584,9 +1680,14 @@ function removeRun() {
 
 	$('#tbl_Date').hide();
 	if (loaded) {
+		if (playTimeout) {
+			clearTimeout(playTimeout);
+			$('#run_play').show();
+			$('#run_pause').hide();
+		}
 		ninjaRun.RemoveRun();
 		toggleActionButton(ninjaRun.ID, 'downloaded');
-		navigator.notification.alert("All layers have been removed", null, 'Layers Removed', 'Ok');
+		navigator.notification.alert("All layers have been removed", null, 'Layers Removed', 'OK');
 		$('#btn_run-opts').button('disable');
 
 		$('#baseMap').val('osm').trigger('change');
@@ -1594,7 +1695,7 @@ function removeRun() {
 		if ($('#pnl_legend').parent().hasClass('ui-popup-active')) {
 			$('#btn_legend').trigger('click');
 		}
-		if ($('#pnl_time').parent().hasClass('ui-popup-active')) {
+		if (sliderOpen) {
 			$('#btn_time').trigger('click');
 		}
 	}
@@ -1656,7 +1757,7 @@ function prettyDate(date) {
 		tz = tz[0];
 	}
 
-	return dt.getMonth() + 1 + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ':' + dt.getSeconds().toString().padLeft(2) + ' ' + tz;
+	return dt.getMonth() + 1 + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ' ' + tz;
 }
 
 //
@@ -1704,7 +1805,8 @@ function WindNinjaRun(id, name) {
 
 					min = fileParts[3].slice(-2);
 					hour = fileParts[3].slice(-4, -2);
-					date = fileParts[2] + ' ' + hour + ':' + min + ':00';
+					date = fileParts[2].split('-');
+					date = date[2] + '-' + date[0] + '-' + date[1] + ' ' + hour + ':' + min + ':00';
 					file = new this.resultFile(f, date);
 					file.Type = product.type;
 
@@ -2041,7 +2143,9 @@ WindNinjaRun.prototype = {
 
 			var layer = new ol.layer.Tile({
 				source: source,
-				visible: false
+				extent: this.Extent,
+				visible: false,
+				preload: Infinity
 			});
 
 			layer.set('type', 'Raster');
@@ -2152,6 +2256,7 @@ WindNinjaRun.prototype = {
 
 			var layer = new ol.layer.Image({
 				source: source,
+				extent: this.Extent,
 				visible: false
 			});
 
