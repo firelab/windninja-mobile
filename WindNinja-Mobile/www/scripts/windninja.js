@@ -63,7 +63,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.3';
+	, version = '1.0.4';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -91,7 +91,9 @@ function _onDeviceReady() {
 	// Initialize cache directory (offline map tiles), and initialize our map
 	window.resolveLocalFileSystemURL(cordova.file.cacheDirectory, function (directoryEntry) {
 		directoryEntry.getDirectory('tilesCache', { create: true, exclusive: false }, function (dir) {
-			console.info('tiles cache directory created/set.');
+			if (_DEBUG) {
+				console.info('tiles cache directory created/set.');
+			}
 			cacheDir = dir;
 			_initMap();
 		}, fail);
@@ -102,14 +104,20 @@ function _onDeviceReady() {
 		configDir = directoryEntry;
 
 		_loadConfig().always(function () {
-			console.info('config loaded, initializing run data directory');
+			if (_DEBUG) {
+				console.info('config loaded, initializing run data directory');
+			}
 			directoryEntry.getDirectory('runs', { create: true, exclusive: false }, function (dir) {
-				console.info('run data directory created/set.');
+				if (_DEBUG) {
+					console.info('run data directory created/set.');
+				}
 				dataDir = dir;
 				WindNinjaRun.prototype.__dir = dataDir.toURL();
 				// is a demo run included?
 				if (_includeDemo) {
-					console.info('including demo run');
+					if (_DEBUG) {
+						console.info('including demo run');
+					}
 					// Initialize demo run
 					dataDir.getDirectory('23becdaa-df7c-4ec2-9934-97261e63d813', { create: true, exclusive: false }, function (testDir) {
 						testDir.getFile("job.json", { create: true, exclusive: false }, function (file) {
@@ -152,13 +160,16 @@ function _onOnline() {
 }
 // Phone in 'sleep mode'
 function _onSuspend() {
-	console.log('_onSuspend()');
-
+	if (_DEBUG) {
+		console.log('_onSuspend()');
+	}
 	_onOffilne();
 }
 // Phone wakes from 'sleep mode'
 function _onResume() {
-	console.log('_onResume()');
+	if (_DEBUG) {
+		console.log('_onResume()');
+	}
 	if (navigator.connection.type !== Connection.NONE) {
 		_onOnline();
 	}
@@ -175,12 +186,17 @@ function _loadConfig() {
 	return $.ajax({
 		url: configDir.toURL() + 'config.json',
 		dataType: 'json',
-		method: 'GET'
+		method: 'GET',
+		cache: false
 	}).done(function (configData) {
-		console.info('config loaded successfully');
+		if (_DEBUG) {
+			console.info('config loaded successfully');
+		}
 		config = configData;
 	}).fail(function () {
-		console.info('config not found or corrupt, setting defaults');
+		if (_DEBUG) {
+			console.info('config not found or corrupt, setting defaults');
+		}
 		config = {
 			"Name": "",
 			"Email": "",
@@ -267,7 +283,9 @@ function _saveConfig(alert) {
 		config.Phone = '';
 	}
 
-	console.info(config);
+	if (_DEBUG) {
+		console.info(config);
+	}
 
 	configDir.getFile('config.json', { create: true, exclusive: false }, function (file) {
 		file.createWriter(function (fileWriter) {
@@ -287,7 +305,8 @@ function _checkRegistration() {
 		var url = serverURL + 'api/account/' + config.Registration.RegistrationId;
 		// Registered, check status
 		$.ajax({
-			url: url
+			url: url,
+			cache: false
 		}).done(function (data) {
 			config.Registration.Status = data.status;
 		}).fail(function (data) {
@@ -324,7 +343,6 @@ function _registrationAccepted() {
 	// Allow the draw button to work properly
 	$('#btn_draw').unbind('click');
 	$('#btn_draw').on('click', function () {
-		console.group('#btn_draw.onClick');
 		if (sliderOpen) {
 			//close slider
 			$('#btn_time').trigger('click');
@@ -339,7 +357,6 @@ function _registrationAccepted() {
 		_cleanSketch();
 		map.addLayer(sketchLayer);
 		map.addInteraction(sketch);
-		console.groupEnd();
 	});
 }
 // User's registration is pending
@@ -380,7 +397,9 @@ function _registerInstall() {
 			dataType: 'json',
 			data: JSON.stringify(registration)
 		}).done(function (data) {
-			console.log(data);
+			if (_DEBUG) {
+				console.log(data);
+			}
 			config.Registration.RegistrationId = data.account;
 			config.Registration.isRegistered = true;
 			config.Registration.Status = data.status;
@@ -395,7 +414,9 @@ function _registerInstall() {
 			//$('#pnl_Settings').panel('open');
 			$('#qStart').popup('open');
 		}).fail(function (data) {
-			console.log(data);
+			if (_DEBUG) {
+				console.log(data);
+			}
 			config.Registration.isRegistered = false;
 			_saveConfig(false);
 			navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
@@ -422,257 +443,278 @@ function _submitFeedback(feedback) {
 }
 // Initialize map objects
 function _initMap() {
-	console.info('cache directory initialized, creating and configuring map objects.');
+	if (_DEBUG) {
+		console.info('cache directory initialized, creating and configuring map objects.');
+	}
 	// Set map projections
 	mapProj = ol.proj.get('EPSG:3857'); // Web-Mercator
 	latLonProj = ol.proj.get('EPSG:4326'); // Lat/Lon
 	var center = ol.proj.transform([-98.579404, 39.828127], latLonProj, mapProj);
 	baseMaps = [];
 
-	/*
-	 * Base-maps
-	 */
-	// OSM
-	baseMaps.push(new ol.layer.Tile({
-		id: 'osm',
-		visible: true,
-		preload: Infinity,
-		source: new ol.source.OSM({
-			url: 'http://{a-c}.tile.opencyclemap.org/landscape/{z}/{x}/{y}.png'
-		})
-	}));
-	// Satellite
-	baseMaps.push(new ol.layer.Tile({
-		id: 'sat',
-		visible: false,
-		preload: Infinity,
-		source: new ol.source.XYZ({
-			url: 'http://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}'
-		})
-	}));
-	// TopoFire
-	baseMaps.push(new ol.layer.Tile({
-		id: 'topofire',
-		visible: false,
-		source: new ol.source.OSM({
-			url: 'http://topofire.dbs.umt.edu/topomap/relief/{z}/{x}/{y}.jpg',
-			crossOrigin: 'anonymous'
-		})
-	}));
-	// Local TopoFire Tiles (must be downloaded with each run - cached locally)
-	baseMaps.push(new ol.layer.Tile({
-		id: 'local',
-		visible: false,
-		source: new ol.source.XYZ({
-			url: cacheDir.toURL() + 'TopoFire/{z}/{x}/{y}.jpg'
-		})
-	}));
+	//get the GeoMAC layer ids
+	var geomacIDs = '';
+	var parser = new ol.format.WMSCapabilities();
+	$.ajax({
+		url: 'https://wildfire.cr.usgs.gov/arcgis/services/geomac_dyn/MapServer/WMSServer?service=wms&request=GetCapabilities',
+		type: 'GET',
+		dataType: 'xml'
+	}).done(function (data) {
+		var c = parser.read(data);
+		$.each(c.Capability.Layer.Layer, function (i, l) {
+			if (l.Title.toLowerCase() === 'current fire perimeters' || l.Title.toLowerCase() === 'current fires') {
+				geomacIDs += l.Name + ',';
+			}
+		});
+		geomacIDs = geomacIDs.replace(/,\s*$/, "");
+	}).always(function () {
+		/*
+		* Base-maps
+		*/
+		// OSM
+		baseMaps.push(new ol.layer.Tile({
+			id: 'osm',
+			visible: true,
+			preload: Infinity,
+			source: new ol.source.XYZ({
+				url: 'http://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}'
+			})
+		}));
+		// Satellite
+		baseMaps.push(new ol.layer.Tile({
+			id: 'sat',
+			visible: false,
+			preload: Infinity,
+			source: new ol.source.XYZ({
+				url: 'http://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}'
+			})
+		}));
+		// TopoFire
+		baseMaps.push(new ol.layer.Tile({
+			id: 'topofire',
+			visible: false,
+			source: new ol.source.OSM({
+				url: 'http://topofire.dbs.umt.edu/topomap/relief/{z}/{x}/{y}.jpg',
+				crossOrigin: 'anonymous'
+			})
+		}));
+		// Local TopoFire Tiles (must be downloaded with each run - cached locally)
+		baseMaps.push(new ol.layer.Tile({
+			id: 'local',
+			visible: false,
+			source: new ol.source.XYZ({
+				url: cacheDir.toURL() + 'TopoFire/{z}/{x}/{y}.jpg'
+			})
+		}));
 
-	/*
-	 * Layers
-	 */
-	// GPS layer
-	gpsSource = new ol.source.Vector();
-	gpsLayer = new ol.layer.Vector({
-		source: gpsSource,
-		style: new ol.style.Style({
-			image: new ol.style.Icon({
-				src: 'css/images/gps.png'
-			})
-		})
-	});
-	// Fuel Models (LANDFIRE)
-	mapLayers.push(new ol.layer.Group({
-		name: 'fuel',
-		id: 'fuel',
-		visible: false,
-		opacity: 0.55,
-		layers: [
-			new ol.layer.Image({
-				source: new ol.source.ImageWMS({
-					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
-					params: { 'LAYERS': 'US_140FBFM13' },
-					crossOrigin: 'anonymous'
-				})
-			}),
-			new ol.layer.Image({
-				source: new ol.source.ImageWMS({
-					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
-					params: { 'LAYERS': 'AK_140FBFM13' },
-					crossOrigin: 'anonymous'
+		/*
+		 * Layers
+		 */
+		// GPS layer
+		gpsSource = new ol.source.Vector();
+		gpsLayer = new ol.layer.Vector({
+			source: gpsSource,
+			style: new ol.style.Style({
+				image: new ol.style.Icon({
+					src: 'css/images/gps.png'
 				})
 			})
-		]
-	}));
-	// Vegetation (LANDFIRE)
-	mapLayers.push(new ol.layer.Group({
-		name: 'vegetation',
-		id: 'vegetation',
-		visible: false,
-		opacity: 0.55,
-		layers: [
-			new ol.layer.Image({
-				source: new ol.source.ImageWMS({
-					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
-					params: { 'LAYERS': 'US_140CH,US_140CC' },
-					crossOrigin: 'anonymous'
+		});
+		// Fuel Models (LANDFIRE)
+		mapLayers.push(new ol.layer.Group({
+			name: 'fuel',
+			id: 'fuel',
+			visible: false,
+			opacity: 0.55,
+			layers: [
+				new ol.layer.Image({
+					source: new ol.source.ImageWMS({
+						url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
+						params: { 'LAYERS': 'US_140FBFM13' },
+						crossOrigin: 'anonymous'
+					})
+				}),
+				new ol.layer.Image({
+					source: new ol.source.ImageWMS({
+						url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
+						params: { 'LAYERS': 'AK_140FBFM13' },
+						crossOrigin: 'anonymous'
+					})
 				})
-			}),
-			new ol.layer.Image({
-				source: new ol.source.ImageWMS({
-					url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
-					params: { 'LAYERS': 'AK_140CH,AK_140CC' },
-					crossOrigin: 'anonymous'
+			]
+		}));
+		// Vegetation (LANDFIRE)
+		mapLayers.push(new ol.layer.Group({
+			name: 'vegetation',
+			id: 'vegetation',
+			visible: false,
+			opacity: 0.55,
+			layers: [
+				new ol.layer.Image({
+					source: new ol.source.ImageWMS({
+						url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/US_140/MapServer/WMSServer',
+						params: { 'LAYERS': 'US_140CH,US_140CC' },
+						crossOrigin: 'anonymous'
+					})
+				}),
+				new ol.layer.Image({
+					source: new ol.source.ImageWMS({
+						url: 'https://landfire.cr.usgs.gov/arcgis/services/Landfire/AK_140/MapServer/WMSServer',
+						params: { 'LAYERS': 'AK_140CH,AK_140CC' },
+						crossOrigin: 'anonymous'
+					})
+				})
+			]
+		}));
+		// GeoMac (Current Fires & Perimeters)
+		mapLayers.push(new ol.layer.Group({
+			name: 'geomac',
+			id: 'geomac',
+			visible: false,
+			layers: [
+				new ol.layer.Image({ // CONUS
+					source: new ol.source.ImageWMS({
+						url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomac_dyn/MapServer/WMSServer',
+						params: { 'LAYERS': geomacIDs },
+						serverType: 'mapserver',
+						crossOrigin: 'anonymous'
+					})
+				}),
+				new ol.layer.Image({ // Alaska
+					source: new ol.source.ImageWMS({
+						url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomacAK_dyn/MapServer/WMSServer',
+						params: { 'LAYERS': geomacIDs },
+						serverType: 'mapserver',
+						crossOrigin: 'anonymous'
+					})
+				})
+			]
+		}));
+		// MODIS
+		mapLayers.push(new ol.layer.Tile({
+			name: 'modis',
+			id: 'modis',
+			visible: false,
+			source: new ol.source.TileWMS({
+				url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus.map&',
+				params: {
+					'LAYERS': 'Last 24 hour fire detections,Last 12 hour fire detections,Current Large incidents',
+					'VERSION': '1.1.0'
+				},
+				crossOrigin: 'anonymous'
+			})
+		}));
+		// VIIRS
+		mapLayers.push(new ol.layer.Tile({
+			name: 'viirs',
+			id: 'viirs',
+			visible: false,
+			source: new ol.source.TileWMS({
+				url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus_viirs_iband.map&',
+				params: {
+					'LAYERS': 'Last 24 hour fire detections,Current Large incidents',
+					'VERSION': '1.1.0'
+				},
+				crossOrigin: 'anonymous'
+			})
+		}));
+		// Sketch layer
+		sketchSource = new ol.source.Vector();
+		sketchLayer = new ol.layer.Vector({
+			source: sketchSource,
+			style: new ol.style.Style({
+				fill: new ol.style.Fill({
+					color: [255, 0, 0, 0.5]
+				}),
+				stroke: new ol.style.Stroke({
+					color: [255, 0, 0, 1],
+					width: 2
 				})
 			})
-		]
-	}));
-	// GeoMac (Current Fires & Perimeters)
-	mapLayers.push(new ol.layer.Group({
-		name: 'geomac',
-		id: 'geomac',
-		visible: false,
-		layers: [
-			new ol.layer.Image({ // CONUS Modis
-				source: new ol.source.ImageWMS({
-					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomac_dyn/MapServer/WMSServer',
-					params: { 'LAYERS': 'Current Fire Perimeters,Current Fires' }, //Current Fires(24), Current Fire Perimeters(23)
-					crossOrigin: 'anonymous'
-				})
-			}),
-			new ol.layer.Image({ // Alaska Modis
-				source: new ol.source.ImageWMS({
-					url: 'http://wildfire.cr.usgs.gov/ArcGIS/services/geomacAK_dyn/MapServer/WMSServer',
-					params: { 'LAYERS': 'Current Fire Perimeters,Current Fires' }, //Current Fires(23), Current Fire Perimeters(22)
-					crossOrigin: 'anonymous'
-				})
-			})
-		]
-	}));
-	// MODIS
-	mapLayers.push(new ol.layer.Tile({
-		name: 'modis',
-		id: 'modis',
-		visible: false,
-		source: new ol.source.TileWMS({
-			url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus.map&',
-			params: {
-				'LAYERS': 'Last 24 hour fire detections,Last 12 hour fire detections,Current Large incidents',
-				'VERSION': '1.1.0'
-			},
-			crossOrigin: 'anonymous'
-		})
-	}));
-	// VIIRS
-	mapLayers.push(new ol.layer.Tile({
-		name: 'viirs',
-		id: 'viirs',
-		visible: false,
-		source: new ol.source.TileWMS({
-			url: 'https://fsapps.nwcg.gov/afm/cgi-bin/mapserv.exe?map=conus_viirs_iband.map&',
-			params: {
-				'LAYERS': 'Last 24 hour fire detections,Current Large incidents',
-				'VERSION': '1.1.0'
-			},
-			crossOrigin: 'anonymous'
-		})
-	}));
-	// Sketch layer
-	sketchSource = new ol.source.Vector();
-	sketchLayer = new ol.layer.Vector({
-		source: sketchSource,
-		style: new ol.style.Style({
-			fill: new ol.style.Fill({
-				color: [255, 0, 0, 0.5]
-			}),
-			stroke: new ol.style.Stroke({
-				color: [255, 0, 0, 1],
-				width: 2
-			})
-		})
-	});
+		});
 
-	// View
-	mapView = new ol.View({
-		center: center,
-		projection: mapProj,
-		zoom: 5,
-		maxZoom: 17,
-		minZoom: 3
-	});
-	// Map
-	map = new ol.Map({
-		layers: baseMaps,
-		target: 'map',
-		view: mapView,
-		zoom: 10,
-		controls: [new ol.control.Rotate(), new ol.control.Zoom(), new ol.control.ScaleLine({ units: 'us' })]
-	});
+		// View
+		mapView = new ol.View({
+			center: center,
+			projection: mapProj,
+			zoom: 5,
+			maxZoom: 17,
+			minZoom: 3
+		});
+		// Map
+		map = new ol.Map({
+			layers: baseMaps,
+			target: 'map',
+			view: mapView,
+			zoom: 10,
+			controls: [new ol.control.Rotate(), new ol.control.Zoom(), new ol.control.ScaleLine({ units: 'us' })]
+		});
 
-	var l = mapLayers.length;
-	for (var i = 0; i < l; ++i) {
-		map.addLayer(mapLayers[i]);
-	}
-
-	// Custom Interactions
-	sketch = new ol.interaction.Pointer({
-		handleDownEvent: function (evt) {
-			sketchLineFeature = new ol.Feature(new ol.geom.LineString([]));
-			sketchSource.addFeature(sketchLineFeature);
-			sketchFeatures.push(sketchLineFeature);
-			sketchLineFeature.getGeometry().setCoordinates(sketchCoordinates);
-			return true;
-		},
-		handleDragEvent: function (evt) {
-			sketchCoordinates.push(evt.coordinate);
-			sketchFeatures[0].getGeometry().setCoordinates(sketchCoordinates);
-			return true;
-		},
-		handleUpEvent: function (evt) {
-			sketchPolyFeature = new ol.Feature(new ol.geom.Polygon([sketchCoordinates]));
-			// Remove the line string
-			sketchSource.removeFeature(sketchLineFeature);
-			sketchSource.addFeature(sketchPolyFeature);
-			return true;
+		var l = mapLayers.length;
+		for (var i = 0; i < l; ++i) {
+			map.addLayer(mapLayers[i]);
 		}
-	});
-	longPress = new ol.interaction.Pointer({
-		handleDownEvent: function (evt) {
-			clearTimeout(holdPromise);
-			startPixel = evt.pixel;
-			holdPromise = setTimeout(function () {
-				// Vibrate to notify that the action is complete
-				navigator.vibrate(50);
 
-				// Set our center location for the run and center the map on it
-				mapView.setCenter(evt.coordinate);
+		// Custom Interactions
+		sketch = new ol.interaction.Pointer({
+			handleDownEvent: function (evt) {
+				sketchLineFeature = new ol.Feature(new ol.geom.LineString([]));
+				sketchSource.addFeature(sketchLineFeature);
+				sketchFeatures.push(sketchLineFeature);
+				sketchLineFeature.getGeometry().setCoordinates(sketchCoordinates);
+				return true;
+			},
+			handleDragEvent: function (evt) {
+				sketchCoordinates.push(evt.coordinate);
+				sketchFeatures[0].getGeometry().setCoordinates(sketchCoordinates);
+				return true;
+			},
+			handleUpEvent: function (evt) {
+				sketchPolyFeature = new ol.Feature(new ol.geom.Polygon([sketchCoordinates]));
+				// Remove the line string
+				sketchSource.removeFeature(sketchLineFeature);
+				sketchSource.addFeature(sketchPolyFeature);
+				return true;
+			}
+		});
+		longPress = new ol.interaction.Pointer({
+			handleDownEvent: function (evt) {
+				clearTimeout(holdPromise);
+				startPixel = evt.pixel;
+				holdPromise = setTimeout(function () {
+					// Vibrate to notify that the action is complete
+					navigator.vibrate(50);
 
-				// Open the panel to create run
-				$('#request-panel').panel('open');
-			}, 750, false);
-		},
-		handleDragEvent: function (evt) {
-			clearTimeout(holdPromise);
-			startPixel = undefined;
-		},
-		handleUpEvent: function (evt) {
-			if (startPixel) {
-				var pixel = evt.pixel;
-				var deltaX = Math.abs(startPixel[0] - pixel[0]);
-				var deltaY = Math.abs(startPixel[1] - pixel[1]);
-				if (deltaX + deltaY > 6) {
-					clearTimeout(holdPromise);
-					startPixel = undefined;
+					// Set our center location for the run and center the map on it
+					mapView.setCenter(evt.coordinate);
+
+					// Open the panel to create run
+					$('#request-panel').panel('open');
+				}, 750, false);
+			},
+			handleDragEvent: function (evt) {
+				clearTimeout(holdPromise);
+				startPixel = undefined;
+			},
+			handleUpEvent: function (evt) {
+				if (startPixel) {
+					var pixel = evt.pixel;
+					var deltaX = Math.abs(startPixel[0] - pixel[0]);
+					var deltaY = Math.abs(startPixel[1] - pixel[1]);
+					if (deltaX + deltaY > 6) {
+						clearTimeout(holdPromise);
+						startPixel = undefined;
+					}
 				}
 			}
-		}
+		});
+
+		//add GPS button to 'zoom' controls (have to add this here because UI initialization has already occurred)
+		$('div.ol-zoom.ol-unselectable.ol-control').append($('<button id="btn_GPS" title="GPS" />').on('click', _onGPSOn));
+
+		// Start GPS location
+		_onGPSOn();
 	});
-
-	//add GPS button to 'zoom' controls (have to add this here because UI initialization has already occurred)
-	$('div.ol-zoom.ol-unselectable.ol-control').append($('<button id="btn_GPS" title="GPS" />').on('click', _onGPSOn));
-
-	// Start GPS location
-	_onGPSOn();
 }
 // Check the size of the domain for the sketch (too small or too big)
 function _checkSketchSize() {
@@ -680,7 +722,9 @@ function _checkSketchSize() {
 	if (!geom)
 		return -1;
 	var area = getArea(geom);
-	console.log(area);
+	if (_DEBUG) {
+		console.log(area);
+	}
 	if (area > 0) {
 		if (area > 10000) {
 			// if the area is > 2331 sq km, it's too large (900 sq mi)
@@ -716,7 +760,9 @@ function _cleanSketch() {
 }
 // Initialize Runs list
 function _initRunList() {
-	console.info('initializing run list.');
+	if (_DEBUG) {
+		console.info('initializing run list.');
+	}
 	runList = [];
 	var dir = dataDir.toURL();
 	var directoryReader = dataDir.createReader();
@@ -733,10 +779,13 @@ function _initRunList() {
 
 				$.ajax({
 					url: url,
-					dataType: 'json'
+					dataType: 'json',
+					cache: false
 				}).done(function (job) {
 					runList.push(job);
-					console.log(job.name + ' added to run list');
+					if (_DEBUG) {
+						console.log(job.name + ' added to run list');
+					}
 					def.resolve();
 				}).fail(function (err) {
 					def.reject([err.statusText]);
@@ -745,7 +794,9 @@ function _initRunList() {
 		});
 
 		$.when.apply($, defs).done(function () {
-			console.log('runList length: ' + runList.length);
+			if (_DEBUG) {
+				console.log('runList length: ' + runList.length);
+			}
 			runList.sort(function (a, b) {
 				var an = a.name.toLowerCase(),
 					bn = b.name.toLowerCase();
@@ -756,14 +807,18 @@ function _initRunList() {
 		}).fail(function (err) {
 			fail(err);
 		}).always(function () {
-			console.log('creating container: ');
+			if (_DEBUG) {
+				console.log('creating container: ');
+			}
 			container.trigger('create');
 		});
 	});
 }
 // Create run menu item
 function _createRunMenuItem(index, jobJson) {
-	console.log('creating menu item: ' + jobJson.name);
+	if (_DEBUG) {
+		console.log('creating menu item: ' + jobJson.name);
+	}
 	// create the buttons for the run (action button and delete button)
 	var actionBtn = $('<span />').addClass('actionBtn').data({ 'runId': jobJson.id, 'runName': jobJson.name });
 	var delBtn = $('<span />').text('Delete').addClass('deleteBtn').data({ 'runId': jobJson.id, 'runName': jobJson.name });
@@ -774,7 +829,9 @@ function _createRunMenuItem(index, jobJson) {
 			submitDate = jobJson.messages[0].split(' | ')[0];
 			updateDate = jobJson.messages[jobJson.messages.length - 1].split(' | ')[0];
 		} catch (e) {
-			console.log(e);
+			if (_DEBUG) {
+				console.log(e);
+			}
 		}
 	} else {
 		submitDate = Date.now();
@@ -797,11 +854,15 @@ function _createRunMenuItem(index, jobJson) {
 		mini: true,
 		corners: true,
 		expand: function () {
-			console.log('expanding/initializing run: ' + $(this).data('runName'));
+			if (_DEBUG) {
+				console.log('expanding/initializing run: ' + $(this).data('runName'));
+			}
 			initRun($(this).attr('id'), $(this).data('runName'));
 		},
 		collapse: function () {
-			console.log('collapsing/removing run: ' + $(this).data('runName'));
+			if (_DEBUG) {
+				console.log('collapsing/removing run: ' + $(this).data('runName'));
+			}
 			removeRun();
 		}
 	});
@@ -817,8 +878,9 @@ function _createRunMenuItem(index, jobJson) {
 }
 // Initialize UI elements and handlers
 function initUI() {
-	//navigator.splashscreen.show();
-	console.info('document loaded, initializing UI.');
+	if (_DEBUG) {
+		console.info('document loaded, initializing UI.');
+	}
 	$('#version').text(version);
 
 	// Registration pop-up
@@ -837,7 +899,9 @@ function initUI() {
 		iconpos: 'left',
 		mini: true
 	}).on('click', function () {
-		console.info('#btn_layers.onClick');
+		if (_DEBUG) {
+			console.info('#btn_layers.onClick');
+		}
 		$(this).parent().toggleClass('ui-btn-on');
 		$('#pnl_layers').panel('toggle');
 
@@ -845,7 +909,6 @@ function initUI() {
 	// by default, the draw button should open the registration page
 	$('#btn_draw').on('click', _showRegistrationPage);
 	$('#btn_submit').on('click', function () {
-		console.group('#btn_submit.onClick');
 		map.removeInteraction(sketch);
 		$('#draw').show();
 		$('#sketch').hide();
@@ -857,7 +920,6 @@ function initUI() {
 		} else if (size === 1) {
 			navigator.notification.alert('The selected run size is too large (> 900sq mi), please redraw your area and try again.', null, 'Run Size');
 		}
-		console.groupEnd();
 	});
 	$('#btn_cancel').on('click', function () {
 		_removeSketch();
@@ -868,19 +930,25 @@ function initUI() {
 		mini: true,
 		disabled: true
 	}).on('click', function () {
-		console.info('#btn_run-opts.onClick');
+		if (_DEBUG) {
+			console.info('#btn_run-opts.onClick');
+		}
 		$('#pnl_run-opts').panel('toggle');
 	});
 
 	// Run Options panel buttons
 	$('#btn_time').button({ mini: true }).on('click', function () {
-		console.info('#btn_time.onClick');
+		if (_DEBUG) {
+			console.info('#btn_time.onClick');
+		}
 		sliderOpen = !sliderOpen;
 		$(this).parent().toggleClass('ui-btn-on');
 		$('#tbl_time').toggle();
 	});
 	$('#btn_legend').button({ mini: true }).on('click', function () {
-		console.info('#btn_legend.onClick');
+		if (_DEBUG) {
+			console.info('#btn_legend.onClick');
+		}
 		legendOpen = !legendOpen;
 		$(this).parent().toggleClass('ui-btn-on');
 
@@ -891,14 +959,17 @@ function initUI() {
 		}
 	});
 	$('#btn_home').button({ mini: true }).on('click', function () {
-		console.info('#btn_home.onClick');
+		if (_DEBUG) {
+			console.info('#btn_home.onClick');
+		}
 		$(this).parent().addClass('ui-btn-on');
 		zoomToRun();
 		$(this).parent().removeClass('ui-btn-on');
-		//$('#pnl_run-opts').panel('close');
 	});
 	$('#btn_weather').button({ mini: true }).on('click', function () {
-		console.info('#btn_weather.onClick');
+		if (_DEBUG) {
+			console.info('#btn_weather.onClick');
+		}
 		$(this).parent().toggleClass('ui-btn-on');
 		ninjaRun.LoadForecasts = $(this).parent().hasClass('ui-btn-on');
 		var i = $('#timeSlider').val();
@@ -919,7 +990,9 @@ function initUI() {
 			if ($(this).is(':checked'))
 				ids.push($(this).val());
 		});
-		console.log(ids);
+		if (_DEBUG) {
+			console.log(ids);
+		}
 		toggleLayers(ids);
 	});
 	$('#baseMap').on('change', function () {
@@ -1012,18 +1085,15 @@ function initUI() {
 
 	// Play controls
 	$('#run_first').on('click', function () {
-		console.debug('run_first.onClick');
 		curIndex = 0;
 		setVisible(curIndex);
 	});
 	$('#run_back').on('click', function () {
-		console.debug('run_back.onClick');
 		curIndex = curIndex -= 1;
 		if (curIndex < 0) curIndex = 0;
 		setVisible(curIndex);
 	});
 	$('#run_pause').on('click', function () {
-		console.debug('run_pause.onClick');
 		$('#run_play').show();
 		$(this).hide();
 		if (playTimeout) {
@@ -1031,19 +1101,16 @@ function initUI() {
 		}
 	});
 	$('#run_play').on('click', function () {
-		console.debug('run_play.onClick');
 		$('#run_pause').show();
 		$(this).hide();
 		play();
 	});
 	$('#run_next').on('click', function () {
-		console.debug('run_next.onClick');
 		curIndex = curIndex += 1;
 		if (curIndex >= ninjaRun.OutputLayers.length) curIndex = ninjaRun.OutputLayers.length - 1;
 		setVisible(curIndex);
 	});
 	$('#run_last').on('click', function () {
-		console.debug('run_last.onClick');
 		curIndex = ninjaRun.OutputLayers.length - 1;
 		setVisible(curIndex);
 	});
@@ -1079,8 +1146,9 @@ function initUI() {
 			var index = parseInt($(this).val());
 			curIndex = index;
 			ninjaRun.SetVisible(index);
-			console.info('slider::stop - ' + ninjaRun.VisibleLayer);
-
+			if (_DEBUG) {
+				console.info('slider::stop - ' + ninjaRun.VisibleLayer);
+			}
 			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
 			if (outputLayer !== undefined) {
 				$('#runDate').text('').text(prettyDate(outputLayer.get('date').replace(/-/g, '/')));
@@ -1168,13 +1236,17 @@ function toggleActionButton(id, status) {
 		case 'submitted':
 		case 'executing':
 			btn.text('Status').on('click', function () {
-				console.log('Checking run status: ' + $(this).data('runName'));
+				if (_DEBUG) {
+					console.log('Checking run status: ' + $(this).data('runName'));
+				}
 				_checkStatus($(this).data('runId'));
 			});
 			break;
 		case 'downloaded':
 			btn.text('Plot').on('click', function () {
-				console.log('Loading run to map: ' + $(this).data('runName'));
+				if (_DEBUG) {
+					console.log('Loading run to map: ' + $(this).data('runName'));
+				}
 				$('#pnl_Runs').panel('close');
 				$('#spinner').spin('windninja');
 				toggleActionButton($(this).data('runId'), 'loaded');
@@ -1184,13 +1256,17 @@ function toggleActionButton(id, status) {
 			break;
 		case 'succeeded':
 			btn.text('Download').on('click', function () {
-				console.log('Downloading run data: ' + $(this).data('runName'));
+				if (_DEBUG) {
+					console.log('Downloading run data: ' + $(this).data('runName'));
+				}
 				getData($(this).data('runId'));
 			});
 			break;
 		case 'loaded':
 			btn.text('Clear').on('click', function () {
-				console.log('Removing run from map: ' + $(this).data('runName'));
+				if (_DEBUG) {
+					console.log('Removing run from map: ' + $(this).data('runName'));
+				}
 				removeRun();
 			});
 			break;
@@ -1268,11 +1344,15 @@ function setmapsize() {
 }
 // Generic fail method
 function fail(err) {
-	console.error(err);
+	if (_DEBUG) {
+		console.error(err);
+	}
 }
 // Initialize WindNinja run data
 function initRun(id, name) {
-	console.info('initRun()');
+	if (_DEBUG) {
+		console.info('initRun()');
+	}
 	if (guidRegex.test(id)) {
 		//$('#displayType').empty();
 		//$('#loadRun').button('disable').prop('disabled', true);
@@ -1298,7 +1378,9 @@ function deleteEvent(id, name) {
 	// Delete all the run data
 	dataDir.getDirectory(id, null, function (dir) {
 		dir.removeRecursively(function (entry) {
-			console.info('removed entry ' + entry);
+			if (_DEBUG) {
+				console.info('removed entry ' + entry);
+			}
 			navigator.notification.alert("Run '" + name + "' deleted.", null, 'Run Deleted', 'OK');
 			_initRunList();
 		}, fail);
@@ -1306,7 +1388,9 @@ function deleteEvent(id, name) {
 }
 // Toggle overlay layer(s) visibility
 function toggleLayers(IDs) {
-	console.log('toggleLayers()', IDs, mapLayers);
+	if (_DEBUG) {
+		console.log('toggleLayers()', IDs, mapLayers);
+	}
 	var len = mapLayers.length;
 	for (var i = 0; i < len; i++) {
 		var l = mapLayers[i];
@@ -1324,7 +1408,8 @@ function _checkStatus(id) {
 	var url = serverURL + "api/job/" + String(id).replace(/-/g, "");
 	$.ajax({
 		type: 'GET',
-		url: url
+		url: url,
+		cache: false
 	}).done(function (job) {
 		dataDir.getDirectory(job.id, { create: true, exclusive: false }, function (dir) {
 			dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
@@ -1345,7 +1430,9 @@ function _checkStatus(id) {
 							submitDate = job.messages[0].split(' | ')[0];
 							updateDate = job.messages[job.messages.length - 1].split(' | ')[0];
 						} catch (e) {
-							console.log(e);
+							if (_DEBUG) {
+								console.log(e);
+							}
 						}
 					} else {
 						submitDate = Date.now();
@@ -1488,7 +1575,8 @@ function getData(id) {
 	var url = serverURL + "api/job/" + String(id).replace(/-/g, "");
 	$.ajax({
 		type: 'GET',
-		url: url
+		url: url,
+		cache: false
 	}).done(function (data) {
 		if (data.status === 'succeeded') {
 			_onDownloadReady(data, id);
@@ -1501,12 +1589,14 @@ function getData(id) {
 }
 // Download WindNinja run data
 function _onDownloadReady(results, id) {
-	console.log(results);
+	if (_DEBUG) {
+		console.log(results);
+	}
 	var downloadSize = results.output.products.length || 0
 	, files = 0
 	, done = 0
 	, outputs = [];
-	$('#loader').popup('open', { positionTo: 'window', transition: 'pop', afterclose: function (evt) { console.debug('loader closed :: ', evt); } });
+	$('#loader').popup('open', { positionTo: 'window', transition: 'pop' });
 	$('#productLabel').text('Files: 0/..');
 	$('#productProgress').progressbar({ value: 0 });
 	downloading = true;
@@ -1527,13 +1617,17 @@ function _onDownloadReady(results, id) {
 	});
 
 	$.when.apply($, outputs).done(function () {
-		console.debug('this says you\'re done downloading...');
+		if (_DEBUG) {
+			console.debug('this says you\'re done downloading...');
+		}
 		downloading = false;
 
 		//update job.json file with 'downloaded' status
 		dataDir.getDirectory(id, { create: true, exclusive: false }, function (dir) {
 			dir.getFile("job.json", { create: true, exclusive: false }, function (file) {
-				console.log("created job.json", file);
+				if (_DEBUG) {
+					console.log("created job.json", file);
+				}
 				file.createWriter(function (fileWriter) {
 					results.status = 'Downloaded';
 					var blob = new Blob([JSON.stringify(results)], { type: 'application/json' });
@@ -1550,7 +1644,9 @@ function _onDownloadReady(results, id) {
 				submitDate = results.messages[0].split(' | ')[0];
 				updateDate = results.messages[results.messages.length - 1].split(' | ')[0];
 			} catch (e) {
-				console.log(e);
+				if (_DEBUG) {
+					console.log(e);
+				}
 			}
 		} else {
 			submitDate = Date.now();
@@ -1582,9 +1678,13 @@ function downloadProduct(id, product) {
 				var name = product.name.split(' Basemap')[0];
 				zip.unzip(DIR + '/' + product.package, cacheDir.toURL() + name + '/', function (s) {
 					if (s === 0) {
-						console.log('Basemap package extracted successfully to /' + name);
+						if (_DEBUG) {
+							console.log('Basemap package extracted successfully to /' + name);
+						}
 					} else {
-						console.log('Failed to extract basemap package.');
+						if (_DEBUG) {
+							console.log('Failed to extract basemap package.');
+						}
 					}
 
 					deferred.resolve();
@@ -1592,9 +1692,13 @@ function downloadProduct(id, product) {
 			} else if (product.type === 'raster') {
 				zip.unzip(DIR + '/' + product.package, DIR + '/tiles/', function (s) {
 					if (s === 0) {
-						console.log('Raster package: ' + product.package + ' extracted successfully to ' + DIR + '/tiles/');
+						if (_DEBUG) {
+							console.log('Raster package: ' + product.package + ' extracted successfully to ' + DIR + '/tiles/');
+						}
 					} else {
-						console.log('Failed to extract raster package ' + product.package);
+						if (_DEBUG) {
+							console.log('Failed to extract raster package ' + product.package);
+						}
 					}
 
 					deferred.resolve();
@@ -1610,13 +1714,18 @@ function downloadProduct(id, product) {
 			defs.push(def.promise());
 			$.ajax({
 				url: URL + f,
-				method: 'GET'
+				method: 'GET',
+				cache: false
 			}).done(function (data) {
-				console.log(f + ' downloaded');
+				if (_DEBUG) {
+					console.log(f + ' downloaded');
+				}
 				dataDir.getDirectory(id, { create: false, exclusive: false }, function (dir) {
 					dir.getFile(f, { create: true, exclusive: false }, function (file) {
 						file.createWriter(function (fileWriter) {
-							console.log('writing ' + f + ' to file');
+							if (_DEBUG) {
+								console.log('writing ' + f + ' to file');
+							}
 							var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
 							fileWriter.write(blob);
 							deferred.notify();
@@ -1625,11 +1734,6 @@ function downloadProduct(id, product) {
 					});
 				});
 			});
-			//fileTransfer.download(URL + f, DIR + '/' + f, function (entry) {
-			//	console.log(entry.name + ' downloaded to: "' + DIR + '/' + f + '/"');
-			//	deferred.notify();
-			//	def.resolve();
-			//});
 		});
 
 		$.when.apply($, defs).done(function () {
@@ -1650,7 +1754,9 @@ function loadRun(displayType) {
 	map.renderSync();
 
 	ninjaRun.LoadRun(displayType).done(function () {
-		console.log('ninjaRun.loadRun() :: done, updating UI');
+		if (_DEBUG) {
+			console.log('ninjaRun.loadRun() :: done, updating UI');
+		}
 		$.each([this.OutputLayers, this.ForecastLayers], function (i, g) {
 			$.each(g, function (j, layer) {
 				if (layer) {
@@ -1716,7 +1822,9 @@ function updateLegend() {
 }
 // Start GPS watch
 function _onGPSOn() {
-	console.log("finding position....");
+	if (_DEBUG) {
+		console.log("finding position....");
+	}
 	navigator.geolocation.getCurrentPosition(function (pos) {
 		$('#btn_GPS').removeClass('off').addClass('on');
 		$.each(gpsSource.getFeatures(), function () {
@@ -1766,7 +1874,9 @@ function prettyDate(date) {
 function WindNinjaRun(id, name) {
 	var _isLoaded = false;
 	this.InitRun = function () {
-		console.log('InitRun()');
+		if (_DEBUG) {
+			console.log('InitRun()');
+		}
 		var fileParts
 		, min
 		, hour
@@ -1777,6 +1887,7 @@ function WindNinjaRun(id, name) {
 		return $.ajax({
 			url: this.BaseURL + '/job.json',
 			dataType: 'json',
+			cache: false,
 			context: this
 		}).done(function (job) {
 			// Output Products
@@ -1839,9 +1950,11 @@ function WindNinjaRun(id, name) {
 		});
 	};
 	this.LoadRun = function (displayType) {
-		console.group('Loading WindNinja run.');
-		console.time('Run load time');
-		console.info('LoadRun(' + displayType + ')');
+		if (_DEBUG) {
+			console.group('Loading WindNinja run.');
+			console.time('Run load time');
+			console.info('LoadRun(' + displayType + ')');
+		}
 		this.__resetLayers();
 		var deferred = $.Deferred()
 		, self = this
@@ -1856,23 +1969,31 @@ function WindNinjaRun(id, name) {
 		var oLayers = this.__loadOutputLayers(displayType);
 
 		fLayers.progress(function (i) {
-			console.info('WindNinjaRun.LoadRun() :: Done creating Forecast Layer (' + i + '/' + count + ')');
+			if (_DEBUG) {
+				console.info('WindNinjaRun.LoadRun() :: Done creating Forecast Layer (' + i + '/' + count + ')');
+			}
 		});
 		oLayers.progress(function (i) {
-			console.info('WindNinjaRun.LoadRun() :: Done creating Output layer (' + i + '/' + count + ')');
+			if (_DEBUG) {
+				console.info('WindNinjaRun.LoadRun() :: Done creating Output layer (' + i + '/' + count + ')');
+			}
 		});
 
 		$.when(oLayers, fLayers).done(function () {
 			self.__sortlayers();
 			self.__setVisibleLayer(self.VisibleLayer);
 
-			console.timeEnd('Run load time');
+			if (_DEBUG) {
+				console.timeEnd('Run load time');
+			}
 			self._isLoaded = true;
 			deferred.resolveWith(self);
 		}).fail(function () {
 			self.__fail(new Error('WindNinjaRun.LoadRun() :: Error').stack);
 		}).always(function () {
-			console.groupEnd();
+			if (_DEBUG) {
+				console.groupEnd();
+			}
 		});
 
 		return deferred.promise();
@@ -1895,7 +2016,7 @@ function WindNinjaRun(id, name) {
 }
 
 WindNinjaRun.prototype = {
-	__verbose: true
+	__verbose: false
 	, __clusterDistance: 12
 	, __dir: ''
 
@@ -1977,6 +2098,7 @@ WindNinjaRun.prototype = {
 					defs.push($.ajax({
 						url: this.BaseURL + file.Name,
 						dataType: dataType,
+						cache: false,
 						context: file
 					}).done(function (data) {
 						self.__makeLayer('weather', data, this.Date).done(function (layer) {
@@ -2043,6 +2165,7 @@ WindNinjaRun.prototype = {
 					defs.push($.ajax({
 						url: this.BaseURL + file.Name,
 						dataType: dataType,
+						cache: false,
 						context: file
 					}).done(function (data) {
 						self.__makeLayer(displayType, data, this.Date).done(function (layer) {
@@ -2286,7 +2409,9 @@ WindNinjaRun.prototype = {
 				break;
 		}
 
-		console.groupEnd();
+		if (this.__verbose) {
+			console.groupEnd();
+		}
 		return deferred.promise();
 	}
 	, __setVisibleLayer: function (index) {
@@ -2432,7 +2557,9 @@ WindNinjaRun.prototype = {
 		return new Date(a.Date).getTime() - new Date(b.Date).getTime();
 	}
 	, layerSort: function (a, b) {
-		console.log(a.get('date'), b.get('date'));
+		if (this.__verbose) {
+			console.log(a.get('date'), b.get('date'));
+		}
 		return new Date(a.get('date').replace(/-/g, '/')).getTime() - new Date(b.get('date').replace(/-/g, '/')).getTime();
 	}
 };
