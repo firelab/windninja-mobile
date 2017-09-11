@@ -14,7 +14,7 @@
          "ymax":47.038565315467025,
          "xmax":-113.97925790543299
       },
-      "products":"vector:true;raster:true;topofire:true;geopdf:false",
+      "products":"vector:true;raster:false;topofire:false;geopdf:false;clustered:true;weather:true",
       "parameters":"forecast_duration:12;vegetation:trees;mesh_choice:fine",
       "forecast":"NOMADS-NAM-CONUS-12-KM"
    },
