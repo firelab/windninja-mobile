@@ -41,6 +41,7 @@ job_wrapper:
       - "--write_shapefile_output $write_shapefile_output"
       - "--write_wx_model_shapefile_output $write_wx_model_shapefile_output"
       - "--write_goog_output false"
+      - "--write_ascii_output $write_ascii_output"
     args_wx: 
       - "--elevation_file $elevation_file"
       - "--mesh_choice $mesh_choice"
@@ -56,6 +57,7 @@ job_wrapper:
       - "--write_shapefile_output $write_shapefile_output"
       - "--write_wx_model_shapefile_output $write_wx_model_shapefile_output"
       - "--write_goog_output false"
+      - "--write_ascii_output $write_ascii_output"
     defaults: 
       forecast_duration: 3
       input_speed: 5
