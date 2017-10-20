@@ -33,72 +33,26 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 ################################# CONSTANTS ###########################################
 SOURCE_PROJ = osr.SpatialReference()
-SOURCE_PROJ.ImportFromEPSG(32611)
 TARGET_PROJ = osr.SpatialReference()
 TARGET_PROJ.ImportFromEPSG(3857)
-TRANSFORM = osr.CoordinateTransformation(SOURCE_PROJ,TARGET_PROJ)
+TRANSFORM = None
 
-# UTC Lookup for timezone formatting
-UTCLookup = {"EST":"-05:00",
-             "EDT":"-04:00",
-             "CST":"-06:00",
-             "CDT":"-05:00",
-             "MST":"-07:00",
-             "MDT":"-06:00",
-             "PST":"-08:00",
-             "PDT":"-07:00",
-             "AKS":"-09:00",
-             "AKD":"-08:00",
-             "NA" :"-06:00"}
-
-
-# Convert WindNinjda datetime format to ISO standard
-# EX:
-# 1900_09-08-2017 -> 2017-09-08T19:00
-def convertDatetime(date,hour,timezone):
-    month,day,year = date.split("-")
-    h,m = hour[:2],hour[2:]
-    utc_offset = UTCLookup[timezone]
-    formatted_datetime = "{}-{}-{}T{}:{}{}".format(year,month,day,h,m,utc_offset)
-    return formatted_datetime
 
 # Parse time and data type from file name
-def parseFileName(file_name):
-    # All files should be of form
-    # FileName_MM-DD-YYYY_HOUR_MeterResolution_DataType.asc
-    # eg
-    # dem_05-19-2017_0900_29m_ang.asc
-
-    # First we get the indices of all _ in the filename
-    # This should return 4 indicies for properly formatted filenames
-    underscore_indices = [i for i, letter in enumerate(file_name) if letter == "_"]
-
-    if len(underscore_indices) > 4:
-        # it's possible for the filename to include
-        # underscores (_) which throws off my indexing.
-        # However, I know if they occur they'll occur
-        # before the indices I care about.
-        # Thus I can simply move up my indexing by the
-        # difference of the number I'm expecting (4)
-        # and the number there actually are (len(underscore_indices))
-        spacer = len(underscore_indices) - 4
-    else:
-        spacer = 0
-
-    # The hour should be contained between the 2nd and 3rd underscores
-    #   The +1 ensures we don't include the "_" character
-    hour = file_name[underscore_indices[1+spacer]+1:underscore_indices[2+spacer]]
-    # The date should be contained between the first underscore
-    # (that isn't part of the filename)
-    # and the second underscore (that isn't part of the filename)
-    date = file_name[underscore_indices[spacer]+1:underscore_indices[1+spacer]]
-    # The data type should be contained between the last underscore and the extension.
-    period = file_name.rfind(".")
-    # NOTE: The final position of the underscore index is not affected by
-    # the inclusion of an underscore in the filename so this
-    # line is not affected by spacer
-    data_type = file_name[underscore_indices[-1]+1:period]
-    return hour,data_type,date
+def parseFileName(file_path):
+    # All file names will be of the format:
+    #   20171019T1700_ang.asc
+    # With '_' separating the formatted date
+    # and the file type.
+    # NOTE:
+    # The full file path is given so we have
+    # to strip the name to just the file name
+    file_name = os.path.basename(file_path)
+    # This is a much simpler formatting than
+    # the previous iteration
+    date,file_end = file_name.split("_")
+    data_type,extension = file_end.split('.')
+    return date,data_type
 
 
 def dataFromASC(path,data_type):
@@ -143,7 +97,7 @@ def dataFromASC(path,data_type):
                 # These values differ by 180 degrees so this line
                 # is to rectify that.
                 vals = [(r + 180) % 360 for r in row[:-1]]
-            else:
+            elif data_type == "vel":
                 vals = row[:-1]
             mat_data.append(vals) 
 
@@ -200,7 +154,7 @@ def coordsFromASC(path):
 
 # Read all files and add their information
 # to one master dictionary
-def createTimeDictionary(files,timezone):
+def createTimeDictionary(files,given_max_vel):
     time_dict = {}
     x,y,r = coordsFromASC(files[0])
     # The inclusion of the "data" key here
@@ -214,15 +168,21 @@ def createTimeDictionary(files,timezone):
     # Keep track of maximum velocity across all times
     max_vel = 0
     for file_name in files:
-        hour,data_type,date = parseFileName(file_name)
-        formatted_date = convertDatetime(date,hour,timezone)
+        formatted_date,data_type = parseFileName(file_name)
         key = "{}_{}".format(data_type,formatted_date)
         time_dict[key] = dataFromASC(file_name,data_type)
         # Set the maximum velocity
         if data_type == "vel":
             time_max_vel = np.max(time_dict[key]["data"])
             max_vel = max(max_vel,time_max_vel)
-    return time_dict,max_vel
+    # Maximum velocity can be provided 
+    # in which case we use that value
+    if given_max_vel and given_max_vel > 0:
+        print("Using maximum velocity value of {}".format(given_max_vel))
+        return time_dict,given_max_vel
+    else:
+        print("Not given a positive value for maximum velocity ({}), using calculated value of {}".format(given_max_vel,max_vel))
+        return time_dict,max_vel
 
 
 def resize(mat,use_scipy=False):
@@ -324,8 +284,9 @@ def vel2Bucket(vel,vel_range):
     try:
         return bucket_val
     except:
-        print(vel)
-        print(search_range)
+        if vel > max_vel:
+            print("Warning: velocity {} greater than maximum velocity of {}.  Assigning maximum value instead".format(vel,max_vel))
+            return 5
     
 
 # This function takes an array and applies val2Bucket
@@ -440,15 +401,19 @@ def writeData(time_dict,num_resizes,file_name,write=True):
         return to_be_written    
         
 
-def createClusters(file_dir,write_path,name,timezone,separate=False):
+def createClusters(file_dir,write_path,name,wk_id,given_max_vel=None,separate=False):
+    global TRANSFORM
     start = time.time()
 
-    #FILE_DIR = "small"
+    SOURCE_PROJ.ImportFromEPSG(wk_id)
+    TRANSFORM = osr.CoordinateTransformation(SOURCE_PROJ,TARGET_PROJ)
+    
     print("Cluster path: {}".format(file_dir))
     FILES_PATH = file_dir
-    FILES = [os.path.join(FILES_PATH,f) for f in os.listdir(FILES_PATH) if os.path.isfile(os.path.join(FILES_PATH, f)) and f[-4:] == ".asc"]
+    FILES = [os.path.join(FILES_PATH,f) for f in os.listdir(FILES_PATH) if os.path.isfile(os.path.join(FILES_PATH, f)) and (f[-7:] == "vel.asc" or f[-7:] == "ang.asc")]
 
-    time_dict,max_vel = createTimeDictionary(FILES,timezone)
+    # If maximum velocity is provided the max_vel here will be that value.
+    time_dict,max_vel = createTimeDictionary(FILES,given_max_vel)
     vel_range = createVelocityRange(max_vel)
 
     if separate:
@@ -512,6 +477,6 @@ def createClusters(file_dir,write_path,name,timezone,separate=False):
 
 
 if __name__ == "__main__":
-    file_dir = r"C:\Projects\WindNinja\WindNinja-Server\Data\job\1a111111111111111111111111111111\NOMADS-NAM-CONUS-12-KM-dem.tif\20170908T1200"
+    file_dir = r"C:\Users\krabil\Desktop\windninja\results"
     name = "clustered"
-    createClusters(file_dir,file_dir,name,separate=False)
+    createClusters(file_dir,file_dir,name,32611,given_max_vel=21.74,separate=False)
