@@ -2,21 +2,14 @@
 import time
 import datetime
 from operator import itemgetter
-import subprocess
 import signal
-
-import windninjaconfig as wnconfig
+import windninjaqueue.windninja as wn
 import windninjaqueue.queue as wnqueue
 
 VERBOSE = False
 CANCEL = False
-LOOP_PAUSE = wnconfig.Config.QUEUE["loop_interval"]
-MAX_RUNNING_JOBS = wnconfig.Config.QUEUE["max_running_jobs"]
-PYTHON_EXECUTABLE = wnconfig.Config.QUEUE["windninja_wrapper"]["executable"]
-WN_WRAPPER = wnconfig.Config.QUEUE["windninja_wrapper"]["script"]
-WN_WRAPPER_OPTIONS = wnconfig.Config.QUEUE["windninja_wrapper"]["options"]
-DETACHED_PROCESS = 0x00000008
-
+LOOP_PAUSE = 5
+MAX_RUNNING_JOBS = 5
 
 #NOTES: this is a simple 'max' processes queue manager - first in, first out based on "created" time 
 # other possible enhancements short term:
@@ -25,21 +18,26 @@ DETACHED_PROCESS = 0x00000008
 # * checks if processes are still running
 # * CPU/RAM usage limits?  
 
-def preexec_function():
-    # set the signal to be ignored
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
 def write_stdout(s):
     sys.stdout.write("[{}]:{}\n".format(datetime.datetime.now().isoformat(), s))
     sys.stdout.flush()
 
-def main_loop():
+def main_loop(config):
 
-    # set the datastore for the queue
-    wnqueue.set_Queue(wnconfig.Config.QUEUE["datastore"], False)
+    #initialize configuration
+    global LOOP_PAUSE
+    LOOP_PAUSE = config.get("loop_interval", LOOP_PAUSE)
+    global MAX_RUNNING_JOBS 
+    MAX_RUNNING_JOBS = config.get("max_running_jobs", MAX_RUNNING_JOBS)
 
+    wn.PYTHON_EXECUTABLE = config["windninja_wrapper"]["executable"]
+    wn.WN_WRAPPER= config["windninja_wrapper"]["script"]
+    wn.WN_WRAPPER_OPTIONS = config["windninja_wrapper"]["options"]
+    
+    wnqueue.set_Queue(config, False)
+    
     # start the loop
-    while not CANCEL:        
+    while not CANCEL:
         try:
             time.sleep(LOOP_PAUSE)
         except KeyboardInterrupt:
@@ -64,26 +62,16 @@ def main_loop():
                 if (available_jobs > 0):
                     id=job["id"]
                     write_stdout("enqueue job: {}".format(id))
-                    
-                    args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
-                    try: args += WN_WRAPPER_OPTIONS
-                    except: pass
-                    
-                    #windows/linux have different "Detach" usage
-                    try:
-                        if sys.platform == "win32":
-                            pid = subprocess.Popen(args, close_fds=True, creationflags=DETACHED_PROCESS ).pid
-                        else:
-                            pid = subprocess.Popen(args, close_fds=True, preexec_fn = preexec_function).pid
-                    except Exception as pex:
-                        write_stdout("job [{}] failed to start: {}".format(id, str(pex)))
-                        wnqueue.update_queue_item_status(id, wnqueue.QueueStatus.failed, "ERROR:{}".format(str(pex)))
-                        continue
-                    
-                    #TODO: how to handle status update fail?
-                    wnqueue.update_queue_item_status(id, wnqueue.QueueStatus.running, "pid:{}".format(pid))
-                    available_jobs -= 1
-                    pending_job_count -= 1
+                   
+                    status, pid, message = wn.start_job(id)
+                    wnqueue.update_queue_item_status(id, status, message)
+
+                    if (status == wnqueue.QueueStatus.running):
+                        available_jobs -= 1
+                        pending_job_count -= 1
+                    else:
+                        write_stdout("job [{}] failed to start: {}".format(id, message))
+
                 else: 
                     write_stdout("Running jobs filled - remaining: {0}".format(pending_job_count))
                     break

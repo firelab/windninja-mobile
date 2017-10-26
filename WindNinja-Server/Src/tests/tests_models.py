@@ -14,26 +14,26 @@ class MockModels:
     feedback_json = r'{"id":"5a46dfb6-70c1-400d-8361-f9b9c000ecbd","account":"nwagenbrenner@gmail.com","dateTimeStamp":"2015-12-16T14:10:54.4555168-07:00","comments":"Does this work? Where is this sent to?\n"}'
     feedback_id = "5a46dfb6-70c1-400d-8361-f9b9c000ecbd"
 
-    job_json = r'{"status": "Succeeded", "account": "tweber@yourdatasmarter.com", "name": "Point Six (test)", "messages": ["2015-02-27T16:48:45.2949952-07:00 | INFO | job created", "2015-02-27T16:48:46.251000-07:00 | INFO | Initializing WindNinja Run", "2015-02-27T16:48:46.370000-07:00 | INFO | DEM created", "2015-02-27T16:49:01.439000-07:00 | INFO | WindNinjaCLI executed", "2015-02-27T16:49:19.481000-07:00 | INFO | Output converted to geojson", "2015-02-27T16:49:19.527000-07:00 | INFO | Complete - total processing: 0:00:33.474000", "2015-12-15T11:24:12.802000-07:00 | INFO | Initializing WindNinja Run", "2015-12-15T11:24:12.935000-07:00 | INFO | DEM created", "2015-12-15T11:24:21.444000-07:00 | INFO | WindNinjaCLI executed", "2015-12-15T11:24:47.399000-07:00 | INFO | Output converted to geojson", "2015-12-15T11:24:49.941000-07:00 | INFO | TopoFire tiles compiled", "2015-12-15T11:25:10.774000-07:00 | INFO | Output converted to raster tiles", "2015-12-15T11:29:22.910000-07:00 | INFO | Initializing WindNinja Run", "2015-12-15T11:29:23.003000-07:00 | INFO | DEM created", "2015-12-15T11:29:29.823000-07:00 | INFO | WindNinjaCLI executed", "2015-12-15T11:29:56.014000-07:00 | INFO | Output converted to geojson", "2015-12-15T11:29:58.313000-07:00 | INFO | TopoFire tiles compiled", "2015-12-15T11:30:22.230000-07:00 | INFO | Output converted to raster tiles", "2015-12-15T11:30:25.061000-07:00 | INFO | Complete - total processing: 0:00:59.454000"], "id": "23becdaa-df7c-4ec2-9934-97261e63d813", "output": {"products": [{"files": ["dem_12-15-2015_1700_29m", "dem_12-15-2015_1400_29m", "dem_12-15-2015_2300_29m", "dem_12-15-2015_2000_29m"], "name": "WindNinja Raster Tiles", "package": "tiles.zip", "type": "raster", "format": "tiles", "data": ["dem_12-15-2015_1700_29m:24.722978", "dem_12-15-2015_1400_29m:27.903006", "dem_12-15-2015_2300_29m:16.501172", "dem_12-15-2015_2000_29m:21.656377"]}, {"files": [], "package": "topofire.zip", "type": "basemap", "name": "TopoFire Basemap", "format": "tiles"}, {"files": ["UCAR-NAM-CONUS-12-KM-12-15-2015_1400.json", "UCAR-NAM-CONUS-12-KM-12-15-2015_1700.json", "UCAR-NAM-CONUS-12-KM-12-15-2015_2000.json", "UCAR-NAM-CONUS-12-KM-12-15-2015_2300.json"], "package": "", "type": "vector", "name": "Weather Json Vectors", "format": "json"}, {"files": ["dem_12-15-2015_1400_29m.json", "dem_12-15-2015_1700_29m.json", "dem_12-15-2015_2000_29m.json", "dem_12-15-2015_2300_29m.json"], "package": "", "type": "vector", "name": "WindNinja Json Vectors", "format": "json"}]}, "input": {"domain": {"xmin": -114.0235465406869, "ymin": 46.99526210560205, "ymax": 47.038565315467025, "xmax": -113.97925790543299}, "products": "vector:true;raster:true;topofire:true;geopdf:false", "parameters": "forecast_duration:12;vegetation:trees;mesh_choice:fine", "forecast": "UCAR-NAM-CONUS-12-KM"}, "email": "4062746694@vtext.com"}'
-    job_id = r"23becdaa-df7c-4ec2-9934-97261e63d813"
+    job_json = r'{"account": "test@yourdatasmarter.com", "email": "5555555555@vtext.com", "id": "11111111-1111-1111-1111-111111111111", "input": {"domain": {"xmax": -113.97925790543299, "xmin": -114.0235465406869, "ymax": 47.038565315467025, "ymin": 46.99526210560205}, "forecast": "NOMADS-NAM-CONUS-12-KM", "parameters": "forecast_duration:6;vegetation:trees;mesh_choice:fine", "products": "vector:true;raster:true;topofire:true;geopdf:false;clustered:true;weather:true"}, "messages": ["2015-02-27T16:48:45.2949952-07:00 | INFO | job created", "2017-10-25T10:43:02.508000 | INFO | Initializing WindNinja Run", "2017-10-25T10:43:02.579000 | INFO | DEM created", "2017-10-25T10:44:00.881000 | INFO | WindNinjaCLI executed", "2017-10-25T10:44:02.114000 | INFO | Weather converted to geojson", "2017-10-25T10:44:44.107000 | INFO | Output converted to geojson", "2017-10-25T10:44:47.937000 | INFO | TopoFire tiles compiled", "2017-10-25T10:45:03.387000 | INFO | Output converted to cluster", "2017-10-25T10:45:03.537000 | INFO | Complete - total processing: 0:02:01.055000"], "name": "Point Six (test)", "output": {"clustered": {"baseUrl": "", "data": {"maxSpeed": {"20171025T1000.shp": 10.287882, "20171025T1100.shp": 11.524338, "20171025T1200.shp": 17.897222, "20171025T1300.shp": 27.699691, "20171025T1400.shp": 32.205115, "20171025T1500.shp": 31.833992, "20171025T1600.shp": 32.541089, "overall": 32.541089}, "speedBreaks": [6.51, 13.02, 19.52, 26.03, 32.54]}, "files": ["clustered_total.csv"], "format": "csv", "name": "WindNinja Cluster Vectors", "package": "wx_clustered.zip", "type": "cluster"}, "raster": {"data": {"maxSpeed": {"20171025T1000": 10.287882, "20171025T1100": 11.524338, "20171025T1200": 17.897222, "20171025T1300": 27.699691, "20171025T1400": 32.205115, "20171025T1500": 31.833992, "20171025T1600": 32.541089, "overall": 32.541089}, "speedBreaks": [6.51, 13.02, 19.52, 26.03, 32.54]}, "files": ["20171025T1200", "20171025T1300", "20171025T1400", "20171025T1500", "20171025T1600", "20171025T1000", "20171025T1100"], "format": "tiles", "name": "WindNinja Raster Tiles", "package": "tiles.zip", "type": "raster"}, "simulations": {"times": ["20171025T1000", "20171025T1100", "20171025T1200", "20171025T1300", "20171025T1400", "20171025T1500", "20171025T1600"], "utcOffset": "-0600"}, "topofire": {"files": [], "format": "tiles", "name": "TopoFire Basemap", "package": "topofire.zip", "type": "basemap"}, "vector": {"data": {"maxSpeed": {"20171025T1000.json": 10.287882, "20171025T1100.json": 11.524338, "20171025T1200.json": 17.897222, "20171025T1300.json": 27.699691, "20171025T1400.json": 32.205115, "20171025T1500.json": 31.833992, "20171025T1600.json": 32.541089, "overall": 32.541089}}, "files": ["20171025T1200.json", "20171025T1300.json", "20171025T1400.json", "20171025T1500.json", "20171025T1600.json", "20171025T1000.json", "20171025T1100.json"], "format": "json", "name": "WindNinja Json Vectors", "package": "wn_geojson.zip", "type": "vector"}, "weather": {"data": {"maxSpeed": {"WX_20171025T1000.json": 24.730692, "WX_20171025T1100.json": 24.482901, "WX_20171025T1200.json": 25.67851, "WX_20171025T1300.json": 27.620552, "WX_20171025T1400.json": 27.947078, "WX_20171025T1500.json": 24.698765, "WX_20171025T1600.json": 22.06951, "overall": 27.947078}}, "files": ["WX_20171025T1200.json", "WX_20171025T1300.json", "WX_20171025T1400.json", "WX_20171025T1500.json", "WX_20171025T1600.json", "WX_20171025T1000.json", "WX_20171025T1100.json"], "format": "json", "name": "Weather Json Vectors", "package": "wx_geojson.zip", "type": "vector"}}, "status": "succeeded"}'
+    job_id = r"11111111-1111-1111-1111-111111111111"
 
     @classmethod
     def validate_job(cls, context, actual):
         context.assertIsNotNone(actual, "Job is None")
-        context.assertEqual(actual.account, "tweber@yourdatasmarter.com", msg="Incorrect job account")
+        context.assertEqual(actual.account, "test@yourdatasmarter.com", msg="Incorrect job account")
         context.assertEqual(actual.name, "Point Six (test)", msg="Incorrect job name")
         context.assertEqual(actual.status, wnmodels.JobStatus.succeeded, msg="Incorrect job status")
-        context.assertEqual(actual.id, "23becdaa-df7c-4ec2-9934-97261e63d813", msg="Incorrect job id")
-        context.assertEqual(actual.email, "4062746694@vtext.com", msg="Incorrect job email")
+        context.assertEqual(actual.id, "11111111-1111-1111-1111-111111111111", msg="Incorrect job id")
+        context.assertEqual(actual.email, "5555555555@vtext.com", msg="Incorrect job email")
         
         context.assertIsNotNone(actual.messages, "Job messages is None")
-        context.assertEqual(len(actual.messages), 19, "Incorrect job messages length")
+        context.assertEqual(len(actual.messages), 9, "Incorrect job messages length")
         #TODO: test some messages or split each to verify format
 
         context.assertIsNotNone(actual.input, "Job input is None")
-        context.assertEqual(actual.input.products, "vector:true;raster:true;topofire:true;geopdf:false", msg="Incorrect job input products")
-        context.assertEqual(actual.input.parameters, "forecast_duration:12;vegetation:trees;mesh_choice:fine", msg="Incorrect job input parameters")
-        context.assertEqual(actual.input.forecast, "UCAR-NAM-CONUS-12-KM", msg="Incorrect job forecast")
+        context.assertEqual(actual.input.products, "vector:true;raster:true;topofire:true;geopdf:false;clustered:true;weather:true", msg="Incorrect job input products")
+        context.assertEqual(actual.input.parameters, "forecast_duration:6;vegetation:trees;mesh_choice:fine", msg="Incorrect job input parameters")
+        context.assertEqual(actual.input.forecast, "NOMADS-NAM-CONUS-12-KM", msg="Incorrect job forecast")
         context.assertIsNotNone(actual.input.domain, "Job input domain is None")
         context.assertEqual(actual.input.domain.xmax, -113.97925790543299, msg="Incorrect job input domain xmax")
         context.assertEqual(actual.input.domain.ymax, 47.038565315467025, msg="Incorrect job input domain ymax")
@@ -41,23 +41,49 @@ class MockModels:
         context.assertEqual(actual.input.domain.ymin, 46.99526210560205, msg="Incorrect job input domain ymin")
 
         context.assertIsNotNone(actual.output, "Job output is None")
+        #context.assertIsNotNone(actual.output.products, "Job output products is None")
+        #context.assertEqual(len(actual.output.products), 4, "Incorrect job output products length")
+
+        context.assertIsNotNone(actual.output.simulations, "Job output simulation is None")
         context.assertIsNotNone(actual.output.products, "Job output products is None")
-        context.assertEqual(len(actual.output.products), 4, "Incorrect job output products length")
+        context.assertEqual(len(actual.output.products.keys()), 5, "Incorrect job output products length")
 
-        actual_product = actual.output.products[0]
-        context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
+        context.assertIsNotNone(actual.output.products["vector"], "Job output product vector is None")
+        context.assertIsNotNone(actual.output.products["topofire"], "Job output product topofire is None")
+        context.assertIsNotNone(actual.output.products["clustered"], "Job output product clustered is None")
+        context.assertIsNotNone(actual.output.products["weather"], "Job output product weather is None")
+        context.assertIsNotNone(actual.output.products["raster"], "Job output product raster is None")
+        
+        #actual_product = actual.output.products[0]
+        #context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
         #TODO: test others are not None
-        context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output product[0] name")
-        context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output product[0] package")
-        context.assertEqual(actual_product.type, "raster", msg="Incorrect job output product[0] type")
-        context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output product[0] format")
+        #context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output product[0] name")
+        #context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output product[0] package")
+        #context.assertEqual(actual_product.type, "raster", msg="Incorrect job output product[0] type")
+        #context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output product[0] format")
 
-        context.assertEqual(len(actual_product.files), 4, "Incorrect job output product[0] files length")
-        context.assertEqual(actual_product.files[0], "dem_12-15-2015_1700_29m", msg="Incorrect job output product[0] file[0]")
+        #context.assertEqual(len(actual_product.files), 4, "Incorrect job output product[0] files length")
+        #context.assertEqual(actual_product.files[0], "dem_12-15-2015_1700_29m", msg="Incorrect job output product[0] file[0]")
 
-        context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
-        context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
+        #context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
+        #context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
    
+        #TODO: test other products
+
+        actual_product = actual.output.products["raster"]
+        context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output raster name")
+        context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output raster package")
+        context.assertEqual(actual_product.type, "raster", msg="Incorrect job output raster type")
+        context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output raster format")
+        context.assertEqual(len(actual_product.files), 7, "Incorrect job output raster files length")
+        context.assertEqual(actual_product.files[0], "20171025T1200", msg="Incorrect job output raster file[0]")
+        context.assertIsNotNone(actual_product.data, "Job output raster data is None")
+        context.assertIsNotNone(actual_product.data["maxSpeed"], "Job output raster data max speed is None")
+        context.assertEqual(len(actual_product.data["maxSpeed"].keys()), 8, msg="Incorrect job output raster max speed keys length")
+        context.assertEqual(actual_product.data["maxSpeed"]["overall"], 32.541089, msg="Incorrect job output raster max speed overall value")
+        context.assertIsNotNone(actual_product.data["speedBreaks"], "Job output raster data speed breaks is None")
+        context.assertEqual(len(actual_product.data["speedBreaks"]), 5, msg="Incorrect job output raster speed breaks keys")
+
     @classmethod
     def validate_account(cls, context, actual):
         #TODO: finish validation
@@ -84,6 +110,7 @@ class TestModels(unittest.TestCase):
     def test_job(self):
         actual = wnmodels.Job.from_json(MockModels.job_json)
         MockModels.validate_job(self, actual)
+        
 
     def test_job_create(self):
         # completely flat structure

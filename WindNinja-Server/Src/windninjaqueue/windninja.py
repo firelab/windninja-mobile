@@ -1,86 +1,47 @@
 ﻿import sys
-import os
-import time
-import tempfile
-import glob
+import subprocess
+import logging
+from windninjaqueue.enums import QueueStatus
 
-#job_dir = r"/home/wnadmin/WindNinjaServer/Data/job"
-job_dir = r"/srv/WindNinjaServer/Data/job"
-sleep_time = 15
+DETACHED_PROCESS = 0x00000008
+CREATE_NEW_PROCESS_GROUP = 0x00000200
+PYTHON_EXECUTABLE = "python"
+WN_WRAPPER = "windninjawrapper/windninja.py"
+WN_WRAPPER_OPTIONS = []
 
-#--------------------------------------------
-# 2.7 version of the queue functions 
-_directories = {
-    "queue" : r"/srv/WindNinjaServer/Data/queue"
-    }
+def preexec_function():
+    # set the signal to be ignored
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-def dequeue(id):
-    item = _find_item(id)
-    if item is None:
-        raise KeyError("Item with id {} not found in queue".format(id))
+def start_job(id):
 
-    #Simpler 'remove file' alogrithm 
-    #try:
-    #    file = item
-    #    os.remove(file)
-    #except OSError as oex:
-    #    raise Exception("Failed to remove queue item {}".format(id))
+    args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
+    try: args += WN_WRAPPER_OPTIONS
+    except: pass
+                    
+    logging.debug("start job args: {}".format(args))
+    #windows/linux have different "Detach" usage
+    status = QueueStatus.running
+    message = ""
+    pid = None
 
-    #More complex keep file with 'status'
-    update_queue_item_status(id, "complete")
-
-def update_queue_item_status(id, status, data=None):
-    if type(status) is not str:
-        raise TypeError("Status is not of type <QueueStatus>")
-    
     try:
-        existing_file = _find_item(id)
-        base = os.path.splitext(existing_file)[0]
-        new_file = "{0}.{1}".format(base, status)
-        os.rename(existing_file, new_file)
-        
-        if data:
-            with open(new_file, "at") as f:
-                f.write(data)
-                f.write("\n")
+        if sys.platform == "win32":
+            #NOTE in testing on WIN10 in 'immediate' mode this setup will fail on the gdalwarp... ??? maybe missing environment variable?
+            logging.debug("full new process group")
+            pid = subprocess.Popen(args, close_fds=True, creationflags=CREATE_NEW_PROCESS_GROUP).pid
+            #pid = subprocess.Popen(args, close_fds=True, creationflags=DETACHED_PROCESS ).pid
+            #pid = subprocess.Popen(args).pid
+        else:
+            pid = subprocess.Popen(args, close_fds=True, preexec_fn = preexec_function).pid
 
-    except AttributeError:
-        raise KeyError("Item with id {} not found in queue".format(id))
+        message = "pid:{}".format(pid)
+        logging.debug("job start success: {}".format(message))
 
-    except OSError:
-        raise Exception("Queue update error") 
+    except Exception as ex:
+        status = QueueStatus.failed
+        #TODO: get full trace info
+        message = "ERROR:{}".format(str(ex))
+        logging.debug("job start failed: {}".format(message))
 
-    except Exception:
-        raise Exception("Queue update error") 
-
-def _find_item(id):
-    name_pattern = "{}.*".format(id)
-    file_pattern = os.path.join(_directories["queue"], name_pattern)
-    try:
-        return  glob.glob(file_pattern)[0]
-    except IndexError as iex:
-        return None
-
-#--------------------------------------------
-current_pid = os.getpid()
-id = sys.argv[1] if len(sys.argv) > 1 else "testid"
-
-file_path = os.path.join(job_dir, "{}.{}.wn".format(current_pid, int(time.time())))
-f = open(file_path, "w")
-
-f.write("[{0}] python:{1}\n".format(current_pid, sys.executable))
-f.write("[{0}] version:{1}\n".format(current_pid, sys.version))
-f.write("[{0}] running windninja job - id: {1}\n".format(current_pid,id))
-
-time.sleep(sleep_time)
-f.write("[{0}] doing job stuff {1}\n".format(current_pid, time.time()))
-
-time.sleep(sleep_time)
-try:
-    dequeue(id)
-    f.write("[{0}] dequeue success...\n".format(current_pid))
-except:
-    f.write("[{0}] dequeue failed...\n".format(current_pid))
-    
-f.write("[{0}] job complete...\n".format(current_pid))
-f.close()
+    return status, pid, message

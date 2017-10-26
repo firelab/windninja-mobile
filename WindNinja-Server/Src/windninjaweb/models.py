@@ -38,7 +38,8 @@ class Product:
         self.baseurl = ""
         self.package = ""
         self.files = []
-        self.data = []
+        #self.data = []
+        self.data = {}
 
     @classmethod
     def from_dict(cls, json_dict):
@@ -52,13 +53,14 @@ class Product:
         obj.format = json_dict.get("format")
         obj.baseurl = json_dict.get("baseurl")
         obj.package = json_dict.get("package")
+        obj.data = json_dict.get("data", {})
 
         for file in json_dict.get("files", []):
             obj.files.append(file)
 
-        for data in json_dict.get("data", []):
-            obj.data.append(data)
-
+        #for data in json_dict.get("data", []):
+        #    obj.data.append(data)
+        
         return obj
 
     def to_json(self):
@@ -74,9 +76,9 @@ class Product:
         for f in self.files:
             files.append(f)
         
-        data = []
-        for d in self.data:
-            data.append(d)
+        #data = []
+        #for d in self.data:
+        #    data.append(d)
 
         dict = {
             "name" : self.name,
@@ -85,7 +87,8 @@ class Product:
             "baseurl" : self.baseurl,
             "package" : self.package,
             "files" : files,
-            "data" : data,
+            #"data" : data,
+            "data" : self.data,
             }
 
         return dict
@@ -175,7 +178,8 @@ class JobInput:
 
 class JobOutput: 
     def __init__(self):
-        self.products = []
+        self.products = {}
+        self.simulations = {}
 
     @classmethod
     def from_dict(cls, json_dict):
@@ -184,26 +188,42 @@ class JobOutput:
 
         obj = cls()
 
-        for product in json_dict.get("products", []):
-            obj.products.append(Product.from_dict(product))
+        for k in json_dict:
+            if k == "simulations":
+                obj.simulations = json_dict.get("simulations")
+            else:
+                obj.products[k] = Product.from_dict(json_dict[k])
+
+        #products = json_dict.get("products", {})
+        #for product in products:
+        #    obj.products.append(Product.from_dict(product))
 
         return obj
+
+    def updateBaseUrls(self, url):
+        for product in self.products:
+            self.products[product].baseurl = url
 
     def to_json(self):
         dict = self.to_dict()
 
         #TODO: sorting seems like a waste but tests fail without a known string represtatntion 
-        # Maybe set module flags for these... 
+        # Maybe set module flags for tests to sort... 
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
-        list = []
-        for p in self.products:
-            list.append(p.to_dict())
+        #list = []
+        #for p in self.products:
+        #    list.append(p.to_dict())
 
         dict = {
-            "products" : list
-            }
+        #    "products" : list
+            "simulations": self.simulations
+        }
+
+        for p in self.products:
+            dict[p] = self.products[p].to_dict()
+
         return dict
 
 class Job ():
@@ -362,6 +382,62 @@ class Feedback:
     def to_email_body(self):
         template = "ID:{}\nACCOUNT:{}\nDATE:{}\nCOMMENTS:\n{}"
         return template.format(self.id, self.account, self.date_time_stamp.isoformat(), self.comments)
+
+#----------NOTIFICATION------------
+class Notification:
+    def __init__(self):
+        self.id = ""
+        self.message = ""
+        self.expires = None
+
+    @classmethod
+    def create(cls, initializer):
+        notification = cls()
+        notification.id = str(uuid.uuid4())
+        
+        #required so throw an error if not found in initialier
+        notification.expires = initializer["expires"]
+        notification.message = initializer["message"]
+        
+        return notification
+
+    @classmethod
+    def from_json(cls, json_string):
+        _logger.debug(json_string)
+        
+        json_dict = json.loads(json_string)
+        return cls.from_dict(json_dict)
+
+    @classmethod
+    def from_dict(cls, json_dict):
+        if not json_dict:
+            return
+
+        obj = cls()
+        # TODO which of these items MUST be found or generate an error?
+        
+        #REQUIRED
+        # TODO: check required values for something other than empty string
+        obj.id = json_dict["id"]
+        obj.message = json_dict["message"]
+        obj.expires = dateutil.parser.parse(json_dict["expires"])
+        
+        return obj
+
+    def to_json(self):
+        dict = self.to_dict()
+
+        #TODO: sorting seems like a waste but tests fail without a known string represtatntion 
+        # Maybe set module flags for these... 
+        return json.dumps(dict, sort_keys=True)
+
+    def to_dict(self):
+        dict = {
+            "id" : self.id,
+            "message" : self.message,
+            "expires" : self.expires.isoformat() if self.expires else datetime.datetime.max,
+        }
+        return dict
 
 #----------ACCOUNT----------------
 class AccountStatus(Enum):

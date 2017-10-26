@@ -5,6 +5,7 @@ import signal
 import datetime
 
 import windninjaqueue.manager as wnmanager
+import windninjaconfig as wnconfig
 
 def write_stdout(s):
     sys.stdout.write("[{}]:{}\n".format(datetime.datetime.now().isoformat(), s))
@@ -27,6 +28,6 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_handler)
 
     wnmanager.VERBOSE = args.verbose
-    wnmanager.main_loop()
+    wnmanager.main_loop(wnconfig.Config.QUEUE)
 
     write_stdout("Exiting queue manager...")

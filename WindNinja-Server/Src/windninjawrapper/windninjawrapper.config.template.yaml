@@ -25,6 +25,7 @@ job_wrapper:
     max_threads: 2
   wn_cli: 
     args_da: 
+      - "--output_path $output_path"
       - "--elevation_file $elevation_file"
       - "--mesh_choice $mesh_choice"
       - "--num_threads $num_threads"
@@ -43,6 +44,7 @@ job_wrapper:
       - "--write_goog_output false"
       - "--write_ascii_output $write_ascii_output"
     args_wx: 
+      - "--output_path $output_path"
       - "--elevation_file $elevation_file"
       - "--mesh_choice $mesh_choice"
       - "--num_threads $num_threads"
@@ -71,6 +73,8 @@ job_wrapper:
       units_input_wind_height: ft
       units_output_wind_height: ft
       vegetation: grass
+    #env:
+    # - GDAL_DRIVER_PATH: /gdalplugins
     path: /usr/local/bin/WindNinja_cli
 mail: 
   from_address: test@gmail.com

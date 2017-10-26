@@ -1,30 +1,38 @@
 ﻿import os
 import glob
-from enum import Enum
+import logging
+from windninjaqueue.enums import QueueMode, QueueStatus
 
 #TODO: move queue to database (could be easy enough to simply pull queue from JOB status once Job is database)
-
-_directories = {
-    "queue" : ""
-    }
-
-class QueueStatus(Enum):
-    unknown = 0
-    pending = 1
-    running = 2
-    complete = 3
-    failed = 4
-
 #TODO: create QueueException
 
-def set_Queue(dir, initialize):
+wn = None #NOTE: needed for conditional import of start_job function
+_mode = QueueMode.disabled
+_directories = {
+        "queue" : ""
+    }
+
+def set_Queue(config, initialize):
     global _directories
-    _directories["queue"]  = dir
-    
+    _directories["queue"]  = config["datastore"]
+
+    global _mode
+    _mode = QueueMode[config["mode"]]
+
+    if _mode == QueueMode.immediate:
+       global wn
+       import windninjaqueue.windninja as wn
+       wn.PYTHON_EXECUTABLE = config["windninja_wrapper"]["executable"]
+       wn.WN_WRAPPER = config["windninja_wrapper"]["script"]
+       wn.WN_WRAPPER_OPTIONS = config["windninja_wrapper"]["options"]
+       
     if initialize:
         os.makedirs(_directories["queue"])
         
 def enqueue(id, reset_existing=False):
+    if _mode == QueueMode.disabled:
+        return 
+    
     name = "{0}.{1}".format(id, QueueStatus.pending.name)
     file = os.path.join(_directories["queue"], name)
 
@@ -38,7 +46,28 @@ def enqueue(id, reset_existing=False):
     else:
         raise KeyError("Item with id {} already exists in queue".format(id))
 
+    # start job if in immediate mode
+    if _mode == QueueMode.immediate:
+        logging.debug("immediate queue start")
+        try:
+            status, pid, message = wn.start_job(id)
+            logging.debug("start results status={} pid={} message={}".format(status, pid, message))
+        except Exception as ex:
+            status = QueueStatus.failed
+            message = "ERROR:{}".format(str(ex))
+
+        #TODO: handle race condition here with wrapper...
+        update_queue_item_status(id, status, message)
+
+        if status == QueueStatus.failed:
+            raise Exception(message)
+
+
 def dequeue(id):
+    #just skip out if disabled
+    if _mode == QueueMode.disabled:
+        return
+
     item = _find_item(id)
     if item is None:
         raise KeyError("Item with id {} not found in queue".format(id))
@@ -46,6 +75,9 @@ def dequeue(id):
     update_queue_item_status(id, QueueStatus.complete)
 
 def update_queue_item_status(id, status, data=None):
+    if _mode == QueueMode.disabled:
+        return 
+
     if type(status) is not QueueStatus:
         raise TypeError("Status is not of type <QueueStatus>")
     
@@ -63,11 +95,11 @@ def update_queue_item_status(id, status, data=None):
     except AttributeError:
         raise KeyError("Item with id {} not found in queue".format(id))
 
-    except OSError:
-        raise Exception("Queue update error") 
+    except OSError as osex:
+        raise Exception("Queue update os error\n{}\n".format(str(osex)), data) 
 
-    except Exception:
-        raise Exception("Queue update error") 
+    except Exception as ex:
+        raise Exception("Queue update error: {}".format(str(ex))) 
 
 def find_items_by_status(status):
     # get the files by status pattern
