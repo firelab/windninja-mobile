@@ -10,7 +10,7 @@ def _deployData(source_root, destination):
     data_foler_name = "Data"
     
     # primary data store folders
-    for f in ["account", "feedback", "job", "queue"]:
+    for f in ["account", "feedback", "job", "queue", "notification"]:
         dst_folder = os.path.join(destination, data_foler_name, f)
         print("creating datastore folder: {}".format(dst_folder))
         os.makedirs(dst_folder, exist_ok=True)
