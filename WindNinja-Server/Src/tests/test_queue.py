@@ -63,7 +63,6 @@ class TestQueue(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, expected_error_message):
             wnqueue.update_queue_item_status(id, "incorect status type")
 
-
     @classmethod
     def tearDownClass(cls):
         cls._store.cleanup()

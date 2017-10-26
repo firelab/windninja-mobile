@@ -17,6 +17,7 @@ mail:                                               #EMAIL SETTINGS
     from_address: test@gmail.com                    #FROM ADDRESS FOR CLIENT EMAILS
     support_address: test@gmail.com                 #ADDRESS TO FORWARD SUPPORT AND FEEDBACK
 queue:
+    mode: immediate                                 #QUEUE CAN BE ENBALED, DISABLE OR IMMEDIATE
     datastore: ../Data/queue                        #PATH TO THE QUEUE FOLDER
     max_running_jobs: 5                             #MAX NUMBER OF RUNNING JOBS
     loop_interval: 5                                #WAIT TIME BEFORE RECHECKING QUEUE
@@ -24,4 +25,5 @@ queue:
         executable: /usr/bin/python                 #PATH TO THE PYTHON EXECUTABLE
         script: windninjawrapper/windninja.py       #PATH THE JOB WRAPPER SCRIPT
         options:                                    #LIST OF SCRIPT OPTION PARAMETER
-            - -i                                    #OPTIONS: -i -v -d 
+            - -p                                    #OPTIONS: -p -l{level}
+            - -ldebug

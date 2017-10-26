@@ -1,6 +1,6 @@
 ﻿import json
 import os
-from flask import abort, url_for, send_from_directory
+from flask import abort, url_for, send_from_directory, jsonify
 from flask_restful import Api, Resource, reqparse, fields, marshal
 
 from windninjaweb.app import app
@@ -10,6 +10,11 @@ import windninjaqueue.queue as wnqueue
 import windninjaweb.utility as wnutil
 
 _email_parameters = app.config.get("MAIL", None)
+
+def error_response(code, message):
+    response = jsonify({"message":message})
+    response.status_code = code
+    return response
 
 # controllers
 class EnumField(fields.Raw):
@@ -31,46 +36,6 @@ class JobController(Resource):
         self.reqparse.add_argument("email", type=str, default="", location="values")
         self.reqparse.add_argument("account", type=str, required=True, help="Job account is required", location="values")
         self.reqparse.add_argument("products", type=str, required=True, help="Job products is required", location="values")
-        
-        # job serialiation specification (mostly defined in the .json() function of job now.
-        bbox_fields = {
-            "xmin": fields.Float(),
-            "ymin": fields.Float(),
-            "xmax": fields.Float(),
-            "ymax": fields.Float(),
-        }
-
-        product_fields = {
-            "name" : fields.String(attribute="name"),
-            "type" : fields.String(attribute="type"),
-            "format" : fields.String(attribute="format"),
-            "baseUrl" : fields.String(attribute="baseurl"),
-            "package" : fields.String(attribute="package"),
-            "files" : fields.List(fields.String(), attribute="files"),
-            "data" : fields.List(fields.String(), attribute="data"),
-        }
-
-        job_input_fields = {
-            "domain" : fields.Nested(bbox_fields, attribute="domain"),
-            "forecast" : fields.String(attribute="forecast"),
-            "parameters" : fields.String(attribute="parameters"),
-            "products" :fields.String(attribute="products")
-        }
-
-        job_output_fields = {
-            "products": fields.List(fields.Nested(product_fields), attribute="products")
-        }
-
-        self.job_fields =  {
-            "name" : fields.String(attribute="name"),
-            "email" : fields.String(attribute= "email"),
-            "id"  : fields.String(attribute="id"),
-            "status" : EnumField(attribute='status'),
-            "messages" : fields.List(fields.String, attribute='messages'),
-            "output" : fields.Nested(job_output_fields, attribute="output"),
-            "input" : fields.Nested(job_input_fields,  attribute="input"),
-            "account" : fields.String(attribute="account")
-        }
 
         super(JobController, self).__init__()
 
@@ -83,10 +48,9 @@ class JobController(Resource):
             # update product urls if complete
             if job.status == wnmodels.JobStatus.succeeded:
                 url = url_for("output", _external=True, job=job.id.replace("-",""), id="")
-                for product in job.output.products:
-                    product.baseurl = url
-                    
-            return marshal(job, self.job_fields)
+                job.output.updateBaseUrls(url)
+
+            return job.to_dict()
         else:
             abort(404)
 
@@ -96,8 +60,14 @@ class JobController(Resource):
         success = wndb.save_job(job)
 
         if success:
-            wnqueue.enqueue(job.id)
-            return marshal(job, self.job_fields)
+            try:
+                wnqueue.enqueue(job.id)
+            except Exception as ex:
+                job.status = wnmodels.JobStatus.failed
+                job.add_message(str(ex), wnmodels.JobMessageType.error)
+                wndb.save_job(job)
+
+            return job.to_dict()
         else:
             abort(500)
 
@@ -132,6 +102,36 @@ class AccountController(Resource):
         else:
             abort(404)
 
+class NotificationListController(Resource):
+
+    def __init__(self):    
+       
+        super(NotificationListController, self).__init__()
+
+    def get(self):
+        
+        notifications = wndb.get_notifications(exprired=False)
+
+        if notifications is None:
+            return []
+        else:
+            notifications_list = [n.to_dict() for n in notifications]
+            return notifications_list
+        
+class NotificationController(Resource):
+
+    def __init__(self):    
+       
+        super(NotificationController, self).__init__()
+
+    def get(self, id):
+        notification = wndb.get_notification(id)
+        
+        if notification:
+            return notification.to_dict()
+        else:
+            abort(404)
+
 class FeedbackController(Resource):
     
     def __init__(self):
@@ -160,9 +160,9 @@ class FeedbackController(Resource):
                     _email_parameters.get("support_address", ""), 
                     _email_parameters.get("from_address", ""), 
                     subject, body)
-            except:
+            except Exception as ex:
+                #return error_response(500, str(ex))
                 pass
-        
         
             return marshal(feedback, self.feedback_fields)
         else:
@@ -178,7 +178,9 @@ api.add_resource(JobController, "/api/job", endpoint="jobs" )
 api.add_resource(JobController, "/api/job/<string:id>", endpoint="job")
 api.add_resource(AccountController, "/api/account/<string:id>", endpoint="account")
 api.add_resource(FeedbackController, "/api/feedback", endpoint="feedback")
+api.add_resource(NotificationListController, "/api/notification", endpoint="notifications")
+api.add_resource(NotificationController, "/api/notification/<string:id>", endpoint="notification")
 api.add_resource(OutputController, "/output/<string:job>/<string:id>", endpoint="output")
 
-#/api/job/7cd8759fe49f49749efd43748b40419c
-#/api/account/fred.spataro@gmail.com
+#/api/job/23becdaadf7c4ec2993497261e63d813
+#/api/account/test@gmail.com

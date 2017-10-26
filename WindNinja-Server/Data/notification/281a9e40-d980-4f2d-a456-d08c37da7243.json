@@ -1,0 +1,5 @@
+{
+	"id": "281a9e40-d980-4f2d-a456-d08c37da7243",
+	"message": "<strong>This is a test notification with expires date not TZ aware, should not cause processing error and should not be displayed</strong>",
+	"expires": "2020-10-25T23:59:59"
+}

@@ -1,82 +1,22 @@
-import datetime
-import pytz
+import logging
+import os
 
-FILE = None
+# create the console output at debug level
+sh = logging.StreamHandler()
+sh.setLevel(logging.DEBUG)
+sh.setFormatter(logging.Formatter("%(levelname)s\t%(filename)s\t%(message)s"))
 
-DEBUG_ENABLED = True
-VERBOSE_ENABLED = True
-INFO_ENABLED = True
-ERROR_ENABLED = True
-WARNING_ENABLED = True
+logger = logging.getLogger()
+logger.addHandler(sh)
+logger.setLevel(logging.DEBUG)
 
-class LOG_LEVEL:
-    DEBUG = "DEBUG"
-    VERBOSE = "VERBOSE"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
+_FILE_NAME = "windninja.log"
 
-MESSAGE_TEMPLATE = "{} | {} | {}"
+PRETTY_PRINT_JOB = False
 
-def log(msg, level):
-    if level==LOG_LEVEL.DEBUG:
-        return debug(msg)
-    elif level==LOG_LEVEL.VERBOSE:
-        return verbose(msg)
-    elif level==LOG_LEVEL.INFO:
-        return info(msg)
-    elif level==LOG_LEVEL.WARNING:
-        return warn(msg)
-    elif level==LOG_LEVEL.ERROR:
-        return error(msg)
-    else:
-        return None
-   
-def verbose(msg):
-    if VERBOSE_ENABLED:
-        return _write_formatted(LOG_LEVEL.VERBOSE, msg)
-    else:
-        return None
-        
-def debug(msg):
-    if DEBUG_ENABLED:
-        return _write_formatted(LOG_LEVEL.DEBUG, msg)
-    else:
-        return None
-        
-def error(e):
-    if ERROR_ENABLED:
-        return _write_formatted(LOG_LEVEL.ERROR, e)
-    else:
-        return None
+def enable_file(folder, level):
+    fh = logging.FileHandler(os.path.join(folder, _FILE_NAME))
+    fh.setLevel(level)
+    fh.setFormatter(logging.Formatter("%(asctime)s\t%(levelname)s\t%(filename)s\t%(message)s"))
 
-def warn(e):
-    if WARNING_ENABLED:
-        return _write_formatted(LOG_LEVEL.WARNING, e)
-    else:
-        return None
-
-def info(msg):
-    if INFO_ENABLED:
-        return _write_formatted(LOG_LEVEL.INFO, msg)
-    else:
-        return None
-
-def _format_message(message, type):
-    date_time_stamp = datetime.datetime.now(pytz.timezone('UTC')).isoformat()
-    formatted_message = MESSAGE_TEMPLATE.format(date_time_stamp, type.ljust(7), message)
-    return formatted_message
-
-def _write_formatted(t, m):
-    formatted_message = _format_message(m, t)
-    _write(formatted_message)
-    return formatted_message
-    
-def _write(m):
-    print(m)
-    try:
-        if FILE is not None:
-            with open(FILE, "a") as log_file:
-                log_file.write(m)
-                log_file.write("\n")
-    except: pass
+    logger.addHandler(fh)

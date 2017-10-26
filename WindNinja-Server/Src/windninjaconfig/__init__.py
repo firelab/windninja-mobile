@@ -2,7 +2,7 @@
 import yaml
 
 class Config():
-    DATASTORE = ""
+    DATASTORE = []
     MAIL = {}
     AUTO_REGISTER = {}
     SECRET_KEY = None
