@@ -14,7 +14,7 @@
     <InterpreterId>Global|VisualStudio|Python 2.7 ArcGIS (64-bit) </InterpreterId>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>WNSERVER_CONFIG=P:\USFS\WindNinja\Source\windninja-mobile-master\WindNinja-Server\Src\windninjaserver.config.yaml</Environment>
-    <CommandLineArguments>23becdaa-df7c-4ec2-9934-97261e63d813 -p -ldebug</CommandLineArguments>
+    <CommandLineArguments>1a111111-1111-1111-1111-111111111111 -p -ldebug</CommandLineArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
