@@ -241,11 +241,11 @@ def main():
 
                         #TODO: should this return a status/error
                         native_wkid = int(wn_infos.values()[0]["native_wkid"])
-                        clustered_file, breakdown = createClusters(results_folder, project.path, "clustered", native_wkid, separate=False, given_max_vel=wn_max_speed)
+                        clustered_file, breakdown = createClusters(results_folder, project.path, "wn_clustered", native_wkid, separate=False, given_max_vel=wn_max_speed, format="json")
                         project.updateJob(None, (logging.INFO, "Output converted to cluster"), True)
 
                         #TODO: zip file
-                        zip_name="wx_clustered.zip"
+                        zip_name="wn_clustered.zip"
                         zip_files(os.path.join(project.path, zip_name), [os.path.join(project.path, f) for f in clustered_file])
 
                         output = project.output["clustered"] = {
@@ -263,7 +263,7 @@ def main():
                             }
                         }
                         for i in wn_infos:
-                            name = i.replace("_vel.asc", "")
+                            name = i.replace("_vel.asc", "").replace(".shp", "")
                             output["data"]["maxSpeed"][name] = wn_infos[i]["max"]
 
                     # processing complete!

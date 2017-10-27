@@ -21,12 +21,13 @@ import time
 from osgeo import ogr
 from osgeo import osr
 
+import json
+
 # This is the defacto graphing library for Python.
 # Theoretically you can run this whole thing without any plotting,
 # it makes sanity testing a lot harder.
 if DEBUG:
     import matplotlib.pyplot as plot
-
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -399,9 +400,29 @@ def writeData(time_dict,num_resizes,file_name,write=True):
                 values = [resolution,proj_x,proj_y] + [time_dict[k]["data"][i][j] for k in keys[3:]] # the 2: skips the first three entries (resolution,unproject x,y)
                 to_be_written.append(line.format(*values))
         return to_be_written    
-        
 
-def createClusters(file_dir,write_path,name,wk_id,given_max_vel=None,separate=False):
+def jsonData(time_dict,num_resizes):
+    keys = sortKeys(time_dict)
+    to_be_written = []
+    rows,cols = time_dict["x"]["data"].shape # We could use any key here, they're all the same size
+    for i in range(rows):
+        for j in range(cols):
+            # Our first argument will be an integer (resolution)
+            # Our next two arguments are floats (x coordinate and y coordinate).
+            # So we format to account for those first.
+            # All other values will be integers so we add non-float formats
+            # for key_length - 3 other arguments (all, but resolution,x and y).
+            #form = ["{},{:.0f}","{:.0f}"] + ["{}"]*(len(keys)-3)
+            #line = form
+            # Project the coordinates to web mercator
+            proj_x,proj_y = projectCoordinates(time_dict["x"]["data"][i][j],time_dict["y"]["data"][i][j])
+            resolution = int(time_dict["resolution"]["data"] * (2 ** num_resizes))
+            # create the line that we'll be writing to the file
+            values = [resolution,proj_x,proj_y] + [time_dict[k]["data"][i][j] for k in keys[3:]] # the 2: skips the first three entries (resolution,unproject x,y)
+            to_be_written.append(values)
+    return to_be_written
+
+def createClusters(file_dir,write_path,name,wk_id,given_max_vel=None,separate=False,format="csv"):
     global TRANSFORM
     start = time.time()
 
@@ -416,53 +437,79 @@ def createClusters(file_dir,write_path,name,wk_id,given_max_vel=None,separate=Fa
     time_dict,max_vel = createTimeDictionary(FILES,given_max_vel)
     vel_range = createVelocityRange(max_vel)
 
-    if separate:
-        write_dict = preWrite(time_dict,vel_range)
-        files = []
-        write_name = "{}.csv".format(name)
-        writeData(write_dict,0,os.path.join(write_path,write_name))
-        files.append(write_name)
-        # number of times we've resized the data
-        num_resizes = 1
+    format = format.lower()
+    if format == "csv":
+        if separate:
+            write_dict = preWrite(time_dict,vel_range)
+            files = []
+            write_name = "{}.csv".format(name)
+            writeData(write_dict,0,os.path.join(write_path,write_name))
+            files.append(write_name)
+            # number of times we've resized the data
+            num_resizes = 1
 
-        # use of time_dict["x"] is arbitrary, all keys of time_dict are the same size
-        # This will perform imresize until either dimension is 1 (as small as it can get)
+            # use of time_dict["x"] is arbitrary, all keys of time_dict are the same size
+            # This will perform imresize until either dimension is 1 (as small as it can get)
+            while time_dict["x"]["data"].shape[0] > 1 and time_dict["x"]["data"].shape[1] > 1:
+                time_dict = resizeAll(time_dict)
+                write_dict = preWrite(time_dict,vel_range)
+                write_name = "{}_{}.csv".format(name,num_resizes)
+                writeData(write_dict,num_resizes,os.path.join(write_path,write_name))
+                files.append(write_name)
+                num_resizes += 1
+                #plot.imshow(time_dict["ang_0900"]["data"])
+                #plot.show()
+
+        else:
+            write_dict = preWrite(time_dict,vel_range)
+            keys = sortKeys(write_dict)
+
+            to_write = []
+            to_write.append(",".join(keys) +"\n")
+
+            to_write += writeData(write_dict,0,None,write=False)
+            # number of times we've resized the data
+            num_resizes = 1
+            # use of time_dict["x"] is arbitrary, all keys of time_dict are the same size
+            # This will perform imresize until either dimension is 1 (as small as it can get)
+            while time_dict["x"]["data"].shape[0] > 1 and time_dict["x"]["data"].shape[1] > 1:
+                time_dict = resizeAll(time_dict)
+                write_dict = preWrite(time_dict,vel_range)
+                to_write += writeData(write_dict,num_resizes,None,write=False)
+                num_resizes += 1
+                #plot.imshow(time_dict["ang_0900"]["data"])
+                #plot.show()
+
+            # This is a little hokey, but we need to ensure
+            # the 'files' values is a list for the return
+            files = ["{}_total.csv".format(name)]
+            with open(os.path.join(write_path,files[0]),"w+") as f:
+                for row in to_write:
+                    f.write(row)
+
+    elif format == "json":
+
+        write_dict = preWrite(time_dict,vel_range)
+
+        data = {
+            "header": sortKeys(write_dict),
+            "data": jsonData(write_dict,0)
+        }
+
+        num_resizes = 1
         while time_dict["x"]["data"].shape[0] > 1 and time_dict["x"]["data"].shape[1] > 1:
             time_dict = resizeAll(time_dict)
             write_dict = preWrite(time_dict,vel_range)
-            write_name = "{}_{}.csv".format(name,num_resizes)
-            writeData(write_dict,num_resizes,os.path.join(write_path,write_name))
-            files.append(write_name)
+            data["data"] += jsonData(write_dict, num_resizes)
             num_resizes += 1
-            #plot.imshow(time_dict["ang_0900"]["data"])
-            #plot.show()
+
+        files = ["{}_total.json".format(name)]
+        json_string = json.dumps(data)
+        with open(os.path.join(write_path,files[0]),"w+") as f:
+            f.write(json_string)
 
     else:
-        write_dict = preWrite(time_dict,vel_range)
-        keys = sortKeys(write_dict)
-
-        to_write = []
-        to_write.append(",".join(keys) +"\n")
-
-        to_write += writeData(write_dict,0,None,write=False)
-        # number of times we've resized the data
-        num_resizes = 1
-        # use of time_dict["x"] is arbitrary, all keys of time_dict are the same size
-        # This will perform imresize until either dimension is 1 (as small as it can get)
-        while time_dict["x"]["data"].shape[0] > 1 and time_dict["x"]["data"].shape[1] > 1:
-            time_dict = resizeAll(time_dict)
-            write_dict = preWrite(time_dict,vel_range)
-            to_write += writeData(write_dict,num_resizes,None,write=False)
-            num_resizes += 1
-            #plot.imshow(time_dict["ang_0900"]["data"])
-            #plot.show()
-
-        # This is a little hokey, but we need to ensure
-        # the 'files' values is a list for the return
-        files = ["{}_total.csv".format(name)]
-        with open(os.path.join(write_path,files[0]),"w+") as f:
-            for row in to_write:
-                f.write(row)
+        raise ValueError("Unsupported output format: {}".format(format))
 
     end = time.time()
 
@@ -474,9 +521,7 @@ def createClusters(file_dir,write_path,name,wk_id,given_max_vel=None,separate=Fa
 
     return files,v
 
-
-
 if __name__ == "__main__":
-    file_dir = r"C:\Users\krabil\Desktop\windninja\results"
+    file_dir = r"P:\USFS\WindNinja\Source\windninja-mobile-master\WindNinja-Server\Data\job\23becdaadf7c4ec2993497261e63d813\wncli\results"
     name = "clustered"
-    createClusters(file_dir,file_dir,name,32611,given_max_vel=21.74,separate=False)
+    createClusters(file_dir,file_dir,name,32611,given_max_vel=11.09,separate=False,format="json")

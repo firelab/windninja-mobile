@@ -98,6 +98,7 @@ print("{0} {1}".format(sys.version, sys.executable))
 print("deploying windninja server '{1}'\nfrom {2}\nto {0}".format(args.destination, args.parts, args.source_root))
 
 #build the destination root
+#TODO: skip if not supplied
 os.makedirs(args.destination, exist_ok=True)
 
 if args.parts == "all": 
