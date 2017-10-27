@@ -44,7 +44,7 @@ try:
     CONFIG.MAIL = overrides["mail"]
     CONFIG.DEM_MIN_BOUNDING_GEOM_WKB = overrides["job_wrapper"]["dem_min_bounding_geom_wkb"]
     CONFIG.WN_CLI_DEFAULTS = overrides["job_wrapper"]["wn_cli"]["defaults"]
-    CONFIG.WN_CLI_ENV = overrides["job_wrapper"]["wn_cli"]["env"]
+    CONFIG.WN_CLI_ENV = overrides["job_wrapper"]["wn_cli"].get("env", {})
     CONFIG.WN_CLI_PATH = overrides["job_wrapper"]["wn_cli"]["path"]
     CONFIG.WN_CLI_ARGS_DA = " ".join(overrides["job_wrapper"]["wn_cli"]["args_da"])
     CONFIG.WN_CLI_ARGS_WX = " ".join(overrides["job_wrapper"]["wn_cli"]["args_wx"])
