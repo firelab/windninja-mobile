@@ -1,6 +1,7 @@
 ﻿import sys
 import subprocess
 import logging
+import signal
 from windninjaqueue.enums import QueueStatus
 
 DETACHED_PROCESS = 0x00000008
