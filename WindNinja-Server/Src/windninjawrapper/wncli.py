@@ -56,16 +56,29 @@ def parse_shell_output(output):
 def process_sim_shpfiles(in_folder, out_folder, dem_name, sim_times):
     shp = []
     for sim in sim_times:
+        logging.debug(sim)
         file_pattern = _sim_shp_name_template.format(dem_name, sim)
         file_search = os.path.join(in_folder, file_pattern)
+        logging.debug(file_search)
         for f in glob.glob(file_search):
             ext = os.path.splitext(f)[1]
+            logging.debug(ext)
             new_name = _sim_shp_rename_template.format(sim, ext)
+            logging.debug(new_name)
             new_file = os.path.join(out_folder, new_name)
+            logging.debug(new_file)
             os.rename(f, new_file)
+            logging.debug(ext)
+            logging.debug((ext == ".shp"))
             if (ext == ".shp"):
+                logging.debug("found")
+                logging.debug(new_name)
                 shp.append(new_name)
-    
+                logging.debug(len(shp))
+            else:
+                logging.debug("not found")
+
+    logging.debug(len(shp))
     return shp
 
 def process_sim_ascfiles(in_folder, out_folder, dem_name, sim_times):
@@ -148,14 +161,14 @@ def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc,
         #TODO: filter out any "past" results and forecasts
 
         # get the output files
+        windninja_ascfiles = process_sim_ascfiles(output_folder, result_folder, dem_name, simulations)
+        logging.debug("ASC output files: {0}".format(windninja_ascfiles))
+
         weather_shapefiles = process_sim_wxfiles(output_folder, result_folder, forecast, simulations)
         logging.debug("WX output files: {0}".format(weather_shapefiles))
 
         windninja_shapefiles = process_sim_shpfiles(output_folder, result_folder, dem_name, simulations)
         logging.debug("SHP output files: {0}".format(weather_shapefiles))
-
-        windninja_ascfiles = process_sim_ascfiles(output_folder, result_folder, dem_name, simulations)
-        logging.debug("ASC output files: {0}".format(windninja_ascfiles))
 
         if (len(windninja_shapefiles) == 0 and len(windninja_ascfiles) == 0) or len(weather_shapefiles)==0:
             result = (False, "WindNinjaCLI did not produce outputs for the job parameters")
