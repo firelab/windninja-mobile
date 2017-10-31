@@ -56,29 +56,16 @@ def parse_shell_output(output):
 def process_sim_shpfiles(in_folder, out_folder, dem_name, sim_times):
     shp = []
     for sim in sim_times:
-        #logging.debug(sim)
         file_pattern = _sim_shp_name_template.format(dem_name, sim)
         file_search = os.path.join(in_folder, file_pattern)
-        #logging.debug(file_search)
         for f in glob.glob(file_search):
             ext = os.path.splitext(f)[1]
-            #logging.debug(ext)
             new_name = _sim_shp_rename_template.format(sim, ext)
-            #logging.debug(new_name)
             new_file = os.path.join(out_folder, new_name)
-            #logging.debug(new_file)
             os.rename(f, new_file)
-            #logging.debug(ext)
-            #logging.debug((ext == ".shp"))
             if (ext == ".shp"):
-                #logging.debug("found")
-                #logging.debug(new_name)
                 shp.append(new_name)
-                #logging.debug(len(shp))
-            #else:
-            #    logging.debug("not found")
 
-    #logging.debug(len(shp))
     return shp
 
 def process_sim_ascfiles(in_folder, out_folder, dem_name, sim_times):
@@ -99,29 +86,16 @@ def process_sim_ascfiles(in_folder, out_folder, dem_name, sim_times):
 def process_sim_wxfiles(in_folder, out_folder, forecast_name, sim_times):
     wx = []
     for sim in sim_times:
-        logging.debug(sim)
         file_pattern = _sim_wx_name_template.format(forecast_name, sim)
         file_search = os.path.join(in_folder, file_pattern)
-        logging.debug(file_search)
         for f in glob.glob(file_search):
             ext = os.path.splitext(f)[1]
-            logging.debug(ext)
             new_name = _sim_wx_rename_template.format(sim, ext)
-            logging.debug(new_name)
             new_file = os.path.join(out_folder, new_name)
-            logging.debug(new_file)
             os.rename(f, new_file)
-            logging.debug(ext)
-            logging.debug((ext == ".shp"))
             if (ext == ".shp"):
-                logging.debug("found")
                 wx.append(new_name)
-                logging.debug(new_name)
-                logging.debug(len(wx))
-            else:
-                logging.debug("not found")
     
-    logging.debug(len(wx))
     return wx
 
 def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc, wxshp):
@@ -185,9 +159,9 @@ def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc,
 
         if shp and len(windninja_shapefiles) == 0:
             result = (False, "WindNinjaCLI did not produce windninja shapefile outputs for the job parameters")
-        elif asc and len(windninja_ascfiles) == 0):
+        elif asc and len(windninja_ascfiles) == 0:
             result = (False, "WindNinjaCLI did not produce windninja ascii outputs for the job parameters")
-        elif wxshp and len(weather_shapefiles)==0:
+        elif wxshp and len(weather_shapefiles) == 0:
             result = (False, "WindNinjaCLI did not produce weather shapefiles outputs for the job parameters")
         else:
             result = (True, result_folder, simulations,  windninja_shapefiles, windninja_ascfiles, weather_shapefiles)   
