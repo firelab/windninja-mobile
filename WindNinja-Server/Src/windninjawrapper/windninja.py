@@ -101,7 +101,7 @@ def main():
                     
                     # initialize some variables used across products
                     wx_infos = wn_infos = None
-                    wx_max_speed = wn_max_speed = None
+                    wx_max_speed = wn_max_speed = 0
 
                     project.output = {
                         "simulations" : {
@@ -239,9 +239,12 @@ def main():
         
                             wn_max_speed = sorted(wn_infos.values(), key=lambda x: x["max"], reverse=True)[0]["max"]
 
+                        #NOTE: assumes weather max will be covered if created
+                        max_speed = wn_max_speed if (wn_max_speed > wx_max_speed) else wx_max_speed
+
                         #TODO: should this return a status/error
                         native_wkid = int(wn_infos.values()[0]["native_wkid"])
-                        clustered_file, breakdown = createClusters(results_folder, project.path, "wn_clustered", native_wkid, separate=False, given_max_vel=wn_max_speed, format="json")
+                        clustered_file, breakdown = createClusters(results_folder, project.path, "wn_clustered", native_wkid, separate=False, given_max_vel=max_speed, format="json")
                         project.updateJob(None, (logging.INFO, "Output converted to cluster"), True)
 
                         #TODO: zip file
