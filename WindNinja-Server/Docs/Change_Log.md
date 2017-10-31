@@ -10,6 +10,7 @@
 * Python 2
   * pip install dateutil
   * pip install enum34
+  * * pip install numpy
 
 * Python 3
   * pip install blinker

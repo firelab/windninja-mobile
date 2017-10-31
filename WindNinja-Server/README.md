@@ -89,12 +89,16 @@ Python2:
 ```s
 sudo pip install pytz
 sudo pip install pyyaml
+sudo pip install dateutil
+sudo pip install enum34
+sudo pip install numpy
 ```
 Python3:
 ```s
 sudo pip3 install flask
 sudo pip3 install flask-restful
 sudo pip3 install pyyaml
+sudo pip3 install blinker
 ```
 #### MAPNIK (python2 only?)
 ```s
