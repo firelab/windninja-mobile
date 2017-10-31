@@ -160,6 +160,7 @@ sudo apt-get install sendmail
 apachectl -V  [apache version]
 sudo a2enmod wsgi-express
 sudo a2dismod wsgi-express
+
 sudo a2ensite WindNinjaApp
 sudo a2dissite WindNinjaApp
 
@@ -168,6 +169,9 @@ sudo truncate -s0 /var/log/supervisor/supervisord.log
 sudo truncate -s0 /var/log/WindNinjaServer/wnqueue.log
 
 sudo supervisorctl -c /etc/supervisor/supervisord.conf
+	supervisorctl> start wnqueue
+	supervisorctl> stop wnqueue
+	supervisorctl> reload wnqueue
 
 sudo ./WindNinjaServer/Src/deploy.py [all, app, data, config, apache, supervisor] -d /srv/WindNinjaServer
 ```

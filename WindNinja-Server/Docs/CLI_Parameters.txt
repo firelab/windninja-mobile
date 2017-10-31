@@ -1,0 +1,176 @@
+Allowed options:
+
+Generic options:
+  --version             print version
+  --help                produce help message
+  --config_file arg     configuration file ('config_file' flag not required)
+  --response_file arg   response file (can be specified with '@name', also)
+
+Simulation options:
+  --num_threads arg (=1)                number of threads to use during 
+                                        simulation
+  --elevation_file arg                  input elevation path/filename (*.asc, 
+                                        *.lcp, *.tif, *.img)
+  --fetch_elevation arg                 download an elevation file from an 
+                                        internet server and save to 
+                                        path/filename
+  --north arg                           north extent of elevation file bounding
+                                        box to download
+  --east arg                            east extent of elevation file bounding 
+                                        box to download
+  --south arg                           south extent of elevation file bounding
+                                        box to download
+  --west arg                            west extent of elevation file bounding 
+                                        box to download
+  --x_center arg                        x coordinate of center of elevation 
+                                        domain to download
+  --y_center arg                        y coordinate of center of elevation 
+                                        domain to download
+  --x_buffer arg                        x buffer of elevation domain to 
+                                        download (distance in east-west 
+                                        direction from center to edge of 
+                                        domain)
+  --y_buffer arg                        y buffer of elevation domain to 
+                                        download (distance in north-south 
+                                        direction from center to edge of 
+                                        domain)
+  --buffer_units arg (=miles)           units for x_buffer and y_buffer of  
+                                        elevation file to download (kilometers,
+                                        miles)
+  --elevation_source arg (=us_srtm)     source for downloading elevation data 
+                                        (us_srtm, world_srtm, gmted, lcp)
+  --initialization_method arg           initialization method 
+                                        (domainAverageInitialization, 
+                                        pointInitialization, 
+                                        wxModelInitialization)
+  --time_zone arg                       time zone (common choices are: 
+                                        America/New_York, America/Chicago, 
+                                        America/Denver, America/Phoenix, 
+                                        America/Los_Angeles, America/Anchorage;
+                                        use 'auto-detect' to try and find the 
+                                        time zone for the dem.  All choices are
+                                        listed in date_time_zonespec.csv)
+  --wx_model_type arg                   type of wx model to download 
+                                        (UCAR-NAM-CONUS-12-KM, 
+                                        UCAR-NAM-ALASKA-11-KM, 
+                                        UCAR-NDFD-CONUS-2.5-KM, 
+                                        UCAR-RAP-CONUS-13-KM, 
+                                        UCAR-GFS-GLOBAL-0.5-DEG, 
+                                        NOMADS-GFS-GLOBAL-0.25-DEG, 
+                                        NOMADS-HIRES-ARW-ALASKA-5-KM, 
+                                        NOMADS-HIRES-NMM-ALASKA-5-KM, 
+                                        NOMADS-HIRES-ARW-CONUS-5-KM, 
+                                        NOMADS-HIRES-NMM-CONUS-5-KM, 
+                                        NOMADS-NAM-ALASKA-11.25-KM, 
+                                        NOMADS-NAM-CONUS-12-KM, 
+                                        NOMADS-NAM-NORTH-AMERICA-32-KM, 
+                                        NOMADS-NAM-NEST-ALASKA-3-KM, 
+                                        NOMADS-NAM-NEST-CONUS-3-KM, 
+                                        NOMADS-HRRR-CONUS-3-KM, 
+                                        NOMADS-RAP-CONUS-13-KM, 
+                                        NOMADS-RAP-NORTH-AMERICA-32-KM)
+  --forecast_duration arg               forecast duration to download (in 
+                                        hours)
+  --forecast_filename arg               path/filename of an already downloaded 
+                                        wx forecast file
+  --match_points arg (=1)               match simulation to points(true, false)
+  --input_speed arg                     input wind speed
+  --input_speed_units arg               units of input wind speed (mps, mph, 
+                                        kph, kts)
+  --output_speed_units arg (=mph)       units of output wind speed (mps, mph, 
+                                        kph, kts)
+  --input_direction arg                 input wind direction
+  --uni_air_temp arg                    surface air temperature
+  --air_temp_units arg                  surface air temperature units (K, C, R,
+                                        F)
+  --uni_cloud_cover arg                 cloud cover
+  --cloud_cover_units arg               cloud cover units (fraction, percent, 
+                                        canopy_category)
+  --wx_station_filename arg             path/filename of input wx station file
+  --write_wx_station_kml arg (=0)       write a Google Earth kml file for the 
+                                        input wx stations (true, false)
+  --wx_station_kml_filename arg         filename for the Google Earth kml wx 
+                                        station output file
+  --input_wind_height arg               height of input wind speed above the 
+                                        vegetation
+  --units_input_wind_height arg         units of input wind height (ft, m)
+  --output_wind_height arg              height of output wind speed above the 
+                                        vegetation
+  --units_output_wind_height arg        units of output wind height (ft, m)
+  --vegetation arg                      dominant type of vegetation (grass, 
+                                        brush, trees)
+  --diurnal_winds arg (=0)              include diurnal winds in simulation 
+                                        (true, false)
+  --year arg                            year of simulation
+  --month arg                           month of simulation
+  --day arg                             day of simulation
+  --hour arg                            hour of simulation
+  --minute arg                          minute of simulation
+  --mesh_choice arg                     mesh resolution choice (coarse, medium,
+                                        fine)
+  --mesh_resolution arg                 mesh resolution
+  --units_mesh_resolution arg           mesh resolution units (ft, m)
+  --output_buffer_clipping arg (=0)     percent to clip buffer on output files
+  --write_wx_model_goog_output arg (=0) write a Google Earth kmz output file 
+                                        for the raw wx model forecast (true, 
+                                        false)
+  --write_goog_output arg (=0)          write a Google Earth kmz output file 
+                                        (true, false)
+  --goog_out_resolution arg (=-1)       resolution of Google Earth output file 
+                                        (-1 to use mesh resolution)
+  --units_goog_out_resolution arg (=m)  units of Google Earth resolution (ft, 
+                                        m)
+  --write_wx_model_shapefile_output arg (=0)
+                                        write a shapefile output file for the 
+                                        raw wx model forecast (true, false)
+  --write_shapefile_output arg (=0)     write a shapefile output file (true, 
+                                        false)
+  --shape_out_resolution arg (=-1)      resolution of shapefile output file (-1
+                                        to use mesh resolution)
+  --units_shape_out_resolution arg (=m) units of shapefile resolution (ft, m)
+  --write_wx_model_ascii_output arg (=0)
+                                        write ascii fire behavior output files 
+                                        for the raw wx model forecast (true, 
+                                        false)
+  --write_ascii_output arg (=0)         write ascii fire behavior output files 
+                                        (true, false)
+  --ascii_out_resolution arg (=-1)      resolution of ascii fire behavior 
+                                        output files (-1 to use mesh 
+                                        resolution)
+  --units_ascii_out_resolution arg (=m) units of ascii fire behavior output 
+                                        file resolution (ft, m)
+  --write_vtk_output arg (=0)           write VTK output file (true, false)
+  --write_farsite_atm arg (=0)          write a FARSITE atm file (true, false)
+  --write_pdf_output arg (=0)           write PDF output file (true, false)
+  --pdf_out_resolution arg (=-1)        resolution of pdf output file (-1 to 
+                                        use mesh resolution)
+  --units_pdf_out_resolution arg (=m)   units of PDF resolution (ft, m)
+  --pdf_linewidth arg (=1)              width of PDF vectors (in pixels)
+  --pdf_basemap arg (=topofire)         background image of the geospatial pdf,
+                                        default is topo map
+  --pdf_height arg                      height of geospatial pdf
+  --pdf_width arg                       width of geospatial pdf
+  --pdf_size arg (=letter)              pre-defined pdf sizes (letter, legal, 
+                                        tabloid)
+  --output_path arg                     path to where output files will be 
+                                        written
+  --non_neutral_stability arg (=0)      use non-neutral stability (true, false)
+  --alpha_stability arg                 alpha value for atmospheric stability
+  --input_points_file arg               input file containing lat,long,z for 
+                                        requested output points (z in m above 
+                                        ground)
+  --output_points_file arg              file to write containing output for 
+                                        requested points
+  --existing_case_directory arg         path to an existing OpenFOAM case 
+                                        directory
+  --momentum_flag arg (=0)              use momentum solver (true, false)
+  --number_of_iterations arg (=300)     number of iterations for momentum 
+                                        solver
+  --mesh_count arg                      number of cells in the mesh
+  --non_equilibrium_boundary_conditions arg (=1)
+                                        use non-equilibrium boundary conditions
+                                        for a momentum solver run (true, false)
+  --input_speed_grid arg                path/filename of input raster speed 
+                                        file (*.asc)
+  --input_dir_grid arg                  path/filename of input raster dir file 
+                                        (*.asc)
