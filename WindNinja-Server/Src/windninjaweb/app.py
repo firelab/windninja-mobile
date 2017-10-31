@@ -12,3 +12,11 @@ import windninjaweb.services
 
 wndb.set_Store(app.config["DATASTORE"], False)
 wnqueue.set_Queue(app.config["QUEUE"], False)
+
+# global expection logging
+import logging
+def log_exception(sender, exception, **extra):
+    logging.exception(exception)
+
+from flask import got_request_exception
+got_request_exception.connect(log_exception, app)
