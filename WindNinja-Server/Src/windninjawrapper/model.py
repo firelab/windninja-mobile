@@ -6,6 +6,25 @@ from email.mime.text import MIMEText
 from config import CONFIG
 import logging
 
+from enum import Enum
+
+#IMPORTANT: keep in sync with web versions
+
+#--------JOB--------------
+class JobStatus(Enum):
+    unknown = 0
+    new = 1
+    waiting = 2
+    executing = 3
+    succeeded = 4
+    failed = 5
+    timedout = 6
+    cancelling = 7
+    cancelled = 8
+    deleting = 9
+    deleted = 10
+
+#--------PROJECT------------
 class Project:
     def __init__(self, path):
         self.error = None
@@ -73,7 +92,6 @@ class Project:
             else:
                 raise ValueError("Job does not contain a valid domain bound box")
 
-
     def updateJob(self, status, message_tuple, write):
         
         if self.job is None:
@@ -89,17 +107,11 @@ class Project:
             logging.log(*message_tuple)
 
             #TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
-            formatted_message = "{} | {} | {}".format(datetime.now().isoformat(), logging.getLevelName(message_tuple[0]), message_tuple[1])
+            formatted_message = "{} | {} | {}".format(datetime.now().isoformat(), logging.getLevelName(message_tuple[0]).lower(), message_tuple[1])
             self.job["messages"].append(formatted_message)
 
         if self.output is not None:
             self.job["output"] = self.output
-            #if self.version >= 1.1:
-                #self.job["output"]["products"] = self.output
-            #else:
-                # products is just list
-                #self.job["output"] =  {"products": self.output.values()}
-                # raster data is list of strings: 'name:max_speed'
 
         logging.debug("Job: {}".format(self.job))
 

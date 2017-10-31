@@ -313,8 +313,8 @@ class Job ():
             "account" : self.account,
             "email" : self.email,
             "status" : self.status.name,
-            "input" : self.input.to_dict(),
-            "output" : self.output.to_dict(),
+            "input" : None if self.input is None else self.input.to_dict(),
+            "output" : None if self.output is None else self.output.to_dict(),
             "messages": list
             }
         return dict

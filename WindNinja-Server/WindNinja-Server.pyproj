@@ -5,13 +5,13 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{33e4cf46-3f72-4a4f-ab52-fdb7ac7fa242}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>Src\windninjawrapper\windninja.py</StartupFile>
+    <StartupFile>Src\runserver.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>Global|VisualStudio|Python 2.7 ArcGIS (64-bit) </InterpreterId>
+    <InterpreterId>Global|PythonCore|3.4</InterpreterId>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>WNSERVER_CONFIG=P:\USFS\WindNinja\Source\windninja-mobile-master\WindNinja-Server\Src\windninjaserver.config.yaml</Environment>
     <CommandLineArguments>1a111111-1111-1111-1111-111111111111 -p -ldebug</CommandLineArguments>
@@ -268,6 +268,7 @@
     <Content Include="Data\queue\testfiles\71c309bd-9523-4b79-90e4-685173998223.pending" />
     <Content Include="Data\queue\testfiles\937f9969-f832-4cef-99d9-425eda99160d.pending" />
     <Content Include="Data\queue\testfiles\f8db471c-f414-408b-967d-784b8b0b3e7f.pending" />
+    <Content Include="Docs\Change_Log.md" />
     <Content Include="Docs\CLI_Parameters.txt" />
     <Content Include="Docs\Default_Solver.md">
       <SubType>Code</SubType>
@@ -580,7 +581,6 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.4" />
-    <InterpreterReference Include="Global|VisualStudio|Python 2.7 ArcGIS (64-bit) " />
     <InterpreterReference Include="Global|VisualStudio|Python 2.7 ArcGIS (64-bit) " />
     <InterpreterReference Include="Global|VisualStudio|Python 2.7 ArcGIS (64-bit) " />
     <InterpreterReference Include="Global|VisualStudio|Python 2.7 ArcGIS (64-bit) " />

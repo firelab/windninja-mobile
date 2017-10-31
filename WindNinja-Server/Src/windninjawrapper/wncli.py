@@ -95,7 +95,7 @@ def process_sim_wxfiles(in_folder, out_folder, forecast_name, sim_times):
             os.rename(f, new_file)
             if (ext == ".shp"):
                 wx.append(new_name)
-    
+
     return wx
 
 def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc, wxshp):

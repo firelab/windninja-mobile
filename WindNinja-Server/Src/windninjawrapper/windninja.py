@@ -5,7 +5,7 @@ import os
 
 import logger
 from config import CONFIG
-from model import Project
+from model import Project, JobStatus
 from gis import createDem, convertShpToJson, getLayerInfo, getRasterInfo
 from wncli import execute_wncli
 from queue import dequeue
@@ -33,7 +33,7 @@ def main():
     logging.debug(str(args))
 
     project = None
-    status = "failed"
+    status = JobStatus.failed
     msg = None
 
     try: 
@@ -59,11 +59,11 @@ def main():
         if project is None or project.job is None or project.error is not None:
             logging.error("Exiting: Unable to open project file: {}".format(project.error))
             project = None
-        elif project.job["status"] != "new":
-            logging.error("Exiting: Project is not NEW: status={0}".format(project.job["status"]))
+        elif project.job["status"] != JobStatus.new.name:
+            logging.error("Exiting: Project is not NEW: status={}".format(project.job["status"]))
             project = None
         else:
-            project.updateJob("Executing", (logging.INFO, "Initializing WindNinja Run" ), True)
+            project.updateJob(JobStatus.executing.name, (logging.INFO, "Initializing WindNinja Run" ), True)
 
             # create the cli output folder
             wncli_folder = os.path.join(project_path, "wncli")
@@ -267,7 +267,7 @@ def main():
                             output["data"]["maxSpeed"][name] = wn_infos[i]["max"]
 
                     # processing complete!
-                    status = "succeeded"
+                    status = JobStatus.succeeded
                 else:
                     project.updateJob(None, (logging.ERROR, result[1]), True)
 
@@ -288,8 +288,8 @@ def main():
 
     if project is not None:
         try:        
-            msg = "Complete - total processing: {0}".format(delta)
-            project.updateJob(status, (logging.INFO, msg), True)
+            msg = "Complete - total processing: {}".format(delta)
+            project.updateJob(status.name, (logging.INFO, msg), True)
         except Exception as ex:
             logging.error("job update failed n failed:\t{}".format(str(ex)))
 
