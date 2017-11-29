@@ -244,7 +244,8 @@ def main():
 
                         #TODO: should this return a status/error
                         native_wkid = int(wn_infos.values()[0]["native_wkid"])
-                        clustered_file, breakdown = createClusters(results_folder, project.path, "wn_clustered", native_wkid, separate=False, given_max_vel=max_speed, format="json")
+                        file_format = "json"
+                        clustered_file, breakdown = createClusters(results_folder, project.path, "wn_clustered", native_wkid, separate=False, given_max_vel=max_speed, format=file_format)
                         project.updateJob(None, (logging.INFO, "Output converted to cluster"), True)
 
                         #TODO: zip file
@@ -254,7 +255,7 @@ def main():
                         output = project.output["clustered"] = {
                             "name": "WindNinja Cluster Vectors",
                             "type": "cluster",
-                            "format": "csv",
+                            "format": file_format,
                             "baseUrl": "",
                             "package": zip_name,
                             "files": clustered_file,
