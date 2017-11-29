@@ -54,7 +54,6 @@
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\20171026T1600.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\20171026T1700.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\20171026T1800.json" />
-    <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\clustered_total.csv" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\job.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\tiles.zip" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\tiles\20171026T1500\0\0\0.png" />
@@ -250,12 +249,13 @@
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wncli\results\WX_20171026T1800.prj" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wncli\results\WX_20171026T1800.shp" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wncli\results\WX_20171026T1800.shx" />
+    <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wn_clustered.zip" />
+    <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wn_clustered_total.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wn_geojson.zip" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\WX_20171026T1500.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\WX_20171026T1600.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\WX_20171026T1700.json" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\WX_20171026T1800.json" />
-    <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wx_clustered.zip" />
     <Content Include="Data\job\23becdaadf7c4ec2993497261e63d813\wx_geojson.zip" />
     <Content Include="Data\notification\281a9e40-d980-4f2d-a456-d08c37da7243.json" />
     <Content Include="Data\notification\76ff1f4e-7ff9-4f21-8ef7-1ad186b99765.json" />

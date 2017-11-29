@@ -67,10 +67,10 @@
       },
       "clustered":{
          "files":[
-            "clustered_total.csv"
+            "wn_clustered_total.json"
          ],
          "name":"WindNinja Cluster Vectors",
-         "package":"wx_clustered.zip",
+         "package":"wn_clustered.zip",
          "data":{
             "maxSpeed":{
                "20171026T1800.shp":3.071329,
@@ -87,7 +87,7 @@
                11.09
             ]
          },
-         "format":"csv",
+         "format":"json",
          "baseUrl":"",
          "type":"cluster"
       },
