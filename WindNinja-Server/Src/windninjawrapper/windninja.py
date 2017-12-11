@@ -9,8 +9,11 @@ from queue import dequeue
 from model import Project
 from utility import executeShellProcess
 from gis import createDem, convertShpToJson
-from tilegrabber import grab_tiles
-from rastertilemaker import make_tiles_for_output
+#from tilegrabber import grab_tiles
+#from rastertilemaker import make_tiles_for_output
+import convolve
+import re
+import pytz
 
 
 VERSION = "2016.05.10.1"
@@ -33,9 +36,25 @@ def executeWNCLI(project):
     cli["initialization_method"] = "domainAverageInitialization" if (project.forecast == "NONE") else "wxModelInitialization"
     cli["elevation_file"] = project.demPath
     cli["wx_model_type"] = project.forecast
-    cli["write_shapefile_output"] = "true"
-    cli["write_wx_model_shapefile_output"] = "true"
-    
+
+    #if vector or raster (is true)
+    if project.products.get("vector",False) or project.products.get("raster",False):
+        cli["write_shapefile_output"] = "true"
+    else:
+        cli["write_shapefile_output"] = "false"
+
+    # if vector or raster or clustered is true
+    if project.products.get("weather",False):
+        cli["write_wx_model_shapefile_output"] = "true"
+    else:
+        cli["write_wx_model_shapefile_output"] = "false"
+
+    # if clustered is true
+    if project.products.get("clustered",False):
+        cli["write_ascii_output"] = "true"
+    else:
+        cli["write_ascii_output"] = "false"
+
     # create the correct command line template
     if project.forecast == "NONE":
         cli_template = Template("{0} {1}".format(CONFIG.WN_CLI_PATH, CONFIG.WN_CLI_ARGS_DA))
@@ -45,6 +64,17 @@ def executeWNCLI(project):
     # execute the command
     command = cli_template.substitute(cli)
     shell_result = executeShellProcess(command, project.path)
+
+    # parse the timezone from the shell logs
+    try:
+        re_pattern = "Run \d*: Simulation time is \d*-[A-Za-z]*-\d* \d*:\d*:\d* [A-Z]{3}"
+        line = re.search(re_pattern,shell_result[1]).group()
+        timezone = line[-3:]
+    except:
+        # If we fail to parse a timezone abbreviation 
+        # use this default value instead
+        # (this value is currently mapped to MDT)
+        timezone = "NA"
 
     # process results
     if (shell_result[0]):
@@ -59,6 +89,7 @@ def executeWNCLI(project):
 
         # collect the output shapefiles
         all_shapefiles = [f for f in os.listdir(time_folder) if f.endswith(".shp")]
+        windninja_asciifiles = [f for f in os.listdir(time_folder) if f.endswith(".asc")]
        
         weather_shapefiles = []
         windninja_shapefiles = []
@@ -93,10 +124,10 @@ def executeWNCLI(project):
 
         logger.verbose("WindNinja output files: {0}".format(windninja_shapefiles))
         logger.verbose("Weather output files: {0}".format(weather_shapefiles))
-        if len(windninja_shapefiles) == 0 or len(weather_shapefiles)==0:
+        if (len(windninja_shapefiles) == 0 and len(windninja_asciifiles) == 0) or len(weather_shapefiles)==0:
             result = (False, "WindNinjaCLI did not produce outputs for the job parameters")
         else:
-            result = (True, time_folder, windninja_shapefiles, weather_shapefiles)    
+            result = (True, time_folder, windninja_shapefiles, weather_shapefiles, timezone)   
 
     else:
         # pass error result back
@@ -163,11 +194,30 @@ def main():
                     # generate the desired output products
                     project.output = {}
 
-                    # json vectors
-                    if project.products.has_key("vector") and project.products["vector"]:
-                        converted_windninja = convertShpToJson((result[1], result[2]), project.path)
+                    #json weather
+                    if project.products.get("weather",False):
                         converted_weather = convertShpToJson((result[1], result[3]), project.path)
-                        if converted_windninja[0] and converted_weather[0]:
+                        if converted_weather[0]:
+                            project.updateJob(None, ("Weather converted to geojson", logger.LOG_LEVEL.INFO), True)
+                            #TODO create zip package
+                            
+                            project.output["weather_vectores_json"] = {
+                                "name": "Weather Json Vectors",
+                                "type": "vector",
+                                "format": "json",
+                                "package": "",
+                                "files": converted_weather[1]
+                            }
+                            
+                        else:
+                            if not converted_weather[0]:
+                                project.updateJob(None, (converted_weather[1], logger.LOG_LEVEL.ERROR), True)
+
+
+                    # json vectors
+                    if project.products.get("vector",False):
+                        converted_windninja = convertShpToJson((result[1], result[2]), project.path)
+                        if converted_windninja[0]:
                             project.updateJob(None, ("Output converted to geojson", logger.LOG_LEVEL.INFO), True)
                             #TODO create zip package
                             
@@ -178,20 +228,10 @@ def main():
                                 "package": "",
                                 "files": converted_windninja[1]
                             }
-
-                            project.output["weather_vectores_json"] = {
-                                "name": "Weather Json Vectors",
-                                "type": "vector",
-                                "format": "json",
-                                "package": "",
-                                "files": converted_weather[1]
-                            }
                             
                         else:
                             if not converted_windninja[0]:
                                 project.updateJob(None, (converted_windninja[1], logger.LOG_LEVEL.ERROR), True)
-                            if not converted_weather[0]:
-                                project.updateJob(None, (converted_weather[1], logger.LOG_LEVEL.ERROR), True)
                     
                     # topofire tiles
                     #TODO: this one could be kicked off in a parrallel process as it doesn't rely on the WN output
@@ -229,6 +269,24 @@ def main():
                             name = os.path.splitext(layer)[0]
                             prd["files"].append(name)
                             prd["data"].append("{0}:{1}".format(name, info["max_speed"]))
+
+                    if project.products.has_key("clustered") and project.products["clustered"]:
+                        folder_name = "{0}-{1}".format(project.forecast, os.path.basename(project.demPath))
+                        output_folder = os.path.join(project.path, folder_name)
+                        time_folder = os.listdir(output_folder)[0]
+                        time_folder = os.path.join(output_folder, time_folder)
+                        file_name,vel_range = convolve.createClusters(time_folder,write_path=project.path,name="clustered",timezone=result[4],separate=False)
+
+                        project.output["clustered"] = {
+                            "name": "WindNinja Cluster Vectors",
+                            "type": "cluster",
+                            "format": "csv",
+                            "baseUrl": "",
+                            "package": "",
+                            "files": file_name,
+                            "data":  vel_range # rounded to 2 decimal places                            
+                        }
+
 
                     status = "succeeded"
                 else:

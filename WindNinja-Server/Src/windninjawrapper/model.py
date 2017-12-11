@@ -15,7 +15,7 @@ class Project:
         self.forecast = "NOMADS-NAM-CONUS-12-KM"
         self.parameters = "duration:12;vegetation:grass"
         self.domain = []
-        self.products = {"vector":True, "raster":False, "topofire":True, "geopdf":False}
+        self.products = {"vector":True, "raster":False, "topofire":True, "geopdf":False, "clustered": False, "weather": False}
         self.email = None
         self.output = {}
         
