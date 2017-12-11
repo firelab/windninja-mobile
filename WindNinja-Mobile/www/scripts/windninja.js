@@ -35,7 +35,8 @@ var _DEBUG = false
 	, playTimeout
 	, dataDir
 	, cacheDir
-	, serverURL = 'http://windninja.wfmrda.org/'
+	, serverURL = 'http://windninja2.wfmrda.com/'
+	, serverTZ = 'America/Denver'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,4}-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -44,10 +45,8 @@ var _DEBUG = false
 	, rasRegex = /(tiles)/
 	, guidRegex = /[\da-zA-Z]{8}-([\da-zA-Z]{4}-){3}[\da-zA-Z]{12}/
 	, demoJob = {
-		"status": "created",
-		"output": {
-			"products": []
-		},
+		"status": "new",
+		"output": {},
 		"messages": [],
 		"id": "23becdaa-df7c-4ec2-9934-97261e63d813",
 		"name": "Point Six (test)",
@@ -58,12 +57,12 @@ var _DEBUG = false
 				"ymax": 47.038565315467025,
 				"xmax": -113.97925790543299
 			},
-			"parameters": "forecast_duration:12;vegetation:trees;mesh_choice:fine",
-			"products": "vector:true;raster:true;topofire:true;geopdf:false",
+			"parameters": "forecast_duration:12;vegetation:trees",
+			"products": "vector:true;raster:false;topofire:true;geopdf:false;clustered:true;weather:true",
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.0.4';
+	, version = '1.1.0';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -71,6 +70,7 @@ $(document).on('offline', _onOffilne);
 $(document).on('online', _onOnline);
 $(document).on('pause', _onSuspend);
 $(document).on('resume', _onResume);
+$(document).on('backbutton', _onBack);
 
 // Cordova Device ready
 function _onDeviceReady() {
@@ -119,7 +119,7 @@ function _onDeviceReady() {
 						console.info('including demo run');
 					}
 					// Initialize demo run
-					dataDir.getDirectory('23becdaa-df7c-4ec2-9934-97261e63d813', { create: true, exclusive: false }, function (testDir) {
+					dataDir.getDirectory(demoJob.id, { create: true, exclusive: false }, function (testDir) {
 						testDir.getFile("job.json", { create: true, exclusive: false }, function (file) {
 							file.createWriter(function (fileWriter) {
 								var blob = new Blob([JSON.stringify(demoJob)], { type: 'application/json' });
@@ -163,6 +163,7 @@ function _onSuspend() {
 	if (_DEBUG) {
 		console.log('_onSuspend()');
 	}
+	_saveConfig(false);
 	_onOffilne();
 }
 // Phone wakes from 'sleep mode'
@@ -193,6 +194,9 @@ function _loadConfig() {
 			console.info('config loaded successfully');
 		}
 		config = configData;
+		if (!config.DisplayTZ) {
+			config.DisplayTZ = "Etc/GMT";
+		}
 	}).fail(function () {
 		if (_DEBUG) {
 			console.info('config not found or corrupt, setting defaults');
@@ -203,16 +207,18 @@ function _loadConfig() {
 			"Phone": "",
 			"Outputs": {
 				"vector": true,
-				"raster": true,
-				"topo": true,
+				"raster": false,
+				"topo": false,
 				"googl": false,
 				"geopdf": false,
+				"clustered": true,
 				"weather": true
 			},
 			"Device": device.model,
 			"Platform": device.platform,
 			"Version": device.version,
 			"DeviceId": device.uuid,
+			"DisplayTZ": "Etc/GMT",
 			"Registration": {
 				"isRegistered": false,
 				"RegistrationId": undefined,
@@ -258,6 +264,8 @@ function _saveConfig(alert) {
 	if (!config.Email)
 		config.Email = config.Registration.RegistrationId;
 
+	config.DisplayTZ = 'Etc/GMT';
+
 
 	config.Outputs = {
 		"vector": $('#vectorOutput').prop('checked'),
@@ -265,6 +273,7 @@ function _saveConfig(alert) {
 		"topo": $('#topoOutput').prop('checked'),
 		"googl": $('#googlOutput').prop('checked'),
 		"geopdf": $('#geopdfOutput').prop('checked'),
+		"clustered": true,
 		"weather": true
 	};
 	config.Device = device.model;
@@ -286,10 +295,10 @@ function _saveConfig(alert) {
 	if (_DEBUG) {
 		console.info(config);
 	}
+	var blob = new Blob([JSON.stringify(config)], { type: 'application/json' });
 
 	configDir.getFile('config.json', { create: true, exclusive: false }, function (file) {
 		file.createWriter(function (fileWriter) {
-			var blob = new Blob([JSON.stringify(config)], { type: 'application/json' });
 			fileWriter.write(blob);
 			if (alert)
 				navigator.notification.alert('Settings Saved.', null, 'Settings');
@@ -328,6 +337,8 @@ function _checkRegistration() {
 		// Not registered, show registration page
 		_showRegistrationPage();
 	}
+
+	_getMessages();
 }
 // display the registration page
 function _showRegistrationPage() {
@@ -419,8 +430,33 @@ function _registerInstall() {
 			}
 			config.Registration.isRegistered = false;
 			_saveConfig(false);
-			navigator.notification.alert('Error trying to register WindNinja Mobile. Please try again shortly.');
+			navigator.notification.alert('Error attempting to register WindNinja Mobile. Please try again shortly.');
 		}).always(_checkRegistration);
+	}
+}
+
+function _getMessages() {
+	$.ajax({
+		url: serverURL + 'api/notification',
+		method: 'GET',
+		ContentType: 'application/json'
+	}).done(function (data) {
+		console.log(data);
+		_displayMessages(data);
+	})
+}
+
+function _displayMessages(msgList) {
+	$('#messageContent').empty();
+	var list = $('<ul />');
+	$.each(msgList, function (i, m) {
+		console.log("i: " + i + ' :: m: ' + m);
+		list.append($('<li />').html(m.message));
+	});
+
+	$('#messageContent').append(list);
+	if (msgList.length > 0) {
+		$('#messages').popup('open');
 	}
 }
 // Submit feedback
@@ -601,7 +637,8 @@ function _initMap() {
 					'LAYERS': 'Last 24 hour fire detections,Last 12 hour fire detections,Current Large incidents',
 					'VERSION': '1.1.0'
 				},
-				crossOrigin: 'anonymous'
+				crossOrigin: 'anonymous',
+				projection: mapProj
 			})
 		}));
 		// VIIRS
@@ -615,7 +652,8 @@ function _initMap() {
 					'LAYERS': 'Last 24 hour fire detections,Current Large incidents',
 					'VERSION': '1.1.0'
 				},
-				crossOrigin: 'anonymous'
+				crossOrigin: 'anonymous',
+				projection: mapProj
 			})
 		}));
 		// Sketch layer
@@ -826,16 +864,16 @@ function _createRunMenuItem(index, jobJson) {
 	// parse and create the submitted and last updated dates from the messages
 	if (jobJson.messages.length > 0) {
 		try {
-			submitDate = jobJson.messages[0].split(' | ')[0];
-			updateDate = jobJson.messages[jobJson.messages.length - 1].split(' | ')[0];
+			submitDate = new moment.tz(jobJson.messages[0].split(' | ')[0], serverTZ);
+			updateDate = new moment.tz(jobJson.messages[jobJson.messages.length - 1].split(' | ')[0], serverTZ);
 		} catch (e) {
 			if (_DEBUG) {
 				console.log(e);
 			}
 		}
 	} else {
-		submitDate = Date.now();
-		updateDate = Date.now();
+		submitDate = new moment.tz(serverTZ);
+		updateDate = new moment.tz(serverTZ);
 	}
 	// create the run panel
 	var pnl = $('<div />').attr('id', jobJson.id).data('runName', jobJson.name)
@@ -845,6 +883,7 @@ function _createRunMenuItem(index, jobJson) {
 			.append(actionBtn)
 			.append(delBtn)
 		)
+		.append('<br />')
 		.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate)))
 		.append('<br />')
 		.append($('<span />').addClass('runTime').text('Updated: ' + prettyDate(updateDate)));
@@ -890,6 +929,14 @@ function initUI() {
 		transition: 'pop',
 		tolerance: 0,
 		dismissible: false,
+		history: false
+	});
+	$('#messages').popup({
+		theme: 'a',
+		positionTo: 'window',
+		transition: 'pop',
+		tolerance: 0,
+		dismissible: true,
 		history: false
 	});
 
@@ -1107,11 +1154,12 @@ function initUI() {
 	});
 	$('#run_next').on('click', function () {
 		curIndex = curIndex += 1;
-		if (curIndex >= ninjaRun.OutputLayers.length) curIndex = ninjaRun.OutputLayers.length - 1;
+		if (curIndex >= ninjaRun.OutputCount)
+			curIndex = ninjaRun.OutputCount - 1;
 		setVisible(curIndex);
 	});
 	$('#run_last').on('click', function () {
-		curIndex = ninjaRun.OutputLayers.length - 1;
+		curIndex = ninjaRun.OutputCount - 1;
 		setVisible(curIndex);
 	});
 
@@ -1145,14 +1193,12 @@ function initUI() {
 		stop: function () {
 			var index = parseInt($(this).val());
 			curIndex = index;
-			ninjaRun.SetVisible(index);
-			if (_DEBUG) {
-				console.info('slider::stop - ' + ninjaRun.VisibleLayer);
-			}
-			var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
-			if (outputLayer !== undefined) {
-				$('#runDate').text('').text(prettyDate(outputLayer.get('date').replace(/-/g, '/')));
-			}
+			if (curIndex < 0) curIndex = 0;
+			if (curIndex >= ninjaRun.OutputCount) curIndex = ninjaRun.OutputCount - 1;
+			ninjaRun.SetVisible(curIndex);
+			console.info('slider::stop - ' + ninjaRun.VisibleLayer);
+
+			$('#runDate').text('').text(prettyDate(ninjaRun.__timeframe));
 
 			$('#spinner').spin(false);
 		}
@@ -1166,6 +1212,7 @@ function initUI() {
 	$('#vectorOutput').flipswitch({ mini: true });
 	$('#rasterOutput').flipswitch({ mini: true });
 	$('#topoOutput').flipswitch({ mini: true });
+	$('#clusterOutput').flipswitch({ mini: true });
 	$('#googlOutput').prop('disabled', true).flipswitch({ mini: true, disabled: true });
 	$('#geopdfOutput').prop('disabled', true).flipswitch({ mini: true, disabled: true });
 	$('#saveSettings').button({ mini: true }).on('click', function () {
@@ -1176,6 +1223,10 @@ function initUI() {
 	$('#sbmtFeedback').button({ mini: true, disabled: true }).on('click', function () {
 		$(this).button('refresh');
 		$('#feedback-panel').popup('open');
+	});
+	$('#showMessages').button({ mini: true }).on('click', function () {
+		$(this).button('refresh');
+		_getMessages();
 	});
 	$('#help').button({ mini: true }).on('click', function () {
 		$(this).button('refresh');
@@ -1225,6 +1276,25 @@ function initUI() {
 	$(window).on('resize', setmapsize);
 	setmapsize();
 }
+// When the back button is pressed (android)
+function _onBack(evt) {
+	console.debug('back button pressed: ', evt);
+	evt.stopPropagation();
+	evt.preventDefault();
+
+	//if anything is open, close it. otherwise exit the app
+	if ($('#pnl_Settings').hasClass('ui-panel-open')) {
+		$('#pnl_Settings').panel('close');
+	} else if ($('#pnl_Runs').hasClass('ui-panel-open')) {
+		$('#pnl_Runs').panel('close');
+	} else if ($('#pnl_layers').hasClass('ui-panel-open')) {
+		$('#pnl_layers').panel('close');
+	} else if ($('#pnl_run-opts').hasClass('ui-panel-open')) {
+		$('#pnl_run-opts').panel('close');
+	} else {
+		navigator.app.exitApp();
+	}
+}
 // Toggle the text/functionality of the 'Action' button for a run
 function toggleActionButton(id, status) {
 	var btn = $('#' + id + ' .actionBtn');
@@ -1250,7 +1320,6 @@ function toggleActionButton(id, status) {
 				$('#pnl_Runs').panel('close');
 				$('#spinner').spin('windninja');
 				toggleActionButton($(this).data('runId'), 'loaded');
-				//loadRun('raster');
 				loadRun($('#output').val());
 			});
 			break;
@@ -1277,12 +1346,22 @@ function toggleActionButton(id, status) {
 
 	btn.button('refresh');
 }
+
+function enableActionButton(id) {
+	var btn = $('#' + id + ' .actionBtn');
+	btn.button('enable').button('refresh');
+}
+
+function disableActionButton(id) {
+	var btn = $('#' + id + ' .actionBtn');
+	btn.button('disable').button('refresh');
+}
 // 'Play' the ninja run
 function play() {
 	setVisible(curIndex);
 	playTimeout = setTimeout(function () {
 		curIndex += 1;
-		if (curIndex >= ninjaRun.OutputLayers.length) {
+		if (curIndex >= ninjaRun.OutputCount) {
 			curIndex = 0;
 		}
 		play();
@@ -1291,11 +1370,9 @@ function play() {
 // set the proper layer visible and update UI
 function setVisible(index) {
 	ninjaRun.SetVisible(index);
-	var outputLayer = ninjaRun.OutputLayers[ninjaRun.VisibleLayer];
-	if (outputLayer !== undefined) {
-		$('#runDate').text('').text(prettyDate(outputLayer.get('date').replace(/-/g, '/')));
-	}
+	$('#runDate').text('').text(prettyDate(ninjaRun.__timeframe));
 	$('#timeSlider').val(index).slider('refresh');
+	$('#spinner').spin(false);
 }
 // Set map element size
 function setmapsize() {
@@ -1307,7 +1384,7 @@ function setmapsize() {
 	var helpFoot = $('#helpFooter').outerHeight(); // outer most height of the 'help' footer
 
 	// map should only be between the bottom of the header to the top of the footer
-	var mapHeight = scrnHeight - headHeight - footHeight + 2;
+	var mapHeight = scrnHeight - headHeight - footHeight + 7;
 	// panels should not scroll over the header, but covering the footer is OK
 	var panelHeight = scrnHeight - headHeight - $(1.5).toPx();
 	// 0.5em buffer on the top and bottom of the 'help' dialog/popup (so it still looks like a dialog box)
@@ -1317,12 +1394,12 @@ function setmapsize() {
 
 	$('#map').css({ 'min-height': mapHeight, 'max-height': mapHeight });
 	$('[data-role="page"]').css({ 'min-height': mapHeight, 'max-height': mapHeight, 'overflow': 'hidden' });
-	$('#menuContent').height(panelHeight);
-	$('#requestContent').height(panelHeight);
-	$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
-	$('#settingsContent').height(panelHeight);
-	$('#helpContent').css({ 'max-height': helpHeight + 'px' });
-	$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px', 'top': 1 + 'em' });
+	//$('#menuContent').height(panelHeight);
+	//$('#requestContent').height(panelHeight);
+	//$('#pnl_Settings').css({ 'max-height': scrnHeight + 'px' });
+	//$('#settingsContent').height(panelHeight);
+	//$('#helpContent').css({ 'max-height': helpHeight + 'px' });
+	//$('#feedback-panel-popup').css({ 'max-height': popupHeight + 'px', 'top': 1 + 'em' });
 	$('#registration-popup').css({ 'max-height': scrnHeight, 'height': scrnHeight });
 	//if (!isIOS7) {
 	//	$('#feedback-panel').top(0.5 + 'em');
@@ -1354,9 +1431,6 @@ function initRun(id, name) {
 		console.info('initRun()');
 	}
 	if (guidRegex.test(id)) {
-		//$('#displayType').empty();
-		//$('#loadRun').button('disable').prop('disabled', true);
-		//$('#removeRun').button('disable').prop('disabled', true);
 		$('#timeSlider').attr({ 'min': 0, 'max': 0, 'value': 0 });
 		curIndex = 0;
 
@@ -1365,6 +1439,7 @@ function initRun(id, name) {
 
 		ninjaRun.InitRun().done(function () {
 			this.LoadForecasts = $('#btn_weather').parent().hasClass('ui-btn-on');
+			enableActionButton(this.ID);
 		});
 	}
 }
@@ -1427,16 +1502,16 @@ function _checkStatus(id) {
 
 					if (job.messages.length > 0) {
 						try {
-							submitDate = job.messages[0].split(' | ')[0];
-							updateDate = job.messages[job.messages.length - 1].split(' | ')[0];
+							submitDate = new moment.tz(job.messages[0].split(' | ')[0], serverTZ);
+							updateDate = new moment.tz(job.messages[job.messages.length - 1].split(' | ')[0], serverTZ);
 						} catch (e) {
 							if (_DEBUG) {
 								console.log(e);
 							}
 						}
 					} else {
-						submitDate = Date.now();
-						updateDate = Date.now();
+						submitDate = moment.tz(serverTZ);
+						updateDate = moment.tz(serverTZ);
 					}
 
 					$(submit).text('Submitted: ' + prettyDate(submitDate));
@@ -1499,6 +1574,7 @@ function submitJob() {
 			topo: false,
 			googl: false,
 			geopdf: false,
+			clustered: true,
 			weather: true
 		};
 		for (var type in config.Outputs) {
@@ -1516,7 +1592,6 @@ function submitJob() {
 				notify = config.Phone;
 		}
 
-		var mesh = 'fine';
 		var params = {
 			'account': config.Registration.RegistrationId,
 			'xmin': xmin,
@@ -1524,9 +1599,9 @@ function submitJob() {
 			'xmax': xmax,
 			'ymax': ymax,
 			'forecast': source,
-			'parameters': 'forecast_duration:' + dur + ';vegetation:' + veg + ';mesh_choice:' + mesh,
+			'parameters': 'forecast_duration:' + dur + ';vegetation:' + veg,
 			'name': name,
-			'products': 'vector:' + true + ';raster:' + outputs.raster + ';topofire:' + outputs.topo + ';geopdf:' + outputs.geopdf + ';weather:' + outputs.weather
+			'products': 'vector:' + outputs.vector + ';raster:false;topofire:' + outputs.topo + ';geopdf:' + outputs.geopdf + ';clustered:' + outputs.clustered + ';weather:' + outputs.weather
 		};
 		if (notify) {
 			params['email'] = notify;
@@ -1592,27 +1667,40 @@ function _onDownloadReady(results, id) {
 	if (_DEBUG) {
 		console.log(results);
 	}
-	var downloadSize = results.output.products.length || 0
-	, files = 0
-	, done = 0
-	, outputs = [];
+	var files = 0
+		, done = 0
+		, outputs = []
+		, prod = results.input.products.split(';')
+		, prods = [];
+
 	$('#loader').popup('open', { positionTo: 'window', transition: 'pop' });
 	$('#productLabel').text('Files: 0/..');
 	$('#productProgress').progressbar({ value: 0 });
+	disableActionButton(id);
 	downloading = true;
 
-	$.each(results.output.products, function (i, p) {
-		files += p.files.length;
-		$('#productLabel').text('Files: ' + done + '/' + files);
-		$('#productProgress').progressbar({ max: files });
+	$.each(prod, function (i, p) {
+		var pr = p.split(':');
+		if (pr[1] === 'true')
+			prods.push(pr[0]);
+	});
+
+	files = prods.length;
+	$('#productLabel').text('Files: ' + done + '/' + files);
+	$('#productProgress').progressbar({ max: files });
+
+	$.each(prods, function (i, p) {
+		var product = results.output[p];
 		var def = $.Deferred();
 		outputs.push(def.promise());
-		downloadProduct(id, p).progress(function () {
+		downloadProduct(id, product).progress(function () {
 			done++;
 			$('#productLabel').text('Files: ' + done + '/' + files);
 			$('#productProgress').progressbar({ value: done });
 		}).done(function () {
 			def.resolve();
+		}).fail(function () {
+			def.reject();
 		});
 	});
 
@@ -1641,16 +1729,16 @@ function _onDownloadReady(results, id) {
 
 		if (results.messages.length > 0) {
 			try {
-				submitDate = results.messages[0].split(' | ')[0];
-				updateDate = results.messages[results.messages.length - 1].split(' | ')[0];
+				submitDate = new moment.tz(results.messages[0].split(' | ')[0], serverTZ);
+				updateDate = new moment.tz(results.messages[results.messages.length - 1].split(' | ')[0], serverTZ);
 			} catch (e) {
 				if (_DEBUG) {
 					console.log(e);
 				}
 			}
 		} else {
-			submitDate = Date.now();
-			updateDate = Date.now();
+			submitDate = new moment.tz(serverTZ);
+			updateDate = new moment.tz(serverTZ);
 		}
 
 		$(submit).text('Submitted: ' + prettyDate(submitDate));
@@ -1659,88 +1747,42 @@ function _onDownloadReady(results, id) {
 		toggleActionButton(results.id, 'downloaded');
 
 		initRun(results.id, results.name);
+	}).always(function () {
 		$('#loader').popup('close');
 	});
 }
 // Download a specific Product (Vectors, Rasters, etc.) and place it in the appropriate location
 function downloadProduct(id, product) {
 	var deferred = $.Deferred()
-	, URL = product.baseUrl
-	, DIR = dataDir.toURL() + id;
+		, URL = product.baseurl ? product.baseurl + product.package : serverURL + 'output/' + id + '/' + product.package
+		, DIR = dataDir.toURL() + id;
 
-	// There is a package for this product, download it instead of each individual file (or folder)
-	if (product.package !== '') {
-		var fileTransfer = new FileTransfer();
+	var fileTransfer = new FileTransfer()
+		, pkgDir = DIR + '/' + product.package
+		, pkgLocation;
 
-		fileTransfer.download(URL + product.package, DIR + '/' + product.package, function (entry) {
-			deferred.notify();
-			if (product.type === 'basemap') {
-				var name = product.name.split(' Basemap')[0];
-				zip.unzip(DIR + '/' + product.package, cacheDir.toURL() + name + '/', function (s) {
-					if (s === 0) {
-						if (_DEBUG) {
-							console.log('Basemap package extracted successfully to /' + name);
-						}
-					} else {
-						if (_DEBUG) {
-							console.log('Failed to extract basemap package.');
-						}
-					}
-
-					deferred.resolve();
-				});
-			} else if (product.type === 'raster') {
-				zip.unzip(DIR + '/' + product.package, DIR + '/tiles/', function (s) {
-					if (s === 0) {
-						if (_DEBUG) {
-							console.log('Raster package: ' + product.package + ' extracted successfully to ' + DIR + '/tiles/');
-						}
-					} else {
-						if (_DEBUG) {
-							console.log('Failed to extract raster package ' + product.package);
-						}
-					}
-
-					deferred.resolve();
-				});
-			}
-		});
-	} else { // Download the individual file(s)
-		var defs = [];
-
-		$.each(product.files, function (i, f) {
-			var def = $.Deferred()
-			, fileTransfer = new FileTransfer();
-			defs.push(def.promise());
-			$.ajax({
-				url: URL + f,
-				method: 'GET',
-				cache: false
-			}).done(function (data) {
-				if (_DEBUG) {
-					console.log(f + ' downloaded');
-				}
-				dataDir.getDirectory(id, { create: false, exclusive: false }, function (dir) {
-					dir.getFile(f, { create: true, exclusive: false }, function (file) {
-						file.createWriter(function (fileWriter) {
-							if (_DEBUG) {
-								console.log('writing ' + f + ' to file');
-							}
-							var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-							fileWriter.write(blob);
-							deferred.notify();
-							def.resolve();
-						});
-					});
-				});
-			});
-		});
-
-		$.when.apply($, defs).done(function () {
-			deferred.resolve();
-		});
+	if (product.type === 'basemap') {
+		pkgLocation = cacheDir.toURL() + product.name.split(' Basemap')[0] + '/';
+	} else if (product.type === 'raster') {
+		pkgLocation = DIR + '/tiles/';
+	} else {
+		pkgLocation = DIR;
 	}
 
+	fileTransfer.download(URL, pkgDir, function (entry) {
+		deferred.notify();
+		zip.unzip(pkgDir, pkgLocation, function (s) {
+			if (s === 0) {
+				if (_DEBUG)
+					console.log('Package extracted successfully to: ' + pkgLocation);
+				deferred.resolve();
+			} else {
+				if (_DEBUG)
+					console.warn('Failed to extract package: ' + product.package);
+				deferred.reject();
+			}
+		});
+	});
 	return deferred.promise();
 }
 // Load a WindNinja run (create layers)
@@ -1768,9 +1810,11 @@ function loadRun(displayType) {
 		$('#spinner').spin(false);
 		$('#tbl_Date').show();
 
-		var count = this.OutputLayers.length;
+		var count = this.OutputCount;
 		$('#timeSlider').attr({ 'min': 0, 'max': count - 1 }).val(0).slider('refresh');
-		$('#runDate').text(prettyDate(this.OutputLayers[this.VisibleLayer].get('date').replace(/-/g, '/')));
+
+		$('#runDate').text(prettyDate(this.__timeframe));
+
 		$('#btn_run-opts').button('enable');
 		updateLegend();
 
@@ -1839,7 +1883,7 @@ function _onGPSOn() {
 		//Zoom to our location
 		mapView.setCenter(point.getCoordinates());
 		//mapView.setZoom(10);
-	}, fail, { enableHighAccuracy: true });
+	}, fail);
 }
 // Stop GPS watch
 function _onGPSOff() {
@@ -1849,23 +1893,10 @@ function _onGPSOff() {
 // Return a 'pretty' formatted date string for display
 function prettyDate(date) {
 	// Returns date in format MM/DD/YYYY, HH:MM:SS
-	var dt,
-		tz;
-
-	if (date instanceof Date)
-		dt = date;
+	if (date.constructor === moment)
+		return date.tz(config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
 	else
-		dt = new Date(date);
-
-	tz = dt.toTimeString().match(/(\([\s\S]+\))$/)[0].split(' ');
-	if (tz.length > 1) {
-		tz = '(' + tz[0].substring(1, 2) + tz[1].substring(0, 1) + tz[2].substring(0, 1) + ')';
-	}
-	else {
-		tz = tz[0];
-	}
-
-	return dt.getMonth() + 1 + '/' + dt.getDate() + '/' + dt.getFullYear() + ', ' + dt.getHours() + ':' + dt.getMinutes().toString().padLeft(2) + ' ' + tz;
+		return new moment.tz(date, config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
 }
 
 //
@@ -1877,11 +1908,9 @@ function WindNinjaRun(id, name) {
 		if (_DEBUG) {
 			console.log('InitRun()');
 		}
-		var fileParts
-		, min
-		, hour
-		, file
-		, date;
+		var file
+			, date
+			, self = this;
 
 		// AJAX load job file
 		return $.ajax({
@@ -1890,52 +1919,87 @@ function WindNinjaRun(id, name) {
 			cache: false,
 			context: this
 		}).done(function (job) {
-			// Output Products
-			for (var i = 0; i < job.output.products.length; i++) {
-				var product = job.output.products[i]
-				, isOutput;
+			var prod = job.input.products.split(';')
+				, prods = []
+				, self = this;
 
-				if (product.type === 'basemap')
-					continue;
+			$.each(prod, function (i, p) {
+				var pr = p.split(':');
+				if (pr[1] === 'true')
+					prods.push(pr[0]);
+			});
 
-				if (product.name.toLowerCase().indexOf('weather') !== -1)
-					isOutput = false;
-				else if (product.name.toLowerCase().indexOf('windninja') !== -1)
-					isOutput = true;
-				else
-					continue;
+			switch (job.status.toLowerCase()) {
+				default:
+				case 'created':
+				case 'submitted':
+				case 'executing':
+				case 'failed':
+					break;
+				case 'downloaded':
+				case 'succeeded':
+				case 'loaded':
+					if (job.output.products) {
+						//old run, needs to be removed
+						navigator.notification.confirm('This run is invalid (old), would you like to remove it from your device?', function (btnIndex) {
+							if (btnIndex === 1) {
+								deleteEvent(job.id, job.name).then(function () {
+									return $.Deferred().reject(new Error('Invalid run, removed'));
+								});
+							}
+							else {
+								toggleActionButton(job.id, 'failed');
+								return $.Deferred().reject(new Error('Invalid run, not removed'));
+							}
+						}, 'Invalid Windninja Run', ['Remove', 'Cancel']);
+					}
 
-				// Product Files
-				var len = product.files.length;
-				for (var j = 0; j < len; j++) {
-					var f = product.files[j];
-					if (isOutput)
-						fileParts = f.split('.json')[0].split(oRegex);
-					else
-						fileParts = f.split('.json')[0].split(fRegex);
+					// set time series
+					this.TimeSteps = job.output.simulations.times.sort();
+					$.each(this.TimeSteps, function (i, t) {
+						self.TimeSteps[i] += job.output.simulations.utcOffset;
+					});
 
-					min = fileParts[3].slice(-2);
-					hour = fileParts[3].slice(-4, -2);
-					date = fileParts[2].split('-');
-					date = date[2] + '-' + date[0] + '-' + date[1] + ' ' + hour + ':' + min + ':00';
-					file = new this.resultFile(f, date);
-					file.Type = product.type;
+					//create our file list
+					$.each(job.output, function (outputType, product) {
+						if (prods.indexOf(outputType) === -1 || !product || product.type === 'basemap')
+							return true;
 
-					if (!this.Outputs[file.Type])
-						this.Outputs[file.Type] = [];
-					if (!this.Forecasts[file.Type])
-						this.Forecasts[file.Type] = [];
+						var isOutput = false;
 
-					if (product.data)
-						file.Data = product.data[j];
+						if (outputType !== 'weather' && product.name.toLowerCase().indexOf('windninja') !== -1)
+							isOutput = true;
 
-					if (isOutput)
-						this.Outputs[file.Type].push(file);
-					else
-						this.Forecasts[file.Type].push(file);
-				}
+						$.each(product.files, function (i, f) {
+							if (product.type === 'cluster') {
+								file = new self.resultFile(f, null);
+							} else {
+								if (!isOutput)
+									date = f.split('.json')[0].slice(3) + job.output.simulations.utcOffset;
+								else
+									date = f.split('.json')[0] + job.output.simulations.utcOffset;
+								file = new self.resultFile(f, date);
+							}
+
+							file.Type = product.type;
+							file.Data = product.data;
+
+							if (isOutput) {
+								if (!self.Outputs[file.Type])
+									self.Outputs[file.Type] = [];
+								self.Outputs[file.Type].push(file);
+							}
+							else {
+								if (!self.Forecasts[file.Type])
+									self.Forecasts[file.Type] = [];
+								self.Forecasts[file.Type].push(file);
+							}
+						});
+					});
+
+					this.__sortFiles();
+					break;
 			}
-			this.__sortFiles();
 
 			// Domain
 			var extent = [
@@ -1946,7 +2010,7 @@ function WindNinjaRun(id, name) {
 			];
 			this.Extent = ol.proj.transformExtent(extent, latLonProj, mapProj);
 		}).fail(function (err) {
-			this.__fail(new Error(err).stack);
+			self.__fail(new Error(err).stack);
 		});
 	};
 	this.LoadRun = function (displayType) {
@@ -1957,11 +2021,12 @@ function WindNinjaRun(id, name) {
 		}
 		this.__resetLayers();
 		var deferred = $.Deferred()
-		, self = this
-		, count = 0;
+			, self = this
+			, count = this.TimeSteps.length;
 
 		if (this.Outputs.hasOwnProperty(displayType)) {
-			count = this.Outputs[displayType].length;
+			this.MaxSpeed = this.Outputs[displayType][0].Data.maxSpeed.overall;
+			this.DisplayType = displayType;
 		}
 
 		//always create vector forecast layers
@@ -2004,6 +2069,10 @@ function WindNinjaRun(id, name) {
 				map.removeLayer(l);
 			});
 		});
+		if (this.displayType === 'cluster') {
+			mapView.un('change:resolution');
+		}
+		this.OutputCount = 0;
 		this._isLoaded = false;
 	};
 	this.SetVisible = function (index) {
@@ -2017,8 +2086,24 @@ function WindNinjaRun(id, name) {
 
 WindNinjaRun.prototype = {
 	__verbose: false
-	, __clusterDistance: 12
+	, __clusterDistance: 15
 	, __dir: ''
+	, __timeframe: null
+	, __styleCache: {}
+	, __resCache: []
+	, __featCache: {}
+	, __forecastCache: []
+	, __colorCache: {
+		'1': 'rgba(0,0,255,1)',
+		'2': 'rgba(0,255,0,1)',
+		'3': 'rgba(255,255,0,1)',
+		'4': 'rgba(255,165,0,1)',
+		'5': 'rgba(255,0,0,1)'
+	}
+	, __stroke: new ol.style.Stroke({ color: 'rgba(255,255,255,1)', width: 2 })
+	, __style: new ol.style.Style()
+	, __symbolGeom: new ol.geom.MultiLineString([[[7, 14], [7, 0], [4, 4]], [[7, 0], [10, 4]]])
+	, __source: null
 
 	, __init: function (id, name) {
 		if (this.__verbose)
@@ -2032,17 +2117,26 @@ WindNinjaRun.prototype = {
 		this.OutputLayers = [];
 		this.Forecasts = {};
 		this.Outputs = {};
+		this.TimeSteps = [];
+		this.OutputCount = 0;
 		this.VisibleLayer = 0;
 		this.RunSpeeds = [];
 		this.MaxSpeed = 0.00;
+		this.__style.setStroke(this.__stroke);
 		this.Extent = null;
 	}
 	, __resetLayers: function () {
 		this.ForecastLayers.length = 0;
 		this.OutputLayers.length = 0;
 		this.VisibleLayer = 0;
+		this.OutputCount = 0;
 		this.RunSpeeds.length = 0;
 		this.MaxSpeed = 0.00;
+		this.DisplayType = '';
+		this.__styleCache = {};
+		this.__resCache.length = 0;
+		this.__featCache = {};
+		this.__forecastCache.length = 0;
 	}
 	, __fail: function (err) {
 		console.error('__fail :: ', err.stack);
@@ -2068,11 +2162,11 @@ WindNinjaRun.prototype = {
 		}
 
 		var deferred = $.Deferred()
-		, self = this
-		, defs = []
-		, items = 0
-		, fileList
-		, dataType;
+			, self = this
+			, defs = []
+			, items = 0
+			, fileList
+			, dataType;
 
 		if (this.Forecasts.hasOwnProperty(displayType)) {
 			fileList = this.Forecasts[displayType];
@@ -2107,15 +2201,6 @@ WindNinjaRun.prototype = {
 							deferred.notifyWith(self, [items]);
 						});
 					}));
-				} else {
-					var def = $.Deferred();
-					defs.push(def.promise());
-					this.__makeLayer(displayType, file.Data + ':true', file.Date).done(function (layer) {
-						this.ForecastLayers.push(layer);
-						items++;
-						deferred.notifyWith(this, [items]);
-						def.resolveWith(this);
-					});
 				}
 			}
 
@@ -2136,11 +2221,11 @@ WindNinjaRun.prototype = {
 		}
 
 		var deferred = $.Deferred()
-		, self = this
-		, defs = []
-		, items = 0
-		, fileList
-		, dataType;
+			, self = this
+			, defs = []
+			, items = 0
+			, fileList
+			, dataType;
 
 		if (this.Outputs.hasOwnProperty(displayType)) {
 			fileList = this.Outputs[displayType];
@@ -2149,11 +2234,14 @@ WindNinjaRun.prototype = {
 				case 'vector':
 					dataType = 'json';
 					break;
+				case 'cluster':
+					dataType = 'json';
+					break;
 				case 'raster':
 					dataType = 'dir';
 					break;
 				case 'google':
-					dataType = 'xml';
+					dataType = 'dir';
 					break;
 			}
 
@@ -2162,25 +2250,27 @@ WindNinjaRun.prototype = {
 			for (var i = 0; i < fileList.length; i++) {
 				var file = fileList[i];
 				if (dataType !== 'dir') {
+					var url = this.BaseURL + file.Name;
 					defs.push($.ajax({
-						url: this.BaseURL + file.Name,
+						url: url,
+						type: 'GET',
 						dataType: dataType,
-						cache: false,
+						isLocal: true,
 						context: file
 					}).done(function (data) {
+						console.debug(data);
 						self.__makeLayer(displayType, data, this.Date).done(function (layer) {
-							if (items === self.VisibleLayer) {
-								self.RunSpeeds = layer.get('speeds');
-							}
 							self.OutputLayers.push(layer);
 							items++;
 							deferred.notifyWith(self, [items]);
 						});
+					}).fail(function (data, var1, var2) {
+						deferred.reject();
 					}));
 				} else {
 					var def = $.Deferred();
 					defs.push(def.promise());
-					this.__makeLayer(displayType, file.Data + ':false', file.Date).done(function (layer) {
+					this.__makeLayer(displayType, file.Data, file.Date).done(function (layer) {
 						this.OutputLayers.push(layer);
 						items++;
 						deferred.notifyWith(this, [items]);
@@ -2193,6 +2283,9 @@ WindNinjaRun.prototype = {
 				if (self.__verbose)
 					console.timeEnd('load output layers');
 				self.OutputLayers.sort(self.layerSort);
+				if (self.DisplayType !== 'cluster') {
+					self.OutputCount = self.OutputLayers.length;
+				}
 				self.RunSpeeds = self.__getSpdRanges(self.MaxSpeed);
 				deferred.resolveWith(self);
 			});
@@ -2213,9 +2306,10 @@ WindNinjaRun.prototype = {
 				console.time('creating source');
 			}
 
-			var source = new ol.source.KML({
-				doc: data,
-				projection: mapProj
+			var source = new ol.source.Vector({
+				url: this.BaseURL + data + '.kml',
+				projection: mapProj,
+				format: new ol.format.KML()
 			});
 
 			if (this.__verbose) {
@@ -2228,7 +2322,7 @@ WindNinjaRun.prototype = {
 				visible: false
 			});
 
-			layer.set('type', 'KML');
+			//layer.set('type', 'KML');
 			layer.set('date', date);
 
 			if (this.__verbose) {
@@ -2239,24 +2333,14 @@ WindNinjaRun.prototype = {
 			deferred.resolveWith(this, [layer]);
 		}, this);
 		var __RasterLayer = $.proxy(function () {
-			var ranges = []
-			, name = data.split(':')[0]
-			, speed = parseFloat(data.split(':')[1])
-			, isForecast = data.split(':')[2] === 'true';
-
 			if (this.__verbose) {
 				console.groupCollapsed('Raster');
-			}
-
-			this.MaxSpeed = speed > this.MaxSpeed ? speed : this.MaxSpeed;
-
-			if (this.__verbose) {
 				console.time('creating source');
 			}
 
 			var source = new ol.source.XYZ({
 				maxZoom: 17,
-				url: this.BaseURL + 'tiles/' + name + '/{z}/{x}/{y}.png'
+				url: this.BaseURL + 'tiles/' + data + '/{z}/{x}/{y}.png'
 			});
 
 			if (this.__verbose) {
@@ -2271,7 +2355,7 @@ WindNinjaRun.prototype = {
 				preload: Infinity
 			});
 
-			layer.set('type', 'Raster');
+			//layer.set('type', 'Raster');
 			layer.set('date', date);
 
 			if (this.__verbose) {
@@ -2282,24 +2366,16 @@ WindNinjaRun.prototype = {
 			deferred.resolveWith(this, [layer]);
 		}, this);
 		var __ImageVectorLayer = $.proxy(function () {
-			var size = data.features.length;
-			var newSize = 0;
-			var self = this;
-
 			if (this.__verbose) {
 				console.groupCollapsed('ImageVector');
 				console.time('max speed calculation');
 			}
 
-			data.features = $.grep(data.features, function (feat, i) {
-				if (feat.properties.speed <= 0.00) {
-					return false;
-				}
-
-				var speed = feat.properties.speed;
-				self.MaxSpeed = speed > self.MaxSpeed ? speed : self.MaxSpeed;
-				return true;
-			});
+			//data.features = $.grep(data.features, function (feat, i) {
+			//	if (feat.properties.speed <= 0.00)
+			//		return false;
+			//	return true;
+			//});
 
 			if (this.__verbose) {
 				console.timeEnd('max speed calculation');
@@ -2325,7 +2401,7 @@ WindNinjaRun.prototype = {
 				visible: false
 			});
 
-			layer.set('type', 'ImageVector');
+			//layer.set('type', 'ImageVector');
 			layer.set('date', date);
 
 			if (this.__verbose) {
@@ -2336,27 +2412,17 @@ WindNinjaRun.prototype = {
 			deferred.resolveWith(this, [layer]);
 		}, this);
 		var __ClusterImageVectorLayer = $.proxy(function () {
-			var size = data.features.length;
-			var newSize = 0;
-			var self = this;
-
 			if (this.__verbose) {
 				console.groupCollapsed('ClusterImageVector');
-				console.time('max speed calculation');
 			}
 
-			data.features = $.grep(data.features, function (feat, i) {
-				if (feat.properties.speed < 0) {
-					return false;
-				}
-
-				var speed = feat.properties.speed;
-				self.MaxSpeed = speed > self.MaxSpeed ? speed : self.MaxSpeed;
-				return true;
-			});
+			//data.features = $.grep(data.features, function (feat, i) {
+			//	if (feat.properties.speed < 0)
+			//		return false;
+			//	return true;
+			//});
 
 			if (this.__verbose) {
-				console.timeEnd('max speed calculation');
 				console.time('creating source');
 			}
 
@@ -2383,8 +2449,92 @@ WindNinjaRun.prototype = {
 				visible: false
 			});
 
-			layer.set('type', 'ClusterImageVector');
+			//layer.set('type', 'ClusterImageVector');
 			layer.set('date', date);
+
+			if (this.__verbose) {
+				console.timeEnd('creating layer');
+				console.groupEnd();
+				console.timeEnd('total');
+			}
+			deferred.resolveWith(this, [layer]);
+		}, this);
+		var __CanvasVectorLayer = $.proxy(function () {
+			var lines = data.data
+				, v, lv, feats, attr = data.header
+				, i, li = lines.length
+				, a, la = attr.length, col
+				, val, pnt, feat, res
+				, ts, speed, dt;
+
+			if (this.__verbose) {
+				console.groupCollapsed('CanvasVector');
+				console.time('creating source');
+			}
+
+			for (a = 0; a < la; a++) {
+				col = attr[a];
+				if (col.startsWith('vel_')) {
+					this.__forecastCache.push(col.slice(4));
+				}
+			}
+
+			this.__forecastCache.sort();
+			this.__timeframe = this.__forecastCache[0];
+			this.OutputCount = this.__forecastCache.length;
+
+			for (i = 0; i < li; i++) {
+				val = lines[i]
+					, lv = val.length;
+				if (lv !== la)
+					continue;
+
+				res = val[0]
+					, feats = this.__featCache[res];
+
+				if (!feats) {
+					this.__resCache.push(res);
+					feats = this.__featCache[res] = new ol.source.Vector();
+				}
+
+				pnt = new ol.geom.Point([Number(val[1]), Number(val[2])]);
+
+				feat = new ol.Feature(pnt);
+				feat.setId(i);
+
+				for (v = 3; v < lv; v++) {
+					feat.set(attr[v], val[v]);
+				}
+
+				feat.setStyle(this.__clusterStyle(feat, this));
+
+				feats.addFeature(feat);
+			}
+
+			this.__source = new ol.source.Vector({
+				projection: mapProj,
+				loader: $.proxy(this.__clusterLoader, this),
+				strategy: ol.loadingstrategy.bbox
+			});
+
+			if (this.__verbose) {
+				console.timeEnd('creating source');
+				console.time('creating layer');
+			}
+
+			var source = new ol.source.ImageVector({
+				source: this.__source
+			});
+
+			var layer = new ol.layer.Image({
+				source: source,
+				visible: true
+			});
+			//layer.set('type', 'CanvasVector');
+
+			mapView.on('change:resolution', $.proxy(function () {
+				this.__source.clear();
+			}, this));
 
 			if (this.__verbose) {
 				console.timeEnd('creating layer');
@@ -2407,6 +2557,9 @@ WindNinjaRun.prototype = {
 			case 'raster':
 				__RasterLayer();
 				break;
+			case 'cluster':
+				__CanvasVectorLayer();
+				break;
 		}
 
 		if (this.__verbose) {
@@ -2419,21 +2572,54 @@ WindNinjaRun.prototype = {
 		if (this.__verbose)
 			console.info('setting visible layer to index: ' + this.VisibleLayer);
 
-		for (var i = 0; i < this.OutputLayers.length; i++) {
-			var layer = this.OutputLayers[i];
-			var forecast = this.ForecastLayers[i];
+		if (this.DisplayType === 'cluster') {
+			this.__timeframe = this.TimeSteps[index];
+			var r = 0, rl = this.__resCache.length
+				, res, src, feats, f, fl, feat;
 
-			if (layer) {
-				if (i === index)
-					layer.setVisible(true);
-				else
-					layer.setVisible(false);
+			for (r = 0; r < rl; r++) {
+				src = this.__featCache[this.__resCache[r]];
+				feats = src.getFeatures();
+				fl = feats.length;
+
+				for (f = 0; f < fl; f++) {
+					feat = feats[f];
+					feat.setStyle(this.__clusterStyle(feat, this));
+				}
 			}
-			if (forecast) {
-				if (i === index && this.LoadForecasts)
-					forecast.setVisible(true);
-				else
-					forecast.setVisible(false);
+
+			this.__source.resolution = null;
+			this.__source.clear(true);
+
+			for (var i = 0; i < this.OutputCount; i++) {
+				f = this.ForecastLayers[i];
+				if (f) {
+					if (i === index && this.LoadForecasts)
+						f.setVisible(true);
+					else
+						f.setVisible(false);
+				}
+			}
+		}
+		else {
+			for (i = 0; i < this.OutputCount; i++) {
+				var layer = this.OutputLayers[i];
+				var forecast = this.ForecastLayers[i];
+
+				if (layer) {
+					if (i === index) {
+						this.__timeframe = this.TimeSteps[index];
+						layer.setVisible(true);
+					}
+					else
+						layer.setVisible(false);
+				}
+				if (forecast) {
+					if (i === index && this.LoadForecasts)
+						forecast.setVisible(true);
+					else
+						forecast.setVisible(false);
+				}
 			}
 		}
 	}
@@ -2533,6 +2719,54 @@ WindNinjaRun.prototype = {
 			})
 		})];
 	}
+	, __clusterLoader: function (extent, res, proj) {
+		var i, l = this.__resCache.length, featRes, symbolRes;
+
+		this.__source.clear(true);
+		this.__source.resolution = res;
+
+		featRes = this.__resCache[l - 1];
+		for (i = 0; i < l; i++) {
+			symbolRes = Number(this.__resCache[i]) / this.__clusterDistance;
+			if (symbolRes >= res && symbolRes < featRes) {
+				featRes = this.__resCache[i];
+				break;
+			}
+		}
+
+		if (this.__featCache[featRes]) {
+			this.__source.addFeatures(this.__featCache[featRes].getFeaturesInExtent(extent));
+		}
+	}
+	, __clusterStyle: function (feat, self) {
+		var vel = feat.get('vel_' + self.__timeframe.substring(0, 13))
+			, ang = parseFloat(feat.get('ang_' + self.__timeframe.substring(0, 13)))
+			, va = 's_{0}_{1}'.format(vel, ang)
+			, style, size, color, canvas, context;
+
+		style = self.__styleCache[va];
+		if (!style) {
+			size = [self.__clusterDistance, self.__clusterDistance];
+			color = self.__colorCache[vel];
+			self.__stroke.setColor(color);
+			canvas = document.createElement('canvas');
+			context = ol.render.toContext(canvas.getContext('2d'), { size: size, pixelRatio: 1 });
+			context.setStyle(self.__style);
+			context.drawGeometry(self.__symbolGeom);
+
+			style = new ol.style.Style({
+				image: new ol.style.Icon({
+					img: canvas,
+					imgSize: size,
+					rotation: ang.toRad(),
+					anchor: [0.5, 0],
+					anchorOrigin: 'bottom-left'
+				})
+			});
+			self.__styleCache[va] = style;
+		}
+		return style;
+	}
 	, __getSpdRanges: function (max) {
 		var ranges = [5];
 		var interval = parseFloat((max / 5).toFixed(2));
@@ -2554,12 +2788,9 @@ WindNinjaRun.prototype = {
 		return this;
 	}
 	, resultFileSort: function (a, b) {
-		return new Date(a.Date).getTime() - new Date(b.Date).getTime();
+		return new moment.tz(a.Date, config.DisplayTZ).valueOf() - new moment.tz(b.Date, config.DisplayTZ).valueOf();
 	}
 	, layerSort: function (a, b) {
-		if (this.__verbose) {
-			console.log(a.get('date'), b.get('date'));
-		}
-		return new Date(a.get('date').replace(/-/g, '/')).getTime() - new Date(b.get('date').replace(/-/g, '/')).getTime();
+		return new moment.tz(a.get('date'), config.DisplayTZ).valueOf() - new moment.tz(b.get('date'), config.DisplayTZ).valueOf();
 	}
 };
