@@ -14,7 +14,7 @@
     <InterpreterId>Global|PythonCore|3.4</InterpreterId>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Environment>WNSERVER_CONFIG=P:\USFS\WindNinja\Source\windninja-mobile-master\WindNinja-Server\Src\windninjaserver.config.yaml</Environment>
-    <CommandLineArguments>1a111111-1111-1111-1111-111111111111 -p -ldebug</CommandLineArguments>
+    <CommandLineArguments>create --message "this is a windninja message" --expires 2018-01-01T23:59 --zone EST</CommandLineArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -270,6 +270,7 @@
     <Content Include="Data\queue\testfiles\f8db471c-f414-408b-967d-784b8b0b3e7f.pending" />
     <Content Include="Docs\Change_Log.md" />
     <Content Include="Docs\CLI_Parameters.txt" />
+    <Content Include="Docs\Notification_System.md" />
     <Content Include="Docs\Default_Solver.md">
       <SubType>Code</SubType>
     </Content>
@@ -321,6 +322,9 @@
     <Content Include="Src\windninjawrapper\windninjawrapper.config.template.yaml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\notification\manage-notifications.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Src\deploy.py" />
     <Compile Include="Src\ptvs_virtualenv_proxy.py" />
     <Compile Include="Src\runload.py" />
