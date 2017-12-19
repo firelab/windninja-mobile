@@ -1,10 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<widget android-versionCode="1040" defaultlocale="en-US" id="gov.usda.fs.rmrs.windninja" iosCFBundleVersion="1.0.3" version="1.0.4" windows-packageVersion="1.0.4.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:vs="http://schemas.microsoft.com/appx/2014/htmlapps">
+<widget android-versionCode="1100" defaultlocale="en-US" id="gov.usda.fs.rmrs.windninja" iosCFBundleVersion="1.1.0" version="1.1.0" windows-packageVersion="1.1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:vs="http://schemas.microsoft.com/appx/2014/htmlapps">
   <name>WindNinja Mobile</name>
   <description>WindNinja Mobile</description>
   <author email="wind.ninja.support@gmail.com" href="http://firelab.org/project/windninja-mobile">USFS Fire Lab</author>
   <content src="index.html" />
   <access origin="*" />
+  <allow-intent href="http://*/*" />
+  <allow-intent href="https://*/*" />
+  <allow-intent href="tel:*" />
+  <allow-intent href="sms:*" />
+  <allow-intent href="mailto:*" />
+  <allow-intent href="geo:*" />
   <preference name="webviewbounce" value="false" />
   <preference name="UIWebViewBounce" value="false" />
   <preference name="DisallowOverscroll" value="true" />
@@ -13,7 +19,7 @@
   <preference name="SplashScreenDelay" value="10000" />
   <preference name="SplashMaintainAspectRatio" value="false" />
   <preference name="SplashShowOnlyFirstTime" value="false" />
-  <preference name="windows-target-version" value="8.1" />
+  <preference name="windows-target-version" value="10.0" />
   <preference name="InAppBrowserStorageEnabled" value="True" />
   <preference name="SuppressesIncrementalRendering" value="True" />
   <preference name="windows-phone-target-version" value="8.1" />
@@ -90,22 +96,28 @@
     <icon height="173" src="res/icons/wp8/Background.png" width="173" />
     <splash height="800" src="res/screens/wp8/SplashScreenImage.jpg" width="480" />
   </platform>
-  <plugin name="cordova-plugin-device" version="1.1.3" />
-  <plugin name="cordova-plugin-dialogs" version="1.3.0" />
-  <plugin name="cordova-plugin-geolocation" version="2.4.0" />
-  <plugin name="cordova-plugin-inappbrowser" version="1.5.0" />
-  <plugin name="cordova-plugin-network-information" version="1.3.0" />
-  <plugin name="cordova-plugin-splashscreen" version="4.0.0" />
-  <plugin name="cordova-plugin-statusbar" version="2.2.0" />
-  <plugin name="cordova-plugin-vibration" version="2.1.2" />
-  <plugin name="cordova-plugin-whitelist" version="1.3.0" />
-  <plugin name="cordova-plugin-email" version="1.2.2" />
-  <plugin name="cordova-plugin-file" version="4.3.0" />
-  <plugin name="cordova-plugin-file-transfer" version="1.6.0" />
-  <plugin name="cordova-plugin-zip" version="3.1.0" />
-  <plugin name="cordova-plugin-compat" version="1.1.0" />
-  <engine name="android" spec="~6.1.0" />
+  <plugin name="cordova-plugin-compat" spec="~1.2.0" />
+  <plugin name="cordova-plugin-device" spec="~1.1.7" />
+  <plugin name="cordova-plugin-dialogs" spec="~1.3.4" />
+  <plugin name="cordova-plugin-email" spec="~1.2.6" />
+  <plugin name="cordova-plugin-inappbrowser" spec="~1.7.2" />
+  <plugin name="cordova-plugin-network-information" spec="~1.3.4" />
+  <plugin name="cordova-plugin-splashscreen" spec="~4.1.0" />
+  <plugin name="cordova-plugin-statusbar" spec="~2.3.0" />
+  <plugin name="cordova-plugin-vibration" spec="~2.1.6" />
+  <plugin name="cordova-plugin-whitelist" spec="~1.3.2" />
+  <plugin name="cordova-plugin-geolocation" version="~2.4.0" />
+  <plugin name="cordova-plugin-file" version="~4.3.3" />
+  <plugin name="cordova-plugin-file-transfer" version="~1.7.0" />
+  <plugin name="cordova-plugin-zip" version="~3.1.0" />
   <vs:platformSpecificValues>
-    <vs:platformSpecificWidget platformName="windows" version="0.0.4.0" />
+    <vs:platformSpecificWidget platformName="windows" version="0.0.5.0" />
   </vs:platformSpecificValues>
+  <vs:toolsetVersion>6.3.1</vs:toolsetVersion>
+  <engine name="android" spec="5.2.1" />
+  <engine name="ios" spec="4.3.0" />
+  <engine name="windows" spec="4.4.2" />
+  <edit-config target="NSLocationWhenInUseUsageDescription" file="*-Info.plist" mode="merge">
+    <string>need location access to show your current location</string>
+  </edit-config>
 </widget>

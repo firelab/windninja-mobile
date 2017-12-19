@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props')" />
   <ItemGroup Label="ProjectConfigurations">
@@ -67,6 +67,9 @@
       <Platform>Windows Phone (Universal)</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <Service Include="{4a0dddb5-7a95-4fbf-97cc-616d07737a77}" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>4c47b2d1-690e-4460-837c-e1d1429f887f</ProjectGuid>
   </PropertyGroup>
@@ -106,5 +109,19 @@
       <UserProperties />
     </VisualStudio>
   </ProjectExtensions>
-  <Import Project="_apacheCordovaProjectSourceItems.Targets" Condition="Exists('_apacheCordovaProjectSourceItems.Targets')" />
+  <ItemGroup >
+    <ProjectCapability Include="UseFileGlobs" />
+  </ItemGroup>
+  <PropertyGroup >
+    <!-- Customize which folders are not shown by default -->
+    <ExcludedItems>bin;bld;platforms;node_modules;simulation;plugins</ExcludedItems>
+  </PropertyGroup>
+  <ItemGroup >
+    <Content Include="**\**" Exclude="**\platforms\**;**\bin\**;**\bld\**;**\node_modules\**;**\simulation\**;**\plugins\**;.gitignore;WindNinja-Mobile.*" />
+  </ItemGroup>
+  <ItemGroup >
+    <Content Update="config.xml">
+      <SubType>Designer</SubType>
+    </Content>
+  </ItemGroup>  
 </Project>

@@ -5,7 +5,7 @@
 	<meta http-equiv="Content-Security-Policy" content="default-src * 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src * 'self' data: content:;">
 	<title>WindNinja Mobile</title>
 
-	<link rel="stylesheet" href="css/ol-3.19.1.css" type="text/css">
+	<link rel="stylesheet" href="css/ol.css" type="text/css">
 	<link rel="stylesheet" href="css/jquery.min.css" type="text/css">
 	<link rel="stylesheet" href="css/icon-pack-custom.css" type="text/css" />
 	<link rel="stylesheet" href="css/map.min.css" type="text/css">
@@ -43,6 +43,14 @@
 			<p style="font-size: x-small;">
 				If you would like to explore the app features first, you can view the test data provided (Point Six) and register later.
 			</p>
+		</div>
+	</div>
+	<!-- Messages -->
+	<div id="messages" data-role="popup" class="ui-corner-all">
+		<div data-role="header" role="banner" class="ui-corner-top ui-header">
+			<h1>Messages</h1>
+		</div>
+		<div id="messageContent" data-role="content" class="ui-corner-bottom" style="padding:5px 15px 5px 5px;">
 		</div>
 	</div>
 	<!-- Head -->
@@ -305,18 +313,26 @@
 						<input type="checkbox" id="geopdfOutput" data-role="flipswitch" />
 					</span>
 				</div>
+				<div class="ui-field-contain" style="margin-top:0; margin-bottom:0; border:0;">
+					<label for="clusterOutput" style="display:inline; white-space:nowrap;">Clusters:</label>
+					<span style="float:right; margin-top:-0.5em;">
+						<input type="checkbox" id="clusterOutput" data-role="flipswitch" />
+					</span>
+				</div>
 			</fieldset>
 			<fieldset id="debugOptions" data-role="controlgroup" style="display:none;">
 				<legend>Debug Options</legend>
 				<select id="output">
-					<option value="raster" selected="selected">Raster</option>
+					<option value="raster">Raster</option>
 					<option value="vector">Vector</option>
+					<option value="cluster" selected="selected">Clustered</option>
 				</select>
 			</fieldset>
 			<div data-role="controlgroup">
 				<input type="button" id="saveSettings" value="Save" />
 				<input type="button" id="register" value="Register" />
 				<input type="button" id="sbmtFeedback" value="Submit Feedback/Questions" />
+				<input type="button" id="showMessages" value="Check Server Messages" />
 				<input type="button" id="help" value="Help" />
 				<input type="button" id="about" value="About" />
 			</div>
@@ -414,17 +430,6 @@
 			</ul>
 		</div>
 	</div>
-	<!-- Forecast Hour Slider Panel -->
-	<!--<div id="pnl_time">
-		<div data-role="controlgroup" data-corners="true" data-type="horizontal" style="width:14em; margin:auto;">
-			<input type="range" id="timeSlider" data-highlight="true" data-track-theme="b" min="0" max="0" value="0" />
-			<button data-role="button" data-icon="fast-backward" data-iconpos="notext" data-inline="true"></button>
-			<button data-role="button" data-icon="step-backward" data-iconpos="notext" data-inline="true"></button>
-			<button data-role="button" data-icon="play" data-iconpos="notext" data-inline="true"></button>
-			<button data-role="button" data-icon="step-forward" data-iconpos="notext" data-inline="true"></button>
-			<button data-role="button" data-icon="fast-forward" data-iconpos="notext" data-inline="true"></button>
-		</div>
-	</div>-->
 	<!-- Map -->
 	<div id="map"></div>
 	<!-- Foot -->
@@ -455,13 +460,15 @@
 	</div>
 
 	<script type="text/javascript" src="cordova.js"></script>
-	<script type="text/javascript" src="scripts/ol-3.19.1.js"></script>
+	<script type="text/javascript" src="scripts/ol-debug.js"></script>
 	<script type="text/javascript" src="scripts/jquery-1.12.4.min.js"></script>
 	<script type="text/javascript" src="scripts/jquery-ui.1.12.1.min.js"></script>
 	<script type="text/javascript" src="scripts/jquery.mobile-1.4.5.min.js"></script>
 	<script type="text/javascript" src="scripts/spin.min.js"></script>
 	<script type="text/javascript" src="scripts/jquery.spin.min.js"></script>
 	<script type="text/javascript" src="scripts/helpers.js"></script>
+	<script type="text/javascript" src="scripts/moment.js"></script>
+	<script type="text/javascript" src="scripts/moment-timezone-with-data.js"></script>
 	<script type="text/javascript" src="scripts/windninja.js"></script>
 
 </body>
