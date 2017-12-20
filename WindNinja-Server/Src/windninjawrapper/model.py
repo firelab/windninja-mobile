@@ -107,7 +107,7 @@ class Project:
             logging.log(*message_tuple)
 
             #TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
-            formatted_message = "{} | {} | {}".format(datetime.now().isoformat(), logging.getLevelName(message_tuple[0]).lower(), message_tuple[1])
+            formatted_message = "{} | {} | {}".format(datetime.utcnow().isoformat(), logging.getLevelName(message_tuple[0]).lower(), message_tuple[1])
             self.job["messages"].append(formatted_message)
 
         if self.output is not None:

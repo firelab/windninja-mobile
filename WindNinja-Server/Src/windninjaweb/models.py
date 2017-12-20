@@ -292,7 +292,8 @@ class Job ():
         return obj
 
     def add_message(self, message, type):
-        formatted = "{0} | {1} | {2}".format(datetime.datetime.now().isoformat(), type.name, message)
+        #TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
+        formatted = "{0} | {1} | {2}".format(datetime.datetime.utcnow().isoformat(), type.name, message)
         self.messages.append(formatted)
 
     def to_json(self):
@@ -331,7 +332,7 @@ class Feedback:
     def create(cls, initializer):
         feedback = cls()
         feedback.id = str(uuid.uuid4())
-        feedback.date_time_stamp = datetime.datetime.now()
+        feedback.date_time_stamp = datetime.datetime.utcnow()
         
         #required so throw an error if not found in initialier
         feedback.account = initializer["account"]
@@ -514,7 +515,7 @@ class Account:
         account.email = email
         account.name = name
         account.status = AccountStatus.pending
-        account.created_on = datetime.datetime.now()
+        account.created_on = datetime.datetime.utcnow()
 
         return account
 

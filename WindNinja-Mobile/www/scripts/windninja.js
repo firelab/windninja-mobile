@@ -36,7 +36,7 @@ var _DEBUG = false
 	, dataDir
 	, cacheDir
 	, serverURL = 'http://windninja2.wfmrda.com/'
-	, serverTZ = 'America/Denver'
+	, serverTZ = 'Etc/GMT'
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,4}-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -354,13 +354,8 @@ function _registrationAccepted() {
 	// Allow the draw button to work properly
 	$('#btn_draw').unbind('click');
 	$('#btn_draw').on('click', function () {
-		if (sliderOpen) {
-			//close slider
-			$('#btn_time').trigger('click');
-		} else if (legendOpen) {
-			//close legend
-			$('#btn_legend').trigger('click');
-		}
+		//clear any existing run...
+		removeRun()
 
 		$('#draw').hide();
 		$('#sketch').show();
@@ -864,16 +859,16 @@ function _createRunMenuItem(index, jobJson) {
 	// parse and create the submitted and last updated dates from the messages
 	if (jobJson.messages.length > 0) {
 		try {
-			submitDate = new moment.tz(jobJson.messages[0].split(' | ')[0], serverTZ);
-			updateDate = new moment.tz(jobJson.messages[jobJson.messages.length - 1].split(' | ')[0], serverTZ);
+			submitDate = moment.tz(jobJson.messages[0].split(' | ')[0], serverTZ);
+			updateDate = moment.tz(jobJson.messages[jobJson.messages.length - 1].split(' | ')[0], serverTZ);
 		} catch (e) {
 			if (_DEBUG) {
 				console.log(e);
 			}
 		}
 	} else {
-		submitDate = new moment.tz(serverTZ);
-		updateDate = new moment.tz(serverTZ);
+		submitDate = moment.tz(serverTZ);
+		updateDate = moment.tz(serverTZ);
 	}
 	// create the run panel
 	var pnl = $('<div />').attr('id', jobJson.id).data('runName', jobJson.name)
@@ -1502,8 +1497,8 @@ function _checkStatus(id) {
 
 					if (job.messages.length > 0) {
 						try {
-							submitDate = new moment.tz(job.messages[0].split(' | ')[0], serverTZ);
-							updateDate = new moment.tz(job.messages[job.messages.length - 1].split(' | ')[0], serverTZ);
+							submitDate = moment.tz(job.messages[0].split(' | ')[0], serverTZ);
+							updateDate = moment.tz(job.messages[job.messages.length - 1].split(' | ')[0], serverTZ);
 						} catch (e) {
 							if (_DEBUG) {
 								console.log(e);
@@ -1729,16 +1724,16 @@ function _onDownloadReady(results, id) {
 
 		if (results.messages.length > 0) {
 			try {
-				submitDate = new moment.tz(results.messages[0].split(' | ')[0], serverTZ);
-				updateDate = new moment.tz(results.messages[results.messages.length - 1].split(' | ')[0], serverTZ);
+				submitDate = moment.tz(results.messages[0].split(' | ')[0], serverTZ);
+				updateDate = moment.tz(results.messages[results.messages.length - 1].split(' | ')[0], serverTZ);
 			} catch (e) {
 				if (_DEBUG) {
 					console.log(e);
 				}
 			}
 		} else {
-			submitDate = new moment.tz(serverTZ);
-			updateDate = new moment.tz(serverTZ);
+			submitDate = moment.tz(serverTZ);
+			updateDate = moment.tz(serverTZ);
 		}
 
 		$(submit).text('Submitted: ' + prettyDate(submitDate));
@@ -1837,7 +1832,7 @@ function removeRun() {
 		}
 		ninjaRun.RemoveRun();
 		toggleActionButton(ninjaRun.ID, 'downloaded');
-		navigator.notification.alert("All layers have been removed", null, 'Layers Removed', 'OK');
+		
 		$('#btn_run-opts').button('disable');
 
 		$('#baseMap').val('osm').trigger('change');
@@ -1893,10 +1888,10 @@ function _onGPSOff() {
 // Return a 'pretty' formatted date string for display
 function prettyDate(date) {
 	// Returns date in format MM/DD/YYYY, HH:MM:SS
-	if (date.constructor === moment)
+	if (moment.isMoment(date))
 		return date.tz(config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
 	else
-		return new moment.tz(date, config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
+		return moment.tz(date, config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
 }
 
 //
@@ -2788,9 +2783,9 @@ WindNinjaRun.prototype = {
 		return this;
 	}
 	, resultFileSort: function (a, b) {
-		return new moment.tz(a.Date, config.DisplayTZ).valueOf() - new moment.tz(b.Date, config.DisplayTZ).valueOf();
+		return moment.tz(a.Date, config.DisplayTZ).valueOf() - moment.tz(b.Date, config.DisplayTZ).valueOf();
 	}
 	, layerSort: function (a, b) {
-		return new moment.tz(a.get('date'), config.DisplayTZ).valueOf() - new moment.tz(b.get('date'), config.DisplayTZ).valueOf();
+		return moment.tz(a.get('date'), config.DisplayTZ).valueOf() - moment.tz(b.get('date'), config.DisplayTZ).valueOf();
 	}
 };
