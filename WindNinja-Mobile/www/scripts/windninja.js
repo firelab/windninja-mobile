@@ -62,7 +62,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.1.0';
+	, version = '1.1.2';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -208,7 +208,7 @@ function _loadConfig() {
 			"Outputs": {
 				"vector": true,
 				"raster": false,
-				"topo": false,
+				"topo": true,
 				"googl": false,
 				"geopdf": false,
 				"clustered": true,
@@ -1094,7 +1094,8 @@ function initUI() {
 			sliderWasOpen = true;
 			//close slider
 			$('#btn_time').trigger('click');
-		} else if (legendOpen) {
+		}
+		if (legendOpen) {
 			legendWasOpen = true;
 			//close legend
 			$('#btn_legend').trigger('click');
@@ -1198,11 +1199,7 @@ function initUI() {
 			$('#spinner').spin(false);
 		}
 	});
-	$('#gotItBtn').button({ mini: true }).on('click', function () {
-		$(this).button('refresh');
-		$('#splash').popup('close');
-	});
-
+	
 	// Initialize Settings Panel
 	$('#vectorOutput').flipswitch({ mini: true });
 	$('#rasterOutput').flipswitch({ mini: true });
@@ -1251,6 +1248,14 @@ function initUI() {
 		_registerInstall();
 		$('#registration').popup('close');
 	});
+	
+	$('#splash').on({
+		popupbeforeposition: function () {
+			var maxHeight = $(window).height() - 30;
+			$('#splash').css('max-height', maxHeight + 'px');
+			$('#helpContent').css('max-height', (maxHeight - 44) + 'px');
+		}
+	})
 
 	$('#hlpLink').on('click', function () {
 		window.open('http://www.firelab.org/project/windninja-mobile', '_system');
@@ -1278,7 +1283,15 @@ function _onBack(evt) {
 	evt.preventDefault();
 
 	//if anything is open, close it. otherwise exit the app
-	if ($('#pnl_Settings').hasClass('ui-panel-open')) {
+	//NOTE: order of operation is important
+	//NOTE: pop ups css class is on parent
+	if ($('#pop_about').parent().hasClass('ui-popup-active')) {
+		$('#pop_about').popup('close');
+	} else if ($('#splash').parent().hasClass('ui-popup-active')) {
+		$('#splash').popup('close');
+	} else if ($('#feedback-panel').parent().hasClass('ui-popup-active')) {
+		$('#feedback-panel').popup('close');
+	} else if ($('#pnl_Settings').hasClass('ui-panel-open')) {
 		$('#pnl_Settings').panel('close');
 	} else if ($('#pnl_Runs').hasClass('ui-panel-open')) {
 		$('#pnl_Runs').panel('close');
@@ -1566,17 +1579,19 @@ function submitJob() {
 		var outputs = {
 			vector: false,
 			raster: false,
-			topo: false,
+			topo: true,
 			googl: false,
 			geopdf: false,
 			clustered: true,
 			weather: true
 		};
-		for (var type in config.Outputs) {
-			if (outputs.hasOwnProperty(type) && config.Outputs.hasOwnProperty(type)) {
-				outputs[type] = config.Outputs[type];
-			}
-		}
+		//NOTE: user config is not currently enabled but config file may have bad settings
+		// if re-enabling be sure to set the correct 
+		//for (var type in config.Outputs) {
+		//	if (outputs.hasOwnProperty(type) && config.Outputs.hasOwnProperty(type)) {
+		//		outputs[type] = config.Outputs[type];
+		//	}
+		//}
 
 		if (email && config.Email)
 			notify = config.Email;
