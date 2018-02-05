@@ -3,7 +3,7 @@
    "account":"test@yourdatasmarter.com",
    "name":"Point Six (test)",
    "messages":[
-      "2017-10-26T15:27:45.015000-06:00 | INFO | job created",
+      "2017-10-26T15:27:45.015000 | INFO | job created",
       "2017-10-26T15:49:43.928000 | INFO | Initializing WindNinja Run",
       "2017-10-26T15:49:44.006000 | INFO | DEM created",
       "2017-10-26T15:50:06.992000 | INFO | WindNinjaCLI executed",
