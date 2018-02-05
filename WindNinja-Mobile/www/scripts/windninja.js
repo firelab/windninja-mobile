@@ -37,6 +37,7 @@ var _DEBUG = false
 	, cacheDir
 	, serverURL = 'http://windninja2.wfmrda.com/'
 	, serverTZ = 'Etc/GMT'
+	, deviceTZ = moment.tz.guess()
 	, eRegex = /[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?/
 	, oRegex = /(dem_(\d{2}-\d{2}-\d{4})_(\d{4})_\d{1,3}[a-z]{1})/
 	, fRegex = /((?:(?:UCAR|NOMADS)-(?:NAM|HRRR)-(?:CONUS|ALASKA)-(?:\d{1,4}-KM|DEG))-(\d{2}-\d{2}-\d{4})_(\d{4}))/
@@ -62,7 +63,7 @@ var _DEBUG = false
 			"forecast": "NOMADS-NAM-CONUS-12-KM"
 		}
 	}
-	, version = '1.1.2';
+	, version = '1.1.3';
 
 // Device listeners
 $(document).on('deviceready', _onDeviceReady);
@@ -879,9 +880,9 @@ function _createRunMenuItem(index, jobJson) {
 			.append(delBtn)
 		)
 		.append('<br />')
-		.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate)))
+		.append($('<span />').addClass('runTime').text('Submitted: ' + prettyDate(submitDate, deviceTZ)))
 		.append('<br />')
-		.append($('<span />').addClass('runTime').text('Updated: ' + prettyDate(updateDate)));
+		.append($('<span />').addClass('runTime').text('Updated: ' + prettyDate(updateDate, deviceTZ)));
 
 	$('#runs_list').append(pnl);
 	pnl.collapsible({
@@ -1522,8 +1523,8 @@ function _checkStatus(id) {
 						updateDate = moment.tz(serverTZ);
 					}
 
-					$(submit).text('Submitted: ' + prettyDate(submitDate));
-					$(update).text('Updated: ' + prettyDate(updateDate));
+					$(submit).text('Submitted: ' + prettyDate(submitDate, deviceTZ));
+					$(update).text('Updated: ' + prettyDate(updateDate, deviceTZ));
 
 					toggleActionButton(job.id, job.status);
 				});
@@ -1751,8 +1752,8 @@ function _onDownloadReady(results, id) {
 			updateDate = moment.tz(serverTZ);
 		}
 
-		$(submit).text('Submitted: ' + prettyDate(submitDate));
-		$(update).text('Updated: ' + prettyDate(updateDate));
+		$(submit).text('Submitted: ' + prettyDate(submitDate, deviceTZ));
+		$(update).text('Updated: ' + prettyDate(updateDate, deviceTZ));
 
 		toggleActionButton(results.id, 'downloaded');
 
@@ -1901,12 +1902,16 @@ function _onGPSOff() {
 	map.removeLayer(gpsLayer);
 }
 // Return a 'pretty' formatted date string for display
-function prettyDate(date) {
-	// Returns date in format MM/DD/YYYY, HH:MM:SS
-	if (moment.isMoment(date))
-		return date.tz(config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
-	else
-		return moment.tz(date, config.DisplayTZ).format('MM/DD/YYYY, HH:mm:ss (z)');
+function prettyDate(date, tz) {
+	// Returns date in format MM/DD/YYYY, HH:MM:SS (zone)
+	//FLS 2/2/18: just return the date using the offset rather than convert to a specific zone
+	//NOTE: parseZone() will keep the exact zone/utcoffset, otherwise format() will be device timezone relative
+	var mdt = (moment.isMoment(date)) ? date : moment.parseZone(date);
+	if (tz) {
+		return mdt.tz(tz).format('MM/DD/YYYY, HH:mm:ss (z)')
+	} else {
+		return mdt.format('MM/DD/YYYY, HH:mm:ss (Z)')
+	}
 }
 
 //
