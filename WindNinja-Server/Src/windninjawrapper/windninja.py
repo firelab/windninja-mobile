@@ -4,14 +4,14 @@ import datetime
 import os
 
 import logger
-from config import CONFIG
+from config import CONFIG, MESSAGES
 from model import Project, JobStatus
-from gis import createDem, convertShpToJson, getLayerInfo, getRasterInfo
+from gis import createDem, convertShpToJson, getLayerInfo, getRasterInfo, withinForecast
 from wncli import execute_wncli
 from queue import dequeue
 from utility import zip_files
 
-VERSION = "2017.10.23.1"
+VERSION = "2019.02.21.1"
 
 def main():
     logging.debug("windninja.main()")  #NOTE: THIS DEBUG STATEMENT WILL NEVER GET INTO THE LOG FILE BUT WILL OUTPUT TO STDOUT
@@ -64,6 +64,20 @@ def main():
             project = None
         else:
             project.updateJob(JobStatus.executing.name, (logging.INFO, "Initializing WindNinja Run" ), True)
+
+            # evaluate 'auto' forecast if necessary
+            logging.debug("evaluate project forecast: {}".format(project.forecast))
+            if project.forecast.lower() == "auto":
+                evaluated_forecast = withinForecast(project.bbox)
+                logging.debug("evaluated forecast for bbox: {}".format(evaluated_forecast))
+                if evaluated_forecast:
+                    project.forecast = evaluated_forecast
+                    #TODO: should this new value be written back to job info
+                    project.updateJob(None, (logging.INFO, "Auto Forecast Evaluated: {}".format(evaluated_forecast)), True)
+                else:
+                    #project.updateJob(None, (logging.ERROR, MESSAGES.BBOX_OUTSIDE_FORECASTS), True)
+                    raise Exception(MESSAGES.BBOX_OUTSIDE_FORECASTS)
+
 
             # create the cli output folder
             wncli_folder = os.path.join(project_path, "wncli")

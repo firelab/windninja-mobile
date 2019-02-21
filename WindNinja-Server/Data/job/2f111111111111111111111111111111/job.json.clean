@@ -1,0 +1,22 @@
+{
+    "status":"new",
+    "account":"test@test.com",
+    "name":"auto forecast - AK - vector only",
+    "messages":[
+        "2018-02-20T16:48:45.2949952-07:00 | INFO | job created"
+    ],
+    "id":"2f111111-1111-1111-1111-111111111111",
+    "output":{},
+    "input":{
+        "domain": {
+            "xmin": -147.9105926641097, 
+            "ymin": 64.79848287245939, 
+            "ymax": 64.87942609584164, 
+            "xmax": -147.54226039805448
+        }, 
+        "products":"vector:true;raster:false;topofire:false;geopdf:false;clustered:false;weather:true",
+        "parameters": "forecast_duration:3;vegetation:grass;mesh_choice:fine", 
+        "forecast": "AUTO"
+    },
+    "email":""
+}

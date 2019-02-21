@@ -1,0 +1,22 @@
+{
+    "status":"new",
+    "account":"test@test.com",
+    "name":"auto forecast - outside - vector only",
+    "messages":[
+        "2018-02-21T16:48:45.2949952-07:00 | INFO | job created"
+    ],
+    "id":"2f211111-1111-1111-1111-111111111111",
+    "output":{},
+    "input":{
+        "domain": {
+            "xmin": 92.60344875583002, 
+            "ymin": 55.89740919625363, 
+            "ymax": 56.124209568573185, 
+            "xmax": 93.26630525449141
+        }, 
+        "products":"vector:true;raster:false;topofire:false;geopdf:false;clustered:false;weather:true",
+        "parameters": "forecast_duration:3;vegetation:grass;mesh_choice:fine", 
+        "forecast": "AUTO"
+    },
+    "email":""
+}

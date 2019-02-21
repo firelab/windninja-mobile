@@ -11,6 +11,7 @@ class CONFIG:
     OUT_DEM_FILENAME = ""
     QUEUE_DIRECTORY = ""
     MAIL = {}
+    AUTO_FORECASTS = {}
     DEM_MIN_BOUNDING_GEOM_WKB = ""
     WN_CLI_DEFAULTS = {}
     WN_CLI_ENV = {}
@@ -29,6 +30,7 @@ class CONFIG:
 
 class MESSAGES:
     BBOX_OUTSIDE_DEM=""
+    BBOX_OUTSIDE_FORECASTS=""
     
 try:
     __config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "windninjawrapper.config.yaml")  #os.environ["WNSERVER_CONFIG"]
@@ -42,6 +44,7 @@ try:
     CONFIG.OUT_DEM_FILENAME = overrides["job_wrapper"]["out_dem_filename"]
     CONFIG.QUEUE_DIRECTORY = os.path.abspath(overrides["job_wrapper"]["queue_datastore"])
     CONFIG.MAIL = overrides["mail"]
+    CONFIG.AUTO_FORECASTS = overrides["job_wrapper"]["auto_forecasts"]
     CONFIG.DEM_MIN_BOUNDING_GEOM_WKB = overrides["job_wrapper"]["dem_min_bounding_geom_wkb"]
     CONFIG.WN_CLI_DEFAULTS = overrides["job_wrapper"]["wn_cli"]["defaults"]
     CONFIG.WN_CLI_ENV = overrides["job_wrapper"]["wn_cli"].get("env", {})
@@ -60,6 +63,7 @@ try:
     
     
     MESSAGES.BBOX_OUTSIDE_DEM = overrides["job_wrapper"]["messages"]["bbox_outside_dem"]
+    MESSAGES.BBOX_OUTSIDE_FORECASTS = overrides["job_wrapper"]["messages"]["bbox_outside_forecasts"]
     
 except Exception as ex:
     print("config loading failed: {}".format(str(ex)))

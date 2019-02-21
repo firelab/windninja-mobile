@@ -1,0 +1,22 @@
+{
+    "status":"new",
+    "account":"test@test.com",
+    "name":"auto forecast - CONUS - vector only",
+    "messages":[
+        "2018-02-21T16:48:45.2949952-07:00 | INFO | job created"
+    ],
+    "id":"2f311111-1111-1111-1111-111111111111",
+    "output":{},
+    "input":{
+        "domain": {
+            "xmin":-114.0235465406869,
+            "ymin":46.99526210560205,
+            "ymax":47.038565315467025,
+            "xmax":-113.97925790543299
+        }, 
+        "products":"vector:true;raster:false;topofire:false;geopdf:false;clustered:false;weather:true",
+        "parameters": "forecast_duration:3;vegetation:grass;mesh_choice:fine", 
+        "forecast": "AUTO"
+    },
+    "email":""
+}

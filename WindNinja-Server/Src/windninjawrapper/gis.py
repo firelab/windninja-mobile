@@ -9,22 +9,30 @@ import ogr2ogr
 from config import CONFIG, MESSAGES
 from utility import execute_shell_process
 
+def withinForecast(bbox):
+    forecast = None
+
+    #polygon from job bounding box 
+    polygon = bboxToPolygon(bbox)
+
+    for f in CONFIG.AUTO_FORECASTS:
+        #forecast boundary
+        wkb = base64.b64decode(CONFIG.AUTO_FORECASTS[f])
+        boundary = ogr.CreateGeometryFromWkb(wkb)
+    
+        if polygon.Within(boundary):
+            forecast = f
+            break
+
+    return forecast
 
 def withinDEM(bbox):
-
     #dem minimum bounding geometry
     wkb = base64.b64decode(CONFIG.DEM_MIN_BOUNDING_GEOM_WKB)
     dem_mbg = ogr.CreateGeometryFromWkb(wkb)
     
     #polygon from job bounding box 
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    ring.AddPoint(bbox[0], bbox[1])
-    ring.AddPoint(bbox[0], bbox[3])
-    ring.AddPoint(bbox[2], bbox[3])
-    ring.AddPoint(bbox[2], bbox[1])
-    ring.AddPoint(bbox[0], bbox[1])
-    polygon = ogr.Geometry(ogr.wkbPolygon)
-    polygon.AddGeometry(ring)
+    polygon = bboxToPolygon(bbox)
     
     return polygon.Within(dem_mbg)
 
@@ -234,3 +242,15 @@ def convertExtents(extent, wkids):
         }
 
     return extents
+
+def bboxToPolygon(bbox):
+    ring = ogr.Geometry(ogr.wkbLinearRing)
+    ring.AddPoint(bbox[0], bbox[1])
+    ring.AddPoint(bbox[0], bbox[3])
+    ring.AddPoint(bbox[2], bbox[3])
+    ring.AddPoint(bbox[2], bbox[1])
+    ring.AddPoint(bbox[0], bbox[1])
+    polygon = ogr.Geometry(ogr.wkbPolygon)
+    polygon.AddGeometry(ring)
+
+    return polygon
