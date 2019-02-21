@@ -25,7 +25,7 @@ _tzinfos = {
     "AKDT":dateutil.tz.gettz("America/Anchorage")
 }
 
-_sim_time_line_pattern = "Run \d*: Simulation time is \d*-[A-Za-z]*-\d* \d*:\d*:\d* [A-Z]{3}"
+_sim_time_line_pattern = "Run \d*: Simulation time is \d*-[A-Za-z]*-\d* \d*:\d*:\d* [A-Z]{3,4}"
 _sim_time_line_sep = " is "
 
 _sim_shp_name_template = "{}_{:%m-%d-%Y_%H%M}_*m.*"
@@ -41,7 +41,7 @@ _sim_wx_rename_template = "WX_{:%Y%m%dT%H%M}{}"
 def parse_shell_output(output):
     simulation_times = []
     # find all the simulation time lines and convert to date objects 
-    # excluding past forecasts expect for the current hour
+    # excluding past forecasts expect for the currenst hour
     utc_now = pytz.utc.localize(datetime.utcnow())
     max_total_seconds = (60*60)
     lines = re.findall(_sim_time_line_pattern,output)
