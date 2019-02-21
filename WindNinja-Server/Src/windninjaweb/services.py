@@ -28,7 +28,7 @@ _confirm_parser.add_argument("f", type=str, default="", required=False, store_mi
 #TODO: log email confirmation offline
 _email_parameters = app.config.get("MAIL", None)
 _confirmation_code_separator = ":"
-_confirmation_delta_minutes = 10 
+_confirmation_delta_minutes = -1 
 
 # ----------------PUBLIC SERVICE METHODS----------------
 @app.route("/services/registration/register", methods=["POST"])
@@ -199,7 +199,10 @@ def _generate_registration_confirmation(account):
 
     # send the email
     subject = "WindNinja Mobile - account verification"
-    body = "Welcome to WindNinja Mobile! Please click the link below to complete your registration.\n\n\n{0}\n\n\nThis code is valid for {1} minutes.".format(url, _confirmation_delta_minutes)
+    body = "Welcome to WindNinja Mobile! Please click the link below to complete your registration.\n\n\n{}".format(url)
+    if _confirmation_delta_minutes > 0:
+        body += "\n\n\nThis code is valid for {} minutes.".format(_confirmation_delta_minutes)
+
     wnutil.send_email(_email_parameters.get("server", {}), account.email, _email_parameters.get("from_address", ""), subject, body)
 
 def _validate_registration_confirmation(code):
@@ -230,8 +233,9 @@ def _validate_registration_confirmation(code):
         return False, "Account mismatch", None
 
     # validate the time frame
-    if (time_stamp+(_confirmation_delta_minutes*60) < time.time()):
-        return False, "Code has expired", account
+    if _confirmation_delta_minutes > 0:
+        if (time_stamp+(_confirmation_delta_minutes*60) < time.time()):
+            return False, "Code has expired", account
     
     # return success
     return True, "", account
