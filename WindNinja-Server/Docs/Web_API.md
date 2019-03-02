@@ -20,6 +20,14 @@ POST /api/job
   * __email__ string, optional - email address to send job notifications 
   * __account__ string, required - id of registered account with the WindNinja Mobile system
   * __products__ JSON, required - output types to generate as semi-colon (;) delimited list of colon (:) delimited key value pairs 
+    
+    * __vector__ = GeoJson files of the WindNinja output . One file for each time simulation
+    * __raster__ = Mapnik generated tileset based on the WindNinja output shapefiles. One tileset for each time simulation, all packaged in a zip file. __NOTE__: this product type may go away in the future.
+    * __topofire__ = Basemap tileset for the job domain extracted from the UofM TopoFire tile service
+    * __geopdf__ = Not implemented as of yet, placeholder for future development
+    * __clustered__ = This is a custom csv-like generated format of raw numerical data. The file contains "scaled" levels of detail. The format is parse-able by any client but was designed specifically for the WindNinja Mobile application for download size and rendering speed.
+    * __weather__ = GeoJson files of the large scale weather data downloaded and input to the WindNinja CLI for the job domain. One file for each time simulation
+      
 * returns 200 when job is successfully saved and queued and returns the details as JSON (see structure below)
 * returns 200 when job is successfully saved but queueing fails and returns the details as JSON (see structure below)
 * returns 400 when required parameters are missing as JSON message
