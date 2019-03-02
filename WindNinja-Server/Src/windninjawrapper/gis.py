@@ -233,7 +233,7 @@ def convertExtents(extent, wkids):
         transform = osr.CoordinateTransformation(native_srs, target_srs)
         multipoint.Transform(transform)
 
-        extents[wkid] = {
+        extents[str(wkid)] = {
             "xmin": multipoint.GetGeometryRef(0).GetPoint(0)[0], 
             "ymin":multipoint.GetGeometryRef(0).GetPoint(0)[1], 
             "xmax":multipoint.GetGeometryRef(1).GetPoint(0)[0], 

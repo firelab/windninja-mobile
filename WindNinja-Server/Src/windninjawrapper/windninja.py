@@ -203,13 +203,12 @@ def main():
                     # windninja results as tile packages
                     if project.products.get("raster", False):
                         from rastertilemaker import make_tiles_for_output
-                        wx_shpfiles = result[5]
                         wn_shpfiles = result[3]
 
                         # calculate values if needed
-                        if not wx_infos:
+                        if output_wx and not wx_infos:
+                            wx_shpfiles = results[5]
                             converted = processShapefiles(results_folder, wx_shpfiles, project.path, False)
-                            wx_infos = converted[2]
                             wx_max_speed = covnerted[3]
 
                         if not wn_infos:
