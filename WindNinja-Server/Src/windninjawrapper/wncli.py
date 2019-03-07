@@ -134,6 +134,8 @@ def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc,
     # execute the command
     command = cli_template.substitute(cli)
     env = CONFIG.WN_CLI_ENV
+    foam_path = "export FOAM_INST_DIR=/home/ubuntu/src/ && foamDotFile=$FOAM_INST_DIR/OpenFOAM-2.2.x/etc/bashrc && [ -f $foamDotFile ] && . $foamDotFile &&"
+    command = foam_path + command 
     shell_result = execute_shell_process(command, working_dir, env=env)
     
     # process results
