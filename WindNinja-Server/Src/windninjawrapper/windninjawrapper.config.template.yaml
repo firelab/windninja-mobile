@@ -47,6 +47,7 @@ job_wrapper:
       - "--write_wx_model_shapefile_output $write_wx_model_shapefile_output"
       - "--write_goog_output false"
       - "--write_ascii_output $write_ascii_output"
+      - "--momentum_flag $momentum_flag"
     args_wx: 
       - "--output_path $output_path"
       - "--elevation_file $elevation_file"
@@ -64,6 +65,7 @@ job_wrapper:
       - "--write_wx_model_shapefile_output $write_wx_model_shapefile_output"
       - "--write_goog_output false"
       - "--write_ascii_output $write_ascii_output"
+      - "--momentum_flag $momentum_flag"
     defaults: 
       forecast_duration: 3
       input_speed: 5
@@ -77,9 +79,12 @@ job_wrapper:
       units_input_wind_height: ft
       units_output_wind_height: ft
       vegetation: grass
+      momentum_flag: false
     #env:
-    # - GDAL_DRIVER_PATH: /gdalplugins
+    #  GDAL_DRIVER_PATH: /gdalplugins
+    #  FOAM_INST_DIR: /home/ubuntu/src
     path: /usr/local/bin/WindNinja_cli
+    #path: "foamDotFile=$$FOAM_INST_DIR/OpenFOAM-2.2.x/etc/bashrc && [ -f $$foamDotFile ] && . $$foamDotFile ; /usr/local/bin/WindNinja_cli"
 mail: 
   from_address: test@gmail.com
   server: 
