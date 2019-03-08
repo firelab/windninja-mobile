@@ -167,7 +167,7 @@ def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc,
             result = (True, result_folder, simulations,  windninja_shapefiles, windninja_ascfiles, weather_shapefiles)   
 
         # cleanup the unnecessary files, but ignore any errors while trying
-	# TODO: create config flag to skip for easier review/triage of failures
+        # TODO: create config flag to skip for easier review/triage of failures
        	shutil.rmtree(output_folder, ignore_errors=True)
 
     else:
