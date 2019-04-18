@@ -46,10 +46,10 @@ def is_whitelisted(email, whitelist):
 
     Returns boolean: True/False
     """
-    whitelisted = email in whitelist.get("emails", [])
+    whitelisted = email in (whitelist.get("emails", []) or [])
     if not whitelisted:
         domain = email.split("@")[-1]
-        whitelisted = domain in whitelist.get("domains", [])
+        whitelisted = domain in (whitelist.get("domains", []) or [])
     return whitelisted
 
 #TODO: better name? or move to "models" as it's really specific to those attributes
