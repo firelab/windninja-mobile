@@ -14,7 +14,6 @@ flask-restful = "*"
 pyyaml = "*"
 blinker = "*"
 pytz = "*"
-enum34 = "*"
 numpy = "*"
 
 [requires]

@@ -11,8 +11,19 @@ with open('README.md') as readme_file:
 with open('HISTORY.md') as history_file:
     history = history_file.read()
 
-requirements = []
-test_requirements = []
+
+with open('requirements.txt') as fh:
+    requirements = [
+        line for line in fh.read().splitlines()
+        if not line.startswith('-i') and not line.startswith('#')
+    ]
+
+with open('dev-requirements.txt') as fh:
+    test_requirements = [
+        line[:line.find(';')] for line in fh.read().splitlines()
+        if not line.startswith('-i') and not line.startswith('#')
+    ]
+
 
 setup(
     author="Levi Malott",
@@ -36,7 +47,6 @@ setup(
     keywords='windninja_server',
     name='windninja_server',
     packages=find_packages(include=['windninja_server']),
-    setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/firelab/windninja-mobile',
