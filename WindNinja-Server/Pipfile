@@ -15,6 +15,11 @@ pyyaml = "*"
 blinker = "*"
 pytz = "*"
 numpy = "*"
+click = "*"
+click-log = "*"
+paramiko = "*"
+fabric = "*"
+invoke = "*"
 
 [requires]
 python_version = "3.7"
