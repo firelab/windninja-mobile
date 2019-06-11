@@ -130,8 +130,21 @@ Edit WindNinjaApp.conf
 - NOTE: this file is directly under git control but these edits do not need to be commited to GitHub (can use assume-nochange)
 - TODO: create a 'template' for this file and commit that to GitHub
 
+On the web server, AWS information and credentials are needed to access the SMTP server.
+Add them as environment variables:
+```
+export AWS_SMTP_HOST=..
+export AWS_SMTP_KEY=..
+export AWS_SMTP_SECRET=...
+```
+
+From your local machine:
+```
+pipenv run python fabfile.py all -h <hostname>
+```
+
+On the remote machine:
 ```s
-sudo python3 Src/deploy.py all -d /srv/WindNinjaServer
 sudo chmod 777 -R /srv/WindWindServer/Data
 sudo mkdir /var/log/WindNinjaServer
 sudo a2ensite WindNinjaApp
@@ -140,14 +153,6 @@ sudo supervisorctl -c /etc/supervisor/supervisord.conf
 >>>reload
 >>>status
 >>>quit
-```
-
-On the web server, AWS information and credentials are needed to access the SMTP server.
-Add them as environment variables:
-```
-export AWS_SMTP_HOST=..
-export AWS_SMTP_KEY=..
-export AWS_SMTP_SECRET=...
 ```
 
 #### WINDNINJA
