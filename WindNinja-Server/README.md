@@ -107,7 +107,7 @@ sudo  apt-get python-mapnik
 
 #### WindNinja Mobile Server
 ```s
-git close [git-repo-url]
+git clone [git-repo-url]
 ```
 Perform the following edits in the local repo before deploy
 
@@ -140,6 +140,14 @@ sudo supervisorctl -c /etc/supervisor/supervisord.conf
 >>>reload
 >>>status
 >>>quit
+```
+
+On the web server, AWS information and credentials are needed to access the SMTP server.
+Add them as environment variables:
+```
+export AWS_SMTP_HOST=..
+export AWS_SMTP_KEY=..
+export AWS_SMTP_SECRET=...
 ```
 
 #### WINDNINJA

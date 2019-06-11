@@ -1,0 +1,29 @@
+---
+datastore: /srv/WindNinjaServer/Data
+auto_register:
+    mode: EMAILS                                   
+    domains:
+        - fs.fed.us
+        - usda.gov
+        - yourdatasmarter.com
+        - bia.gov
+        - blm.gov
+        - fws.gov
+        - nifc.gov
+        - nps.gov
+        - turnerforestry.com
+    emails: 
+mail:
+    from_address: wind.ninja.support@gmail.com
+    support_address: wind.ninja.support@gmail.com
+queue:
+    mode: enabled
+    datastore: /srv/WindNinjaServer/Data/queue
+    max_running_jobs: 2
+    loop_interval: 5
+    windninja_wrapper:                              
+        executable: /usr/bin/python
+        script: /srv/WindNinjaServer/App/windninjawrapper/windninja.py
+        options:
+            - -p
+            - -ldebug
