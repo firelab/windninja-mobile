@@ -140,7 +140,11 @@ export AWS_SMTP_SECRET=...
 
 From your local machine:
 ```
-pipenv run python fabfile.py all -h <hostname>
+pipenv run python fabfile.py all -h <hostname> -d /srv/WindNinjaServer
+```
+To deploy an already created tarball, at the `-t/--target` option.
+```
+pipenv run python fabfile.py all -h <hostname> -t <local_tar.tar.gz>
 ```
 
 On the remote machine:
