@@ -79,7 +79,7 @@ def deploy_data(connection, source, destination):
 
 def deploy_config(connection, source, destination):
     src_file = os.path.join(source, "windninjaserver.config.yaml")
-    dst_folder = os.path.join(destination, "App")
+    dst_folder = os.path.join(destination, "app")
 
     logger.info("creating application folder: {}".format(dst_folder))
     connection.run(f'mkdir -p {dst_folder}')
@@ -99,7 +99,7 @@ def deploy_config(connection, source, destination):
 
 
 def deploy_app(connection, source, destination):
-    connection.run(f'rm -rf {destination}')
+    connection.run(f'rm -rf {destination}/app')
     connection.run(f'mkdir -p {destination}/app')
 
     # copy main folders
@@ -110,7 +110,7 @@ def deploy_app(connection, source, destination):
         connection.run(f"cp -R {src_folder} {dst_folder}")
 
     # copy top level files
-    for f in ["runqueue.py"]:
+    for f in ["runqueue.py", "../setup.py"]:
         src_file = os.path.join(source, f)
         dst_folder = os.path.join(destination, "app")
         logger.info(f"copying {f} file: {src_file} to {dst_folder}")
@@ -162,22 +162,27 @@ def deploy(parts, target, destination, host):
     logger.info(f"Deploying windninja server {host}")
     upload_and_unpack(connection, target)
 
-    if parts == "all":
-        deploy_app(connection, source, destination)
-        deploy_config(connection, source, destination)
-        deploy_data(connection, source, destination)
-        deploy_apache(connection, source)
-        deploy_supervisor(connection, source)
-    elif parts == "app":
-        deploy_app(connection, source, destination)
-    elif parts == "config":
-        deploy_config(connection, source, destination)
-    elif parts == "data":
-        deploy_data(connection, source, destination)
-    elif parts == "apache":
-        deploy_apache(connection, source)
-    elif parts == "supervisor":
-        deploy_supervisor(connection, source)
+    connection.sudo(f'chown -R ubuntu:ubuntu {destination}')
+
+    try:
+        if parts == "all":
+            deploy_app(connection, source, destination)
+            deploy_config(connection, source, destination)
+            deploy_data(connection, source, destination)
+            deploy_apache(connection, source)
+            deploy_supervisor(connection, source)
+        elif parts == "app":
+            deploy_app(connection, source, destination)
+        elif parts == "config":
+            deploy_config(connection, source, destination)
+        elif parts == "data":
+            deploy_data(connection, source, destination)
+        elif parts == "apache":
+            deploy_apache(connection, source)
+        elif parts == "supervisor":
+            deploy_supervisor(connection, source)
+    finally:
+        connection.sudo(f'chown -R root:root {destination}')
 
     logger.info("complete!")
 
