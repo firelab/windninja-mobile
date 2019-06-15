@@ -109,27 +109,31 @@ sudo  apt-get python-mapnik
 ```s
 git clone [git-repo-url]
 ```
-Perform the following edits in the local repo before deploy
 
-Config files:
-- Copy and rename the two .config.yaml files (remove 'template' from name)
-- Use absolute paths for safety
-- SMTP configuratin values
+##### Available configuration
+
+**Config files**:
+[windninjaserver.config.yaml](windninja_server/windninjaserver.config.yaml) is the main configuration
+file for the web server. It contains:
 - Performance values: job count, threads, etc
 - Auto register settings
-- remove comments
+- Queue configuration
 
-Digital Elevation Model files:  
-- These files are two big to load to the GitHub repo.  
-- Copy these files to the local repo Data/dem folder.  
+**Digital Elevation Model files**:  
+- These files are too big to load to the GitHub repo.  
+- Copy these files to the local repo `data/dem` folder.  
 - Edit the "min bounding geometry" setting in the config if not using AK and CONUS
 
-Edit WindNinjaApp.conf 
-- Edit server name and alias 
-- Edit paths to wsgi app if necessary
-- NOTE: this file is directly under git control but these edits do not need to be commited to GitHub (can use assume-nochange)
-- TODO: create a 'template' for this file and commit that to GitHub
+**WindNinjaApp.conf**
+[WindNinjaApp.conf](windninja_server/windninjaweb/apache/WindNinjaApp.conf) 
+controls the WSGI server configuration. If you need to change the path
+where the server source code is located or how logs are maintained, edit this
+file.
 
+[supervisor/WindNinjaApp.conf](windninja_server/windninjaqueue/supervisor/WindNinjaApp.conf) controls the Supervisor settings for the task queue. 
+
+
+##### Deploying to a remote host
 On the web server, AWS information and credentials are needed to access the SMTP server.
 Add them as environment variables:
 ```
@@ -145,18 +149,6 @@ pipenv run python fabfile.py all -h <hostname> -d /srv/WindNinjaServer
 To deploy an already created tarball, at the `-t/--target` option.
 ```
 pipenv run python fabfile.py all -h <hostname> -t <local_tar.tar.gz>
-```
-
-On the remote machine:
-```s
-sudo chmod 777 -R /srv/WindWindServer/Data
-sudo mkdir /var/log/WindNinjaServer
-sudo a2ensite WindNinjaApp
-sudo service apache2 reload
-sudo supervisorctl -c /etc/supervisor/supervisord.conf
->>>reload
->>>status
->>>quit
 ```
 
 #### WINDNINJA
@@ -193,30 +185,28 @@ sudo supervisorctl -c /etc/supervisor/supervisord.conf
 	supervisorctl> start wnqueue
 	supervisorctl> stop wnqueue
 	supervisorctl> reload wnqueue
-
-sudo ./WindNinjaServer/Src/deploy.py [all, app, data, config, apache, supervisor] -d /srv/WindNinjaServer
 ```
 
 #### Testing System
 Verify queue manager & job wrapper
 - Drop the job queue file into the queue stroe 
 ```s
-cp Data/job/1a1111111111111111111111111111/1a1111111111111111111111111111.pending Data/queue
+cp data/job/1a1111111111111111111111111111/1a1111111111111111111111111111.pending data/queue
 ```
-- If file extension should change to .running, if the manager picks it up.  It will change to .complete or .fail depending on the result 
-- Check the job folder for artificats being created
+- If file extension should change to `.running`, if the manager picks it up.  It will change to `.complete` or `.fail` depending on the result 
+- Check the job folder for artifacts being created
 - Check the wnqueue log file for manager issues 
-    - /var/log/WindNinjaServer/wnqueue.log
+    - `/var/log/WindNinjaServer/wnqueue.log`
 - Truncate the queue log with:
 ```s
 sudo truncate -s0 /var/log/WindNinjaServer/wnqueue.log 
 ```
 - Review the job log file and job json
-    - Data/job/1a1111111111111111111111111111/log.txt
-    - Data/job/1a1111111111111111111111111111/job.json
+    - `data/job/1a1111111111111111111111111111/log.txt`
+    - `data/job/1a1111111111111111111111111111/job.json`
 - Clean up the job to run again
 ```s
-Data/job/1a1111111111111111111111111111/clean-job.sh
+data/job/1a1111111111111111111111111111/clean-job.sh
 rm Data/queue/1a1111111111111111111111111111.complete 
 ```
 

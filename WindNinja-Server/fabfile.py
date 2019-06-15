@@ -76,6 +76,11 @@ def deploy_data(connection, source, destination):
         logger.info(f"copying test job folder: {src_folder} to {dst_folder}")
         connection.run(f"cp -R {src_folder} {dst_folder}")
 
+    # TODO (lmalott): Figure out if it is really necessary to add executable
+    # permissions to these directories.
+    root_data_folder = os.path.join(destination, 'data')
+    connection.sudo(f'chmod 777 -R {root_data_folder}')
+
 
 def deploy_config(connection, source, destination):
     src_file = os.path.join(source, "windninjaserver.config.yaml")
@@ -133,6 +138,15 @@ def deploy_supervisor(connection, source):
     connection.sudo(f"cp -R {src_file} {dst_folder}")
 
 
+def reload_services(connection):
+    logger.info('Reloading apache and supervisor')
+    connection.sudo('mkdir -p /var/log/WindNinjaServer')
+    connection.sudo('a2ensite WindNinjaApp')
+    connection.sudo('service apache2 reload')
+    connection.sudo('supervisorctl reload /etc/supervisor/supervisord.conf')
+    connection.sudo('supervisorctl status')
+
+
 @click.command()
 @click.argument("parts", type=click.Choice(["all", "app", "config", "data", "apache", "supervisor"]))
 @click.option('-t', '--target', default=None)
@@ -181,6 +195,8 @@ def deploy(parts, target, destination, host):
             deploy_apache(connection, source)
         elif parts == "supervisor":
             deploy_supervisor(connection, source)
+
+        reload_services(connection)
     finally:
         connection.sudo(f'chown -R root:root {destination}')
 

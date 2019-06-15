@@ -1,5 +1,5 @@
 ---
-datastore: /srv/WindNinjaServer/Data
+datastore: /srv/WindNinjaServer/data
 auto_register:
     mode: EMAILS                                   
     domains:
