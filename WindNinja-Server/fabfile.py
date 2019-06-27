@@ -180,9 +180,9 @@ def deploy(parts, target, destination, host):
 
     try:
         if parts == "all":
+            # deploy_data is excluded because uploading the DEM files can take 30 minutes
             deploy_app(connection, source, destination)
             deploy_config(connection, source, destination)
-            deploy_data(connection, source, destination)
             deploy_apache(connection, source)
             deploy_supervisor(connection, source)
         elif parts == "app":
