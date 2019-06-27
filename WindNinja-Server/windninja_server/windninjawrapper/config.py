@@ -62,9 +62,9 @@ try:
     CONFIG.TILE_RASTER_MAX_LEVEL = overrides["job_wrapper"]["tile_maker"]["max_level"]
 
     Config.MAIL['server'] = {
-        address: os.getenv('AWS_SMTP_HOST'),
-        user: os.getenv('AWS_SMTP_KEY'),
-        password: os.getenv('AWS_SMTP_SECRET')
+        'address': os.getenv('AWS_SMTP_HOST'),
+        'user': os.getenv('AWS_SMTP_KEY'),
+        'password': os.getenv('AWS_SMTP_SECRET')
     }
 
     MESSAGES.BBOX_OUTSIDE_DEM = overrides["job_wrapper"]["messages"]["bbox_outside_dem"]
