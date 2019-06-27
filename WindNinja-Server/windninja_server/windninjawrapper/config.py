@@ -61,7 +61,7 @@ try:
     CONFIG.TILE_RASTER_MIN_LEVEL = overrides["job_wrapper"]["tile_maker"]["min_level"]
     CONFIG.TILE_RASTER_MAX_LEVEL = overrides["job_wrapper"]["tile_maker"]["max_level"]
 
-    Config.MAIL['server'] = {
+    CONFIG.MAIL['server'] = {
         'address': os.getenv('AWS_SMTP_HOST'),
         'user': os.getenv('AWS_SMTP_KEY'),
         'password': os.getenv('AWS_SMTP_SECRET')
