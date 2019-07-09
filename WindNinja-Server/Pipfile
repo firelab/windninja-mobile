@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+bumpversion = "*"
+
+[packages]
+flask = "*"
+supervisor = "*"
+flask-restful = "*"
+pyyaml = "*"
+blinker = "*"
+pytz = "*"
+numpy = "*"
+click = "*"
+click-log = "*"
+paramiko = "*"
+fabric = "*"
+invoke = "*"
+
+[requires]
+python_version = "3.7"

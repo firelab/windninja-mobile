@@ -7,7 +7,7 @@ import yaml
 class CONFIG:
     JOBS_DIRECTORY = ""
     JOB_FILENAME = ""
-    IN_DEM_PATH = "" 
+    IN_DEM_PATH = ""
     OUT_DEM_FILENAME = ""
     QUEUE_DIRECTORY = ""
     MAIL = {}
@@ -31,13 +31,13 @@ class CONFIG:
 class MESSAGES:
     BBOX_OUTSIDE_DEM=""
     BBOX_OUTSIDE_FORECASTS=""
-    
+
 try:
     __config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "windninjawrapper.config.yaml")  #os.environ["WNSERVER_CONFIG"]
     print(__config_file)
     with open(__config_file, "r") as f:
         overrides = yaml.safe_load(f)
-    
+
     CONFIG.JOBS_DIRECTORY = os.path.abspath(overrides["job_wrapper"]["job_datastore"])
     CONFIG.JOB_FILENAME = overrides["job_wrapper"]["job_filename"]
     CONFIG.IN_DEM_PATH = overrides["job_wrapper"]["in_dem_path"]
@@ -60,11 +60,16 @@ try:
     CONFIG.TILE_RASTER_MAX_THREADS = overrides["job_wrapper"]["tile_maker"]["max_threads"]
     CONFIG.TILE_RASTER_MIN_LEVEL = overrides["job_wrapper"]["tile_maker"]["min_level"]
     CONFIG.TILE_RASTER_MAX_LEVEL = overrides["job_wrapper"]["tile_maker"]["max_level"]
-    
-    
+
+    CONFIG.MAIL['server'] = {
+        'address': os.getenv('AWS_SMTP_HOST'),
+        'user': os.getenv('AWS_SMTP_KEY'),
+        'password': os.getenv('AWS_SMTP_SECRET')
+    }
+
     MESSAGES.BBOX_OUTSIDE_DEM = overrides["job_wrapper"]["messages"]["bbox_outside_dem"]
     MESSAGES.BBOX_OUTSIDE_FORECASTS = overrides["job_wrapper"]["messages"]["bbox_outside_forecasts"]
-    
+
 except Exception as ex:
     print("config loading failed: {}".format(str(ex)))
 
