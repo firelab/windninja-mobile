@@ -17,9 +17,9 @@ click_log.basic_config(logger)
 def pack(tarname):
     """Create a tarball of the windninja_server source."""
     logger.info(f"Creating tarball of windninja_server..")
-    tar_files = ' '.join(['windninja_server', 'setup.py'])
+    tar_files = ' '.join(['windninja_server', 'bin', 'setup.py'])
     run(f'rm -f {tarname}')
-    run(f"tar -czvf {tarname} --exclude='*.tar.gz' --exclude='fabfile.py' {tar_files}", hide=True)
+    run(f"tar -czvf {tarname} --exclude='*.tar.gz' --exclude='fabfile.py' {tar_files}")
     logger.info(f"Successfully created tarball")
 
 
@@ -120,6 +120,9 @@ def deploy_app(connection, source, destination):
         dst_folder = os.path.join(destination, "app")
         logger.info(f"copying {f} file: {src_file} to {dst_folder}")
         connection.run(f"cp -R {src_file} {dst_folder}")
+
+    bin_source = os.path.join(source, "..", "bin")
+    connection.sudo(f"cp -R {bin_source} {destination}")
 
 
 def deploy_apache(connection, source):
