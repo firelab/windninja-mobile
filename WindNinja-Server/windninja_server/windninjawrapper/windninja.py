@@ -308,18 +308,18 @@ def main():
             msg = "Complete - total processing: {}".format(delta)
             project.updateJob(status.name, (logging.INFO, msg), True)
         except Exception as ex:
-            logging.error("job update failed n failed:\t{}".format(str(ex)))
+            logging.exception("job update failed n failed:\t{}".format(str(ex)))
 
         try: project.sendEmail()
         except Exception as ex:
-            logging.error("send notification failed:\t{}".format(str(ex)))
+            logging.exception("send notification failed:\t{}".format(str(ex)))
 
     #TODO: should this be a command line flag to skip or try
     try:
         dequeue(args.id)
         logging.info("Job dequeue")
     except Exception as ex:
-        logging.error("job dequeue failed:\t{}".format(str(ex))) 
+        logging.exception("job dequeue failed:\t{}".format(str(ex))) 
 
 def processShapefiles(results_folder, shpfiles, project_path, convertToGeoJson, where=None, zip_name=""):
     zip_package = None

@@ -15,6 +15,9 @@ wnqueue.set_Queue(app.config["QUEUE"], False)
 
 # global expection logging
 import logging
+
+logging.info('Starting the windninjaserver application')
+
 def log_exception(sender, exception, **extra):
     logging.exception(exception)
 
