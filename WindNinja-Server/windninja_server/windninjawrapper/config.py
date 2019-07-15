@@ -74,5 +74,5 @@ except Exception as ex:
     print("config loading failed: {}".format(str(ex)))
 
 
-#print("job wrapper config initalized!")
-#print(CONFIG.JOBS_DIRECTORY)
+print("job wrapper config initalized!")
+print(CONFIG.JOBS_DIRECTORY)

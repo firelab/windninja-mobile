@@ -128,19 +128,23 @@ file for the web server. It contains:
 [WindNinjaApp.conf](windninja_server/windninjaweb/apache/WindNinjaApp.conf) 
 controls the WSGI server configuration. If you need to change the path
 where the server source code is located or how logs are maintained, edit this
-file.
+file. *Note*, after deploying, this file must be edited to include the SMTP
+environment variables. Apache runs the web server as a subprocess in a different
+shell. Environment variables must explicitely be included.
 
 [supervisor/WindNinjaApp.conf](windninja_server/windninjaqueue/supervisor/WindNinjaApp.conf) controls the Supervisor settings for the task queue. 
 
 
 ##### Deploying to a remote host
 On the web server, AWS information and credentials are needed to access the SMTP server.
-Add them as environment variables:
+Add them as environment variables to `/etc/environment` and to `/etc/apache2/envvars`:
 ```
+export APP_HOSTNAME=
 export AWS_SMTP_HOST=..
 export AWS_SMTP_KEY=..
 export AWS_SMTP_SECRET=...
 ```
+
 
 From your local machine:
 ```

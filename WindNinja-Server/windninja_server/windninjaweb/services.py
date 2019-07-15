@@ -6,11 +6,15 @@ from flask_restful import reqparse
 from werkzeug import exceptions
 import json
 import time
+import logging
 
 from windninjaweb.app import app
 import windninjaweb.models as wnmodels
 import windninjaweb.filestore as wndb
 import windninjaweb.utility as wnutil
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ----------------CONFIGURATION----------------
 _register_parser = reqparse.RequestParser()
@@ -27,8 +31,9 @@ _confirm_parser.add_argument("f", type=str, default="", required=False, store_mi
 
 #TODO: log email confirmation offline
 _email_parameters = app.config.get("MAIL", None)
+logger.info(_email_parameters)
 _confirmation_code_separator = ":"
-_confirmation_delta_minutes = -1 
+_confirmation_delta_minutes = -1
 
 # ----------------PUBLIC SERVICE METHODS----------------
 @app.route("/services/registration/register", methods=["POST"])
@@ -38,53 +43,54 @@ def register():
     """
     try:
         args = _register_parser.parse_args(request)
-        
+
         # create a device to add to the account
         device = wnmodels.Device.create(args.deviceId, args.model, args.platform, args.version)
 
         #email is the account id
         id = email = args["email"]
         account = wndb.get_account(id)
-        
+
         if not account:
             message = "Registration accepted; Account pending verification"
 
             account = wnmodels.Account.create(id, email, args["name"])
             account.devices.append(device)
-            
+
             # check auto accept
             if _auto_accept_registration(account):
                 account.status = wnmodels.AccountStatus.accepted
                 message = "Account accepted via auto-registration"
-            
+
             # save the new account
             wndb.save_account(account)
-        
+
         elif not account.has_device(device):
             message = "Account exists, device added"
 
             account.devices.append(device)
-            
+
             # save the new account
             wndb.save_account(account)
 
         else:
             message = "Account and device exist"
-            
+
         account_state = wnmodels.AccountState.create(account, message)
         response = make_response(account_state.to_json(), 200)
 
-        # send account verification 
+        # send account verification
         if account.status == wnmodels.AccountStatus.pending:
             _generate_registration_confirmation(account)
 
-    except exceptions.HTTPException as hex:      
+    except exceptions.HTTPException as hex:
          response = make_response(json.dumps(hex.data), hex.code)
     except Exception as ex:
         #TODO: log
         #TODO: hide real message with generic?
+        logger.exception('Failed to register account')
         response = make_response("{{'message':'{}'}}".format(str(ex)), 500)
-    
+
     response.headers["Content-Type"] = "application/json"
     return response
 
@@ -98,7 +104,7 @@ def confirm():
     try:
         # get the request data
         args = _confirm_parser.parse_args(request)
-        
+
         #----------------------------------------
         #ERROR HANDLER TESTING
         #raise Exception("Testing error handler")
@@ -113,18 +119,18 @@ def confirm():
             # update account to accepted and return response
             account.status = wnmodels.AccountStatus .accepted
             success = wndb.save_account(account)
-            if success: 
+            if success:
                 result.code = 200
                 result.data = wnmodels.AccountState.create(account, message="Account enabled")
-                
+
             else:
                 result.code = 500
                 result.data = {"message": "unable to update account"}
-        
+
         elif account and not valid:
             result.data = wnmodels.AccountState.create(account, message="Confirmation code is expired")
-            result.code = 403 
-            
+            result.code = 403
+
             # send a new code
             try:
                 _generate_registration_confirmation(account)
@@ -135,19 +141,19 @@ def confirm():
         else:
             result.code = 400
             result.data = {"message": message}
-        
+
     except exceptions.HTTPException as hex:
         result.code = hex.code
         result.data = hex.data
         args = args or wnutil.Namespace(request.args.to_dict())
         args.f = args.get("f") or request.args.get("f", "html")
-            
+
     except Exception as ex:
         #TODO: log
         #TODO: hide real message with generic?
         result.code = 500
         result.data = {"message": str(ex)}
-    
+
     # create the expected response format - content-type rules over f argument
     if ("application/json" in [x.strip() for x in request.headers.get("ContentType", "").split(";")]) or args.f == "json":
         try:
@@ -158,7 +164,7 @@ def confirm():
         response.headers["Content-Type"] = "application/json"
     else:
         response = render_template("confirm.html", result=result)
-    
+
     return response
 
 # ----------------PRIVATE SUPPORT METHODS----------------
@@ -170,17 +176,17 @@ def _auto_accept_registration(account):
     """
     settings = app.config.get("AUTO_REGISTER", {"mode": "NONE"})
     mode = settings.get("mode", "NONE").upper()
-    
+
     if mode == "ALL":
 
         return True
 
     elif mode == "EMAILS":
-        
+
         return wnutil.is_whitelisted(account.email, settings)
 
     else:
-    
+
         return False
 
 def _generate_registration_confirmation(account):
@@ -225,7 +231,7 @@ def _validate_registration_confirmation(code):
 
     # get the assocated account
     account = wndb.get_account(id)
-    if not account: 
+    if not account:
         return False, "Account not found", None
 
     # validate the account hash
@@ -236,6 +242,6 @@ def _validate_registration_confirmation(code):
     if _confirmation_delta_minutes > 0:
         if (time_stamp+(_confirmation_delta_minutes*60) < time.time()):
             return False, "Code has expired", account
-    
+
     # return success
     return True, "", account

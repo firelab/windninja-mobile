@@ -3,6 +3,7 @@ import os
 import logging
 import shutil
 import distutils
+import time
 from datetime import datetime
 
 import click
@@ -17,7 +18,7 @@ click_log.basic_config(logger)
 def pack(tarname):
     """Create a tarball of the windninja_server source."""
     logger.info(f"Creating tarball of windninja_server..")
-    tar_files = ' '.join(['windninja_server', 'data', 'setup.py'])
+    tar_files = ' '.join(['windninja_server', 'bin', 'setup.py'])
     run(f'rm -f {tarname}')
     run(f"tar -czvf {tarname} --exclude='*.tar.gz' --exclude='fabfile.py' {tar_files}", hide=True)
     logger.info(f"Successfully created tarball")
@@ -121,6 +122,9 @@ def deploy_app(connection, source, destination):
         logger.info(f"copying {f} file: {src_file} to {dst_folder}")
         connection.run(f"cp -R {src_file} {dst_folder}")
 
+    bin_source = os.path.join(source, "..", "bin")
+    connection.sudo(f"cp -R {bin_source} {destination}")
+
 
 def deploy_apache(connection, source):
     src_file = os.path.join(source, "windninjaweb", "apache", "WindNinjaApp.conf")
@@ -144,6 +148,7 @@ def reload_services(connection):
     connection.sudo('a2ensite WindNinjaApp')
     connection.sudo('service apache2 reload')
     connection.sudo('supervisorctl reload /etc/supervisor/supervisord.conf')
+    time.sleep(5)
     connection.sudo('supervisorctl status')
 
 

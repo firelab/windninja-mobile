@@ -40,7 +40,7 @@ class Project:
         self.products = {"vector":True, "raster":False, "topofire":True, "geopdf":False, "clustered": False, "weather": False}
         self.email = None
         self.output = {}
-        
+
     def openJob(self):
         try:
             with open(self.jobFile, "r") as json_file:
@@ -63,7 +63,7 @@ class Project:
                 self.forecast = self.job["input"]["forecast"]
             else:
                 self.job["input"]["forecast"] = self.forecast
-            
+
             # get the windninja parameters
             if self.job["input"].has_key("parameters"):
                 self.parameters = self.job["input"]["parameters"]
@@ -85,7 +85,7 @@ class Project:
                 self.job["input"]["products"] = ""
                 for p in selft.products.iterkeys():
                     self.products += "{0}:{1};".format(p, products[p])
-            
+
             #parse the domain values into box
             if (self.job["input"].has_key("domain") and self.job["input"]["domain"].has_key("xmin") and self.job["input"]["domain"].has_key("ymin") and self.job["input"]["domain"].has_key("xmax") and self.job["input"]["domain"].has_key("ymax")):
                 self.bbox = [self.job["input"]["domain"]["xmin"],self.job["input"]["domain"]["ymin"],self.job["input"]["domain"]["xmax"],self.job["input"]["domain"]["ymax"]]
@@ -93,7 +93,7 @@ class Project:
                 raise ValueError("Job does not contain a valid domain bound box")
 
     def updateJob(self, status, message_tuple, write):
-        
+
         if self.job is None:
             return
 
@@ -127,10 +127,14 @@ class Project:
             msg['From'] = CONFIG.MAIL["from_address"]
             msg['To'] = self.job['email']
 
+            if CONFIG.MAIL["server"]["address"] is None:
+                logger.error('SMTP server address is not set! Cannot send notifications')
+                return
+
             s = smtplib.SMTP(CONFIG.MAIL["server"]["address"])
             s.ehlo()
             if CONFIG.MAIL["server"]["user"] and CONFIG.MAIL["server"]["password"]:
-                logging.debug("server requires login")  
+                logging.debug("server requires login")
                 s.starttls()
                 s.ehlo()
                 s.login(CONFIG.MAIL["server"]["user"], CONFIG.MAIL["server"]["password"])
