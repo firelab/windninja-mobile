@@ -17,7 +17,7 @@ click_log.basic_config(logger)
 def pack(tarname):
     """Create a tarball of the windninja_server source."""
     logger.info(f"Creating tarball of windninja_server..")
-    tar_files = ' '.join(['windninja_server', 'data', 'setup.py'])
+    tar_files = ' '.join(['windninja_server', 'setup.py'])
     run(f'rm -f {tarname}')
     run(f"tar -czvf {tarname} --exclude='*.tar.gz' --exclude='fabfile.py' {tar_files}", hide=True)
     logger.info(f"Successfully created tarball")
