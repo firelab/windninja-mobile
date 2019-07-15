@@ -3,6 +3,7 @@ import os
 import logging
 import shutil
 import distutils
+import time
 from datetime import datetime
 
 import click
@@ -147,6 +148,7 @@ def reload_services(connection):
     connection.sudo('a2ensite WindNinjaApp')
     connection.sudo('service apache2 reload')
     connection.sudo('supervisorctl reload /etc/supervisor/supervisord.conf')
+    time.sleep(5)
     connection.sudo('supervisorctl status')
 
 

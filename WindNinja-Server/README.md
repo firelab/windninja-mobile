@@ -137,12 +137,14 @@ shell. Environment variables must explicitely be included.
 
 ##### Deploying to a remote host
 On the web server, AWS information and credentials are needed to access the SMTP server.
-Add them as environment variables:
+Add them as environment variables to `/etc/environment` and to `/etc/apache2/envvars`:
 ```
+export APP_HOSTNAME=
 export AWS_SMTP_HOST=..
 export AWS_SMTP_KEY=..
 export AWS_SMTP_SECRET=...
 ```
+
 
 From your local machine:
 ```
