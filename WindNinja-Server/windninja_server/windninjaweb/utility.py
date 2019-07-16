@@ -1,7 +1,6 @@
 ﻿"""
 Utility methods and classes for the project
 """
-
 import smtplib
 import base64
 from email.mime.text import MIMEText
@@ -18,10 +17,13 @@ class Namespace(dict):
 
 def send_email(server, to_addresses, from_address, subject, body):
     """
-    Send email using setting defined in 'server' 
+    Send email using setting defined in 'server'
+
+    Returns:
+        SMTP: SMTP object used to send the email. Primarily for unit testing.
     """
 
-    #NOTE: from address does not appear to 'reset' from the gmail account used 
+    #NOTE: from address does not appear to 'reset' from the gmail account used
     #TODO: implement other SMTP providers or non-SMTP variations
 
     # create the message
@@ -40,9 +42,12 @@ def send_email(server, to_addresses, from_address, subject, body):
     s.sendmail(from_address, to_addresses.split(','), msg.as_string())
     s.close()
 
+    return s
+
+
 def is_whitelisted(email, whitelist):
     """
-    Determines if an email address/domian is in the whitelist 
+    Determines if an email address/domian is in the whitelist
 
     Returns boolean: True/False
     """
@@ -51,6 +56,7 @@ def is_whitelisted(email, whitelist):
         domain = email.split("@")[-1]
         whitelisted = domain in (whitelist.get("domains", []) or [])
     return whitelisted
+
 
 #TODO: better name? or move to "models" as it's really specific to those attributes
 def validate(value, value_type, message):
@@ -67,11 +73,12 @@ def validate(value, value_type, message):
 
     return True
 
+
 def encode(key, clear):
     """
     A very simple obfuscation encoding function
     --- key is btyes i.e. from os.urandom(24)
-    
+
     Returns: byte string
     """
     enc = []
@@ -81,11 +88,12 @@ def encode(key, clear):
         enc.append(enc_c)
     return base64.urlsafe_b64encode("".join(enc).encode("utf-8"))
 
+
 def decode(key, enc):
     """
     Decoding function for a very simple obfuscation encoding function
     --- key is btyes i.e. from os.urandom(24)
-    
+
     Returns: string
     """
     dec = []
