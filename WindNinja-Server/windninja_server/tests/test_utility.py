@@ -1,64 +1,79 @@
-﻿import unittest
+﻿import pytest
+
 import os
+import smtplib
 import windninjaweb.utility as wnutils
 
-class TestUtility(unittest.TestCase):
-    mail = {"server": {"address": "smtp.gmail.com:587", "password": "@dmin4dev", "user": "gcs4windninja@gmail.com"},  "from_address": "windninja@yourdatasmarter.com"}
-    auto_register = {"domains": ["fs.fed.us", "yourdatasmarter.com"], "emails":["someone@gmail.com", "me@gmail.com"]}
 
-    @classmethod
-    def setUpClass(cls):
-        pass
+MAIL = {
+    "server": {
+        "address": "smtp.gmail.com:587",
+        "password": "@dmin4dev",
+        "user": "gcs4windninja@gmail.com"
+    },
+    "from_address": "windninja@yourdatasmarter.com"
+}
 
-    def test_send_email(self):
-        to_addresses = "fspataro@yourdatasmarter.com"
-        body = "This is a unit test email"
-        subject = "WindNinja Server UnitTest"
-        wnutils.send_email(TestUtility.mail["server"], to_addresses, TestUtility.mail["from_address"], subject, body)
-       
-    def test_is_whitelisted(self):
-        
-        valid_domain_email = "me@yourdatasmarter.com"
-        valid_email = "me@gmail.com"
-        invalid_email = "not_me@gmail.com"
+AUTO_REGISTER = {
+    "domains": ["fs.fed.us", "yourdatasmarter.com"],
+    "emails":["someone@gmail.com", "me@gmail.com"]
+}
 
-        # populated whitelist
-        whitelist = TestUtility.auto_register
-        self.assertTrue(wnutils.is_whitelisted(valid_domain_email, whitelist), msg="Valid domain failed")
-        self.assertTrue(wnutils.is_whitelisted(valid_email, whitelist), msg="Valid email failed")
-        self.assertFalse(wnutils.is_whitelisted(invalid_email, whitelist), msg="Invalid email accepted")
 
-        # empty whitelist
-        whitelist = {}
-        self.assertFalse(wnutils.is_whitelisted(valid_domain_email, whitelist), msg="Valid domain accepted with empty whitelist")
-        self.assertFalse(wnutils.is_whitelisted(valid_email, whitelist), msg="Valid email accepted with empty whitelist")
-        self.assertFalse(wnutils.is_whitelisted(invalid_email, whitelist), msg="Invalid email accepted with empty whitelist")
-    
-    def test_validate(self):
+def test_send_email(mocker):
+    mock_smtp = mocker.patch('smtplib.SMTP')
 
-        target = wnutils.validate
-        message = "Incorrect value: {}"
-        
-        value = "a"
-        self.assertTrue(target(value, str, message), "Validate incorrectly failed")
+    to_addresses = "fspataro@yourdatasmarter.com"
+    body = "This is a unit test email"
+    subject = "WindNinja Server UnitTest"
 
-        value = ""
-        self.assertRaisesRegex(ValueError, message.format(value), target, value, str, message)
+    expected_msg = 'Content-Type: text/plain; charset="us-ascii"\nMIME-Version: 1.0\nContent-Transfer-Encoding: 7bit\nSubject: WindNinja Server UnitTest\nFrom: windninja@yourdatasmarter.com\nTo: fspataro@yourdatasmarter.com\n\nThis is a unit test email'
 
-        value = 1
-        self.assertRaisesRegex(TypeError, message.format(type(value)), target, value, str, message)
+    smtp = wnutils.send_email(MAIL["server"], to_addresses, MAIL["from_address"], subject, body)
 
-    def test_encode_decode(self):
-        key =  b'.\x87\xa4m9\xbd)_\x07\x08{\xf4\xf8qY^\x81\x9f3\xb4U\xca|\x12'
-        value = "me@mail.com"
-        encoded = wnutils.encode(key, value)
-        decoded = wnutils.decode(key, encoded)
+    smtp.sendmail.assert_called_with(MAIL["from_address"], [to_addresses], expected_msg)
 
-        self.assertEqual(value, decoded, "Incorrect decoded value")
 
-    @classmethod
-    def tearDownClass(cls):
-        pass
+def test_is_whitelisted():
 
-if __name__ == '__main__':
-    unittest.main()
+    valid_domain_email = "me@yourdatasmarter.com"
+    valid_email = "me@gmail.com"
+    invalid_email = "not_me@gmail.com"
+
+    # populated whitelist
+    whitelist = AUTO_REGISTER
+    assert wnutils.is_whitelisted(valid_domain_email, whitelist), "Valid domain failed"
+    assert wnutils.is_whitelisted(valid_email, whitelist), "Valid email failed"
+    assert not wnutils.is_whitelisted(invalid_email, whitelist), "Invalid email accepted"
+
+    # empty whitelist
+    whitelist = {}
+    assert not wnutils.is_whitelisted(valid_domain_email, whitelist), "Valid domain accepted with empty whitelist"
+    assert not wnutils.is_whitelisted(valid_email, whitelist), "Valid email accepted with empty whitelist"
+    assert not wnutils.is_whitelisted(invalid_email, whitelist), "Invalid email accepted with empty whitelist"
+
+
+def test_validate():
+    message = "Incorrect value: {}"
+
+    assert wnutils.validate("a", str, message), "Validate incorrectly failed"
+
+    with pytest.raises(ValueError) as excinfo:
+        wnutils.validate("", str, message)
+
+    assert message.format("") == str(excinfo.value)
+
+    with pytest.raises(TypeError) as excinfo:
+        wnutils.validate(1, str, message)
+
+    assert message.format(type(1)) == str(excinfo.value)
+
+
+def test_encode_decode():
+    key =  b'.\x87\xa4m9\xbd)_\x07\x08{\xf4\xf8qY^\x81\x9f3\xb4U\xca|\x12'
+    value = "me@mail.com"
+    encoded = wnutils.encode(key, value)
+    decoded = wnutils.decode(key, encoded)
+
+    assert value == decoded, "Value decoded incorrectly"
+
