@@ -9,17 +9,17 @@ import pytz
 _logger = logging.getLogger(__name__)
 
 _directories = {
-    "main" : "", 
+    "main" : "",
     "account" : "",
     "feedback" : "",
     "job" : "",
     "notification": ""
     }
 
-def set_Store(dir, initialize):
+def set_Store(dir, initialize=False):
     global _directories
 
-    #TODO: the names could be configurable? probably overkill since db will be more likely 
+    #TODO: the names could be configurable? probably overkill since db will be more likely
     _directories["main"]  = dir
     _directories["job"] = os.path.join(dir, "job")
     _directories["feedback"] = os.path.join(dir, "feedback")
@@ -37,16 +37,16 @@ def get_job(id):
     job_folder = id.replace("-", "").lower()
     file = os.path.join(_directories["job"], job_folder, _job_file_name)
     _logger.debug("Job file: {}".format(file))
-    
+
     try:
-    
+
         with open(file, "r") as json_file:
             json_string = json_file.read()
 
     except FileNotFoundError as e:
         return None
 
-    job = wnmodels.Job.from_json(json_string)   
+    job = wnmodels.Job.from_json(json_string)
     return job
 
 def save_job(job):
@@ -57,7 +57,7 @@ def save_job(job):
 
     job_folder = os.path.join(_directories["job"], job.id.replace("-", "").lower())
     _logger.debug("Job folder: {}".format(job_folder))
-    
+
     try:
         os.mkdir(job_folder)
     except FileExistsError:
@@ -65,7 +65,7 @@ def save_job(job):
 
     file = os.path.join(_directories["job"], job_folder, _job_file_name)
     _logger.debug("Job file: {}".format(file))
-    
+
     with open(file, "w") as json_file:
         json_file.write(json_string)
 
@@ -77,14 +77,14 @@ def get_account(id):
     _logger.debug("Account file: {}".format(file))
 
     try:
-    
+
         with open(file, "r") as json_file:
             json_string = json_file.read()
 
     except FileNotFoundError as e:
         return None
 
-    account = wnmodels.Account.from_json(json_string)   
+    account = wnmodels.Account.from_json(json_string)
     return account
 
 def save_account(account):
@@ -95,7 +95,7 @@ def save_account(account):
 
     file = os.path.join(_directories["account"], "{}.json".format(account.id.lower()))
     _logger.debug("Account file: {}".format(file))
-    
+
     with open(file, "w") as json_file:
         json_file.write(json_string)
 
@@ -105,16 +105,16 @@ def save_account(account):
 def get_feedback(id):
     file = os.path.join(_directories["feedback"], "{}.json".format(id.lower()))
     _logger.debug("Feedback file: {}".format(file))
-    
+
     try:
-    
+
         with open(file, "r") as json_file:
             json_string = json_file.read()
 
     except FileNotFoundError as e:
         return None
 
-    feedback = wnmodels.Feedback.from_json(json_string)   
+    feedback = wnmodels.Feedback.from_json(json_string)
     return feedback
 
 def save_feedback(feedback):
@@ -134,7 +134,7 @@ def save_feedback(feedback):
 #------------NOTIFICATION--------------
 def _get_notification_from_file(file):
     _logger.debug("Notification file: {}".format(file))
-    
+
     try:
         with open(file, "r") as json_file:
             json_string = json_file.read()
@@ -142,7 +142,7 @@ def _get_notification_from_file(file):
     except FileNotFoundError as e:
         return None
 
-    notification = wnmodels.Notification.from_json(json_string)   
+    notification = wnmodels.Notification.from_json(json_string)
     return notification
 
 
@@ -159,7 +159,7 @@ def get_notifications(exprired=False):
 
     file_filter = os.path.join(_directories["notification"], "*.json")
     _logger.debug("Notification file filter: {}".format(file_filter))
-    
+
     files = glob.glob(file_filter)
     _logger.debug("Notification count: {}".format(len(files)))
 
