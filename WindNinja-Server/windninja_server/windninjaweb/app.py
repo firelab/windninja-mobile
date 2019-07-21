@@ -10,8 +10,8 @@ import windninjaweb.views
 import windninjaweb.api
 import windninjaweb.services
 
-wndb.set_Store(app.config["DATASTORE"], False)
-wnqueue.set_Queue(app.config["QUEUE"], False)
+wndb.set_Store(app.config["DATASTORE"])
+wnqueue.set_Queue(app.config["QUEUE"])
 
 # global expection logging
 import logging

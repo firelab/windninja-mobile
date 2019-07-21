@@ -10,15 +10,15 @@ import windninjaweb.filestore as wndb
 from tests_models import MockModels
 
 class TestFileStore(unittest.TestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         # create a temp directory for the file store and initialize it
         cls._store = tempfile.TemporaryDirectory()
-        wndb.set_Store(cls._store.name, True)
+        wndb.set_Store(cls._store.name, initialize=True)
 
         # create the "exsiting files" in a manual way
-        account_file =  "{}.json".format(MockModels.account_id)    
+        account_file =  "{}.json".format(MockModels.account_id)
         with open(os.path.join(wndb._directories["account"], account_file), "w") as f:
             f.write(MockModels.account_json)
 
@@ -38,7 +38,7 @@ class TestFileStore(unittest.TestCase):
         actual = wndb.get_job("THIS IS A BAD ID")
         self.assertIsNone(actual, msg="Actual job: not None")
 
-    def test_save_job(self): 
+    def test_save_job(self):
         target = wnmodels.Job()
         target.account = "my@account.com"
         target.email = "name@email.com"
@@ -84,7 +84,7 @@ class TestFileStore(unittest.TestCase):
         target.status = wnmodels.AccountStatus.disabled
         target.devices.append(wnmodels.Device.create("ID01", "MD01", "ANDR", "5.0"))
         target.devices.append(wnmodels.Device.create("ID02", "MD02", "IOS", "9.0"))
-        
+
         actual = wndb.save_account(target)
         self.assertTrue(actual, msg="Account save failed")
 
