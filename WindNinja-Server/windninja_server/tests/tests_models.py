@@ -5,12 +5,99 @@ import dateutil
 
 _id_regex = "\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z"
 
+
+def validate_job(actual):
+    assert actual is not None, "Job is None"
+    assert actual.account == "test@yourdatasmarter.com", "Incorrect job account"
+
+    assert actual.name == "Point Six (test)", "Incorrect job name"
+    assert actual.status == wnmodels.JobStatus.succeeded, "Incorrect job status"
+    assert actual.id == "11111111-1111-1111-1111-111111111111", "Incorrect job id"
+    assert actual.email == "5555555555@vtext.com", "Incorrect job email"
+
+    assert actual.messages is not None, "Job messages is None"
+    assert len(actual.messages) == 9, "Incorrect job messages length"
+    #TODO: test some messages or split each to verify format
+
+    assert actual.input is not None, "Job input is None"
+    assert actual.input.products == "vector:true;raster:true;topofire:true;geopdf:false;clustered:true;weather:true", "Incorrect job input products"
+    assert actual.input.parameters == "forecast_duration:6;vegetation:trees;mesh_choice:fine", "Incorrect job input parameters"
+    assert actual.input.forecast == "NOMADS-NAM-CONUS-12-KM", "Incorrect job forecast"
+
+    assert actual.input.domain is not None, "Job input domain is None"
+    assert actual.input.domain.xmax == -113.97925790543299, "Incorrect job input domain xmax"
+    assert actual.input.domain.ymax == 47.038565315467025, "Incorrect job input domain ymax"
+    assert actual.input.domain.xmin == -114.0235465406869, "Incorrect job input domain xmin"
+    assert actual.input.domain.ymin == 46.99526210560205, "Incorrect job input domain ymin"
+
+    assert actual.output is not None, "Job output is None"
+    #assert actual.output.products is not None, "Job output products is None"
+    #assert len(actual.output.products) == 4, "Incorrect job output products length"
+
+    assert actual.output.simulations is not None, "Job output simulation is None"
+    assert actual.output.products is not None, "Job output products is None"
+    assert len(actual.output.products.keys()) == 5, "Incorrect job output products length"
+
+    assert actual.output.products["vector"] is not None, "Job output product vector is None"
+    assert actual.output.products["topofire"] is not None, "Job output product topofire is None"
+    assert actual.output.products["clustered"] is not None, "Job output product clustered is None"
+    assert actual.output.products["weather"] is not None, "Job output product weather is None"
+    assert actual.output.products["raster"] is not None, "Job output product raster is None"
+
+    #actual_product = actual.output.products[0]
+    #context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
+    #TODO: test others are not None
+    #context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output product[0] name")
+    #context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output product[0] package")
+    #context.assertEqual(actual_product.type, "raster", msg="Incorrect job output product[0] type")
+    #context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output product[0] format")
+
+    #context.assertEqual(len(actual_product.files), 4, "Incorrect job output product[0] files length")
+    #context.assertEqual(actual_product.files[0], "dem_12-15-2015_1700_29m", msg="Incorrect job output product[0] file[0]")
+
+    #context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
+    #context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
+
+    #TODO: test other products
+
+    actual_product = actual.output.products["raster"]
+    assert actual_product.name == "WindNinja Raster Tiles", "Incorrect job output raster name"
+    assert actual_product.package == "tiles.zip", "Incorrect job output raster package"
+    assert actual_product.type == "raster", "Incorrect job output raster type"
+    assert actual_product.format ==  "tiles", "Incorrect job output raster format"
+    assert len(actual_product.files) == 7, "Incorrect job output raster files length"
+    assert actual_product.files[0] == "20171025T1200", "Incorrect job output raster file[0]"
+    assert actual_product.data is not None, "Job output raster data is None"
+    assert actual_product.data["maxSpeed"] is not None, "Job output raster data max speed is None"
+
+    assert len(actual_product.data["maxSpeed"].keys()) == 8, "Incorrect job output raster max speed keys length"
+    assert actual_product.data["maxSpeed"]["overall"] == 32.541089, "Incorrect job output raster max speed overall value"
+    assert actual_product.data["speedBreaks"] is not None, "Job output raster data speed breaks is None"
+    assert len(actual_product.data["speedBreaks"]) == 5, "Incorrect job output raster speed breaks keys"
+
+
+def validate_account(actual):
+    #TODO: finish validation
+    assert actual is not None, "Account is None"
+    assert wnmodels.AccountStatus.accepted == actual.status, "Status is not 'accepted'"
+    assert len(actual.devices) == 1, "Device length is not 1"
+    assert actual.devices[0] is not None, "Device[0] is None"
+
+
+def validate_feedback(actual):
+    assert actual is not None, "Feedback is None"
+    assert actual.id == "5a46dfb6-70c1-400d-8361-f9b9c000ecbd", "Incorrect feedback id"
+    assert actual.account == "nwagenbrenner@gmail.com", "Incorrect feedback account"
+    assert actual.date_time_stamp == datetime.datetime(2015, 12, 16, 14, 10, 54, 455516, dateutil.tz.gettz("America/Denver")), "Incorrect feedback account"
+    assert actual.comments == "Does this work? Where is this sent to?\n", "Incorrect feedback comments"
+
+
 class MockModels:
     account_json = r'{"id":"nwagenbrenner@gmail.com","email":"nwagenbrenner@gmail.com","name":"Natalie","devices":[{"id":"34168dabe324072c","model":"SAMSUNG-SM-G850A","platform":"Android","version":"5.0.2"}],"createdOn":"2015-12-15T15:34:20.422737-07:00","status":"Accepted"}'
     account_id = "nwagenbrenner@gmail.com"
     account_hash = "bb8f07d34b662c5889bffd2684c647febdde7e092beb897f8d52abf23df21f07"
     device_id = "34168dabe324072c"
-    
+
     feedback_json = r'{"id":"5a46dfb6-70c1-400d-8361-f9b9c000ecbd","account":"nwagenbrenner@gmail.com","dateTimeStamp":"2015-12-16T14:10:54.4555168-07:00","comments":"Does this work? Where is this sent to?\n"}'
     feedback_id = "5a46dfb6-70c1-400d-8361-f9b9c000ecbd"
 
@@ -25,7 +112,7 @@ class MockModels:
         context.assertEqual(actual.status, wnmodels.JobStatus.succeeded, msg="Incorrect job status")
         context.assertEqual(actual.id, "11111111-1111-1111-1111-111111111111", msg="Incorrect job id")
         context.assertEqual(actual.email, "5555555555@vtext.com", msg="Incorrect job email")
-        
+
         context.assertIsNotNone(actual.messages, "Job messages is None")
         context.assertEqual(len(actual.messages), 9, "Incorrect job messages length")
         #TODO: test some messages or split each to verify format
@@ -53,7 +140,7 @@ class MockModels:
         context.assertIsNotNone(actual.output.products["clustered"], "Job output product clustered is None")
         context.assertIsNotNone(actual.output.products["weather"], "Job output product weather is None")
         context.assertIsNotNone(actual.output.products["raster"], "Job output product raster is None")
-        
+
         #actual_product = actual.output.products[0]
         #context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
         #TODO: test others are not None
@@ -67,7 +154,7 @@ class MockModels:
 
         #context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
         #context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
-   
+
         #TODO: test other products
 
         actual_product = actual.output.products["raster"]
@@ -84,24 +171,8 @@ class MockModels:
         context.assertIsNotNone(actual_product.data["speedBreaks"], "Job output raster data speed breaks is None")
         context.assertEqual(len(actual_product.data["speedBreaks"]), 5, msg="Incorrect job output raster speed breaks keys")
 
-    @classmethod
-    def validate_account(cls, context, actual):
-        #TODO: finish validation
-        context.assertIsNotNone(actual, "Account is None")
-        context.assertEqual(wnmodels.AccountStatus.accepted, actual.status, msg="Status is not 'accepted'")
-        context.assertEqual(1, len(actual.devices), msg="Device length is not 1")
-        context.assertIsNotNone(actual.devices[0], msg="Device[0] is None")
-        
-    @classmethod
-    def validate_feedback(cls, context, actual):
-        context.assertIsNotNone(actual, msg="Feedback is None")
-        context.assertEqual(actual.id, "5a46dfb6-70c1-400d-8361-f9b9c000ecbd", msg="Incorrect feedback id")
-        context.assertEqual(actual.account, "nwagenbrenner@gmail.com", msg="Incorrect feedback account")
-        context.assertEqual(actual.date_time_stamp, datetime.datetime(2015, 12, 16, 14, 10, 54, 455516, dateutil.tz.gettz("America/Denver")), msg="Incorrect feedback account")
-        context.assertEqual(actual.comments, "Does this work? Where is this sent to?\n", msg="Incorrect feedback comments")
-
 class TestModels(unittest.TestCase):
-    
+
     #TODO: add other scenarios
 
     def setUp(self):
@@ -110,13 +181,13 @@ class TestModels(unittest.TestCase):
     def test_job(self):
         actual = wnmodels.Job.from_json(MockModels.job_json)
         MockModels.validate_job(self, actual)
-        
+
 
     def test_job_create(self):
         # completely flat structure
         initiaizer = {
-            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com", 
-            "xmin" : -113.99492384878174, "ymin" : 46.831572491414505, "ymax" : 46.86509153123788, "xmax" : -113.96402480093018, 
+            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com",
+            "xmin" : -113.99492384878174, "ymin" : 46.831572491414505, "ymax" : 46.86509153123788, "xmax" : -113.96402480093018,
             "parameters" : "duration:5", "forecast" : "UCAR-NAM-CONUS-12-KM", "products" : "stuff" }
 
         expected = wnmodels.Job()
@@ -132,13 +203,13 @@ class TestModels(unittest.TestCase):
         expected.input.domain.xmax = initiaizer["xmax"]
         expected.input.domain.ymax = initiaizer["ymax"]
         expected.add_message("job created", wnmodels.JobMessageType.info)
-        
+
         actual = wnmodels.Job.create(initiaizer)
         self.validate_job(actual, expected, exact_id=False, exact_messages=False)
 
         # flat with bbox dict
         initiaizer = {
-            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com", 
+            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com",
             "domain": {"xmin" : -113.99492384878174, "ymin" : 46.831572491414505, "ymax" : 46.86509153123788, "xmax" : -113.96402480093018},
             "parameters" : "duration:5", "forecast" : "UCAR-NAM-CONUS-12-KM", "products" : "stuff" }
 
@@ -147,21 +218,21 @@ class TestModels(unittest.TestCase):
 
         # structured
         initiaizer = {
-            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com", 
+            "name": "this is a test", "account" : "unknown_account", "email" : "sendalerts@here.com",
             "input" : {
             "domain": {"xmin" : -113.99492384878174, "ymin" : 46.831572491414505, "ymax" : 46.86509153123788, "xmax" : -113.96402480093018},
             "parameters" : "duration:5", "forecast" : "UCAR-NAM-CONUS-12-KM", "products" : "stuff" }}
 
         actual = wnmodels.Job.create(initiaizer)
         self.validate_job(actual, expected, exact_id=False, exact_messages=False)
-        
+
     def test_account(self):
         actual = wnmodels.Account.from_json(MockModels.account_json)
         MockModels.validate_account(self, actual)
 
     def test_account_has_device(self):
         account = wnmodels.Account.from_json(MockModels.account_json)
-        
+
         device = wnmodels.Device()
         device.id = MockModels.device_id
 
@@ -195,7 +266,7 @@ class TestModels(unittest.TestCase):
         actual = wnmodels.Feedback.create(initializer)
         self.validate_feedback(actual, expected, exact_id=False, dt_delta=datetime.timedelta(seconds=1))
 
-        # invalid initialier 
+        # invalid initialier
         initializer = {
             "wrong": "keys"
         }
@@ -209,7 +280,7 @@ class TestModels(unittest.TestCase):
         model = "d.model.XX"
         platform = "d.platform.XXX"
         version = "d.version.XXXX"
-        
+
         actual = target(id, model, platform, version)
         self.assertEqual(actual.id, id, "Incorrect device id")
         self.assertEqual(actual.model, model, "Incorrect device model")
@@ -279,7 +350,7 @@ class TestModels(unittest.TestCase):
                 self.assertEqual(p[0].package, p[1].package, msg="Incorrect job output product[{}] package".format(i))
                 self.assertEqual(p[0].type, p[1].type, msg="Incorrect job output product[{}] type".format(i))
                 self.assertEqual(p[0].format, p[1].format, msg="Incorrect job output product[{}] format".format(i))
-                
+
                 self.assertListEqual(p[0].files, p[1].files, msg="Mismatched job output product[{}] files".format(i))
                 self.assertListEqual(p[0].data, p[1].data, msg="Mismatched job output product[{}] data".format(i))
 

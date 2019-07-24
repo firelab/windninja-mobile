@@ -77,10 +77,10 @@ def deploy_data(connection, source, destination):
         logger.info(f"copying test job folder: {src_folder} to {dst_folder}")
         connection.run(f"cp -R {src_folder} {dst_folder}")
 
-    # TODO (lmalott): Figure out if it is really necessary to add executable
-    # permissions to these directories.
     root_data_folder = os.path.join(destination, 'data')
     connection.sudo(f'chmod 777 -R {root_data_folder}')
+    connection.sudo(f'chmod 775 -R dem')
+    connection.sudo(f'chmod 775 -R notification')
 
 
 def deploy_config(connection, source, destination):
