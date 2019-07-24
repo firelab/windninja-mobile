@@ -6,7 +6,8 @@ import logging
 from datetime import datetime
 import pytz
 
-_logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 _directories = {
     "main" : "",
@@ -14,7 +15,7 @@ _directories = {
     "feedback" : "",
     "job" : "",
     "notification": ""
-    }
+}
 
 def set_Store(dir, initialize=False):
     global _directories
@@ -28,140 +29,210 @@ def set_Store(dir, initialize=False):
 
     if initialize:
         for d in _directories:
-            os.makedirs(_directories[d])
+            os.makedirs(_directories[d], exist_ok=True)
 
 #------------JOB-------------------
 _job_file_name = "job.json"
 
 def get_job(id):
+    """Return a populated Job from the given id
+
+    Args:
+        id (str): Unique identifier of the job
+    Returns:
+        Job: populated Job for the id or None if the job was not found.
+    """
     job_folder = id.replace("-", "").lower()
-    file = os.path.join(_directories["job"], job_folder, _job_file_name)
-    _logger.debug("Job file: {}".format(file))
+    path = os.path.join(_directories["job"], job_folder, _job_file_name)
 
-    try:
-
-        with open(file, "r") as json_file:
-            json_string = json_file.read()
-
-    except FileNotFoundError as e:
-        return None
+    logger.debug(f"Job file: {path}")
+    json_string = read_file(path)
+    if json_string is None:
+        return
 
     job = wnmodels.Job.from_json(json_string)
+
     return job
 
+
 def save_job(job):
+    """Saves a Job to the file store.
+
+    Job will be saved under the job directory under a directory named
+    after the job id.
+
+    Args:
+        job (Job): Job to save
+    Returns:
+        bool: True if the Job was successfully saved.
+    """
     if not job:
         return False
 
     json_string = job.to_json()
 
-    job_folder = os.path.join(_directories["job"], job.id.replace("-", "").lower())
-    _logger.debug("Job folder: {}".format(job_folder))
+    root = _directories["job"]
+    job_directory = job.id.replace("-", "").lower()
+    job_folder = os.path.join(root, job_directory)
+    logger.debug(f"Job folder: {job_folder}")
 
-    try:
-        os.mkdir(job_folder)
-    except FileExistsError:
-        pass
+    os.makedirs(job_folder, exist_ok=True)
 
-    file = os.path.join(_directories["job"], job_folder, _job_file_name)
-    _logger.debug("Job file: {}".format(file))
+    path = os.path.join(root, job_folder, _job_file_name)
+    logger.debug(f"Job file: {path}")
 
-    with open(file, "w") as json_file:
+    with open(path, "w") as json_file:
         json_file.write(json_string)
 
     return True
 
 #------------ACCOUNT-------------------
 def get_account(id):
-    file = os.path.join(_directories["account"], "{}.json".format(id.lower()))
-    _logger.debug("Account file: {}".format(file))
+    """Retrieve the Account associated with the id.
 
-    try:
-
-        with open(file, "r") as json_file:
-            json_string = json_file.read()
-
-    except FileNotFoundError as e:
-        return None
+    Args:
+        id: unique identifier of the account
+    Returns:
+        Account: populated Account object associated with the id or None
+            if the account was not found.
+    """
+    name = id.lower()
+    path = os.path.join(_directories["account"], f"{name}.json")
+    logger.debug(f"Account file: {path}")
+    json_string = read_file(path)
+    if json_string is None:
+        return
 
     account = wnmodels.Account.from_json(json_string)
+
     return account
 
+
 def save_account(account):
+    """Saves the Account to the file store.
+
+    If successful, the Account contents will be persisted to a
+    file in the accounts directory in a file named after the account identifier.
+
+    If the account is falsy, then this method is a no-op
+    (i.e., if you pass in None, this function does nothing and returns False).
+
+    Args:
+        account (Account): populated Account object to save
+    Returns:
+        bool: Indicates the success of the save
+    """
     if not account:
         return False
 
     json_string = account.to_json()
 
-    file = os.path.join(_directories["account"], "{}.json".format(account.id.lower()))
-    _logger.debug("Account file: {}".format(file))
+    name = account.id.lower()
+    path = os.path.join(_directories["account"], f"{name}.json")
+    logger.debug("Account file: {path}")
 
-    with open(file, "w") as json_file:
+    with open(path, "w") as json_file:
         json_file.write(json_string)
 
     return True
 
 #------------FEEDBACK------------------
 def get_feedback(id):
-    file = os.path.join(_directories["feedback"], "{}.json".format(id.lower()))
-    _logger.debug("Feedback file: {}".format(file))
+    """Return the content of the feedack file for the given job id.
 
-    try:
+    Args:
+        id (str): identifier of the job
+    Returns:
+        Feedback: populated Feedback object from the contents of the found file
+                  or None if there was no feedback.
+    """
+    name = id.lower()
+    path = os.path.join(_directories["feedback"], f"{name}.json")
+    logger.debug(f"Feedback file: {path}")
+    json_string = read_file(path)
 
-        with open(file, "r") as json_file:
-            json_string = json_file.read()
-
-    except FileNotFoundError as e:
+    if json_string is None:
         return None
 
     feedback = wnmodels.Feedback.from_json(json_string)
+
     return feedback
 
+
 def save_feedback(feedback):
+    """Saves the job feedback to the file store.
+
+    If successful, the Feedback contents will be persisted to a
+    file in the feedbac directory in a file named after the job identifier.
+
+    If feedback is falsy, then this method is a no-op
+    (i.e., if you pass in None, this function does nothing and returns False).
+
+    Args:
+        feedback (Feedback): Feedback object to save to the file store
+    Returns:
+        bool: Inidicates success of the save operation
+    """
     if not feedback:
         return False
 
     json_string = feedback.to_json()
 
-    file = os.path.join(_directories["feedback"], "{}.json".format(feedback.id.lower()))
-    _logger.debug("Feedback file: {}".format(file))
+    name = feedback.id.lower()
+    path = os.path.join(_directories["feedback"], f"{name}.json")
+    logger.debug(f"Feedback file: {path}")
 
-    with open(file, "w") as json_file:
+    with open(path, "w") as json_file:
         json_file.write(json_string)
 
     return True
 
 #------------NOTIFICATION--------------
-def _get_notification_from_file(file):
-    _logger.debug("Notification file: {}".format(file))
-
-    try:
-        with open(file, "r") as json_file:
-            json_string = json_file.read()
-
-    except FileNotFoundError as e:
-        return None
+def _get_notification_from_file(path):
+    logger.debug(f"Notification file: {path}")
+    json_string = read_file(path)
+    if json_string is None:
+        return
 
     notification = wnmodels.Notification.from_json(json_string)
     return notification
 
 
 def get_notification(id):
-    file = os.path.join(_directories["notification"], "{}.json".format(id.lower()))
-    return _get_notification_from_file(file)
+    """Return the content of the notification for the given notification id.
 
-def get_notifications(exprired=False):
+    Args:
+        id (str): identifier of the notification
+    Returns:
+        Notification: populated Notification object from the contents of the found file
+            or None if there was no notification found.
+    """
+    name = id.lower()
+    path = os.path.join(_directories["notification"], f"{name}.json")
+    return _get_notification_from_file(path)
+
+
+def get_notifications(expired=False):
+    """Returns a list of all known notifications
+
+    Args:
+        expired (bool): If true, then return all notifications. Else only return
+            those that have not yet expired.
+    Returns:
+        list: Notifications found in the notifications directory
+    """
     notifications = []
     #ASSUMPTION: times are UTC WITH PYTZ
-    dt = datetime.max if exprired else datetime.utcnow()
+    dt = datetime.max if expired else datetime.utcnow()
     date_filter = pytz.utc.localize(dt)
-    _logger.debug("Notification date filter: {}".format(date_filter.isoformat()))
+    date_filter_iso = date_filter.isoformat()
+    logger.debug("Notification date filter: {date_filter_iso}")
 
     file_filter = os.path.join(_directories["notification"], "*.json")
-    _logger.debug("Notification file filter: {}".format(file_filter))
+    logger.debug("Notification file filter: {file_filter}")
 
     files = glob.glob(file_filter)
-    _logger.debug("Notification count: {}".format(len(files)))
+    logger.debug(f"Notification count: {len(files)}")
 
     for f in files:
         notification = _get_notification_from_file(f)
@@ -169,20 +240,53 @@ def get_notifications(exprired=False):
             if notification and notification.expires > date_filter:
                 notifications.append(notification)
         except TypeError:
-            _logger.warn("Notification expires date is not tz aware: id={}, expires:{}".format(notification.id, notification.expires))
+            logger.warn(f"Notification expires date is not tz aware: id={notification.id}, expires:{notification.expires}")
 
     return notifications
 
 def save_notification(notification):
+    """Saves the notification to the file store.
+
+    If successful, the Notification contents will be persisted to a
+    file in the notification directory in a file named after the identifier.
+
+    If feedback is falsy, then this method is a no-op
+    (i.e., if you pass in None, this function does nothing and returns False).
+
+    Args:
+        notification (Notification): Notification object to save to the file store
+    Returns:
+        bool: Inidicates success of the save operation
+    """
     if not notification:
         return False
 
     json_string = notification.to_json()
 
-    file = os.path.join(_directories["notification"], "{}.json".format(notification.id.lower()))
-    _logger.debug("Notification file: {}".format(file))
+    notification_name = notification.id.lower()
+    path = os.path.join(_directories["notification"], "{notification_name}.json")
+    logger.debug(f"Notification file: {file}")
 
-    with open(file, "w") as json_file:
+    with open(path, "w") as json_file:
         json_file.write(json_string)
 
     return True
+
+
+def read_file(path):
+    """
+    Attempt to read a file as a string.
+    Args:
+        path (str): location of the file to read
+    Returns:
+        str: string containing the contents of the file
+        None: if file was not found
+    """
+    try:
+        with open(path, "r") as json_file:
+            json_string = json_file.read()
+    except FileNotFoundError as e:
+        logger.exception(f'{path} not found.')
+        return None
+
+    return json_string
