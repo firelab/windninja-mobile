@@ -1,7 +1,6 @@
 ﻿import windninjaweb.models as wnmodels
 import os
 import glob
-import json
 import logging
 from datetime import datetime
 import pytz
@@ -10,18 +9,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 _directories = {
-    "main" : "",
-    "account" : "",
-    "feedback" : "",
-    "job" : "",
-    "notification": ""
+    "main": "",
+    "account": "",
+    "feedback": "",
+    "job": "",
+    "notification": "",
 }
+
 
 def set_Store(dir, initialize=False):
     global _directories
 
-    #TODO: the names could be configurable? probably overkill since db will be more likely
-    _directories["main"]  = dir
+    # TODO: the names could be configurable? probably overkill since db will be more likely
+    _directories["main"] = dir
     _directories["job"] = os.path.join(dir, "job")
     _directories["feedback"] = os.path.join(dir, "feedback")
     _directories["account"] = os.path.join(dir, "account")
@@ -31,8 +31,10 @@ def set_Store(dir, initialize=False):
         for d in _directories:
             os.makedirs(_directories[d], exist_ok=True)
 
-#------------JOB-------------------
+
+# ------------JOB-------------------
 _job_file_name = "job.json"
+
 
 def get_job(id):
     """Return a populated Job from the given id
@@ -86,7 +88,8 @@ def save_job(job):
 
     return True
 
-#------------ACCOUNT-------------------
+
+# ------------ACCOUNT-------------------
 def get_account(id):
     """Retrieve the Account associated with the id.
 
@@ -136,7 +139,8 @@ def save_account(account):
 
     return True
 
-#------------FEEDBACK------------------
+
+# ------------FEEDBACK------------------
 def get_feedback(id):
     """Return the content of the feedack file for the given job id.
 
@@ -187,7 +191,8 @@ def save_feedback(feedback):
 
     return True
 
-#------------NOTIFICATION--------------
+
+# ------------NOTIFICATION--------------
 def _get_notification_from_file(path):
     logger.debug(f"Notification file: {path}")
     json_string = read_file(path)
@@ -222,11 +227,10 @@ def get_notifications(expired=False):
         list: Notifications found in the notifications directory
     """
     notifications = []
-    #ASSUMPTION: times are UTC WITH PYTZ
+    # ASSUMPTION: times are UTC WITH PYTZ
     dt = datetime.max if expired else datetime.utcnow()
     date_filter = pytz.utc.localize(dt)
-    date_filter_iso = date_filter.isoformat()
-    logger.debug("Notification date filter: {date_filter_iso}")
+    logger.debug("Notification date filter: {date_filter.isoformat()}")
 
     file_filter = os.path.join(_directories["notification"], "*.json")
     logger.debug("Notification file filter: {file_filter}")
@@ -240,9 +244,12 @@ def get_notifications(expired=False):
             if notification and notification.expires > date_filter:
                 notifications.append(notification)
         except TypeError:
-            logger.warn(f"Notification expires date is not tz aware: id={notification.id}, expires:{notification.expires}")
+            logger.warn(
+                f"Notification expires date is not tz aware: id={notification.id}, expires:{notification.expires}"
+            )
 
     return notifications
+
 
 def save_notification(notification):
     """Saves the notification to the file store.
@@ -263,9 +270,8 @@ def save_notification(notification):
 
     json_string = notification.to_json()
 
-    notification_name = notification.id.lower()
-    path = os.path.join(_directories["notification"], "{notification_name}.json")
-    logger.debug(f"Notification file: {file}")
+    path = os.path.join(_directories["notification"], "{notification.id.lower()}.json")
+    logger.debug(f"Notification file: {path}")
 
     with open(path, "w") as json_file:
         json_file.write(json_string)
@@ -285,8 +291,8 @@ def read_file(path):
     try:
         with open(path, "r") as json_file:
             json_string = json_file.read()
-    except FileNotFoundError as e:
-        logger.exception(f'{path} not found.')
+    except FileNotFoundError:
+        logger.exception(f"{path} not found.")
         return None
 
     return json_string

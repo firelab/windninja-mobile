@@ -3,31 +3,32 @@ import glob
 import logging
 from windninjaqueue.enums import QueueMode, QueueStatus
 
-#TODO: move queue to database (could be easy enough to simply pull queue from JOB status once Job is database)
-#TODO: create QueueException
+# TODO: move queue to database (could be easy enough to simply pull queue from JOB status once Job is database)
+# TODO: create QueueException
 
-wn = None #NOTE: needed for conditional import of start_job function
+wn = None  # NOTE: needed for conditional import of start_job function
 _mode = QueueMode.disabled
-_directories = {
-        "queue" : ""
-    }
+_directories = {"queue": ""}
+
 
 def set_Queue(config, initialize=False):
     global _directories
-    _directories["queue"]  = config["datastore"]
+    _directories["queue"] = config["datastore"]
 
     global _mode
     _mode = QueueMode[config.get("mode", "disabled")]
 
     if _mode == QueueMode.immediate:
-       global wn
-       import windninjaqueue.windninja as wn
-       wn.PYTHON_EXECUTABLE = config["windninja_wrapper"]["executable"]
-       wn.WN_WRAPPER = config["windninja_wrapper"]["script"]
-       wn.WN_WRAPPER_OPTIONS = config["windninja_wrapper"]["options"]
+        global wn
+        import windninjaqueue.windninja as wn
+
+        wn.PYTHON_EXECUTABLE = config["windninja_wrapper"]["executable"]
+        wn.WN_WRAPPER = config["windninja_wrapper"]["script"]
+        wn.WN_WRAPPER_OPTIONS = config["windninja_wrapper"]["options"]
 
     if initialize:
         os.makedirs(_directories["queue"])
+
 
 def enqueue(id, reset_existing=False):
     if _mode == QueueMode.disabled:
@@ -36,7 +37,7 @@ def enqueue(id, reset_existing=False):
     name = "{0}.{1}".format(id, QueueStatus.pending.name)
     file = os.path.join(_directories["queue"], name)
 
-    if (_find_item(id) is None):
+    if _find_item(id) is None:
         try:
             open(file, "x").close()
         except FileExistsError:
@@ -51,12 +52,14 @@ def enqueue(id, reset_existing=False):
         logging.debug("immediate queue start")
         try:
             status, pid, message = wn.start_job(id)
-            logging.debug("start results status={} pid={} message={}".format(status, pid, message))
+            logging.debug(
+                "start results status={} pid={} message={}".format(status, pid, message)
+            )
         except Exception as ex:
             status = QueueStatus.failed
             message = "ERROR:{}".format(str(ex))
 
-        #TODO: handle race condition here with wrapper...
+        # TODO: handle race condition here with wrapper...
         update_queue_item_status(id, status, message)
 
         if status == QueueStatus.failed:
@@ -64,7 +67,7 @@ def enqueue(id, reset_existing=False):
 
 
 def dequeue(id, **kwargs):
-    #just skip out if disabled
+    # just skip out if disabled
     if _mode == QueueMode.disabled:
         return
 
@@ -102,6 +105,7 @@ def update_queue_item_status(id, status, data=None):
     except OSError as osex:
         raise Exception("Queue update os error\n{}\n".format(str(osex)), data)
 
+
 def find_items_by_status(status):
     # get the files by status pattern
     name_pattern = "*.{}".format(status.name)
@@ -112,15 +116,16 @@ def find_items_by_status(status):
     return [
         {
             "id": os.path.splitext(os.path.basename(item))[0],
-            "created": os.path.getctime(item)
+            "created": os.path.getctime(item),
         }
         for item in files
     ]
+
 
 def _find_item(id):
     name_pattern = "{}.*".format(id)
     file_pattern = os.path.join(_directories["queue"], name_pattern)
     try:
-        return  glob.glob(file_pattern)[0]
-    except IndexError as iex:
+        return glob.glob(file_pattern)[0]
+    except IndexError:
         return None

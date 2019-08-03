@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class QueueMode(Enum):
     disabled = 0
     immediate = 1
     enabled = 2
-    
+
+
 class QueueStatus(Enum):
     unknown = 0
     pending = 1

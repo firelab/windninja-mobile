@@ -9,6 +9,12 @@ The server side system consists of:
 ### Version 
 2016.05.13
 
+### Developers
+
+To contribute, please install `pip3 install pre-commit` and run `pre-commit install`.
+This creates git hooks for your local repository that will run linting, auto-format
+code, and unit testing on each commit.
+
 ### Installation
 
 Global installs

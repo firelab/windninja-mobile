@@ -1,20 +1,14 @@
 ﻿import pytest
-import tempfile
 import os
 
 import windninjaqueue.queue as wnqueue
-from windninjaqueue.enums import QueueMode
-
 
 
 @pytest.fixture
 def filestore(tmpdir):
     # create a temp directory for the file store and initialize i
     filestore = tmpdir
-    config = {
-        'datastore': filestore,
-        'mode': 'enabled'
-    }
+    config = {"datastore": filestore, "mode": "enabled"}
     wnqueue.set_Queue(config, initialize=False)
 
     f = tmpdir.join("00000000-0000-0000-0000-000000000001.pending")
@@ -44,12 +38,8 @@ def test_enabled_enqueue(filestore):
     assert expected_error_message in str(excinfo.value)
 
 
-
 def test_disabled_enqueue(filestore):
-    config = {
-        'datastore': filestore,
-        'mode': 'disabled'
-    }
+    config = {"datastore": filestore, "mode": "disabled"}
     wnqueue.set_Queue(config, initialize=False)
 
     id = "00000000-0000-0000-0000-000000000000"
@@ -57,12 +47,13 @@ def test_disabled_enqueue(filestore):
     wnqueue.enqueue(id)
 
     unexpected_file = os.path.join(wnqueue._directories["queue"], f"{id}.{status.name}")
-    assert not os.path.exists(unexpected_file), f"Unexpected file found: {expected_file}"
+    assert not os.path.exists(
+        unexpected_file
+    ), f"Unexpected file found: {unexpected_file}"
 
 
 def test_dequeue(filestore):
     id = "00000000-0000-0000-0000-000000000002"
-    status = wnqueue.QueueStatus.complete
     fh = filestore.join(f"{id}.running")
     assert fh.read() == ""
 
@@ -70,7 +61,9 @@ def test_dequeue(filestore):
 
     # Confirm original .running file was renamed/moved to .complete
     unexpected_file = os.path.join(wnqueue._directories["queue"], f"{id}.running")
-    assert not os.path.exists(unexpected_file), f"Unexpected file found: {unexpected_file}"
+    assert not os.path.exists(
+        unexpected_file
+    ), f"Unexpected file found: {unexpected_file}"
 
     # Confirm that data was written to the .complete job file
     fh = filestore.join(f"{id}.complete")
@@ -78,14 +71,10 @@ def test_dequeue(filestore):
 
 
 def test_disabled_dequeue(filestore):
-    config = {
-        'datastore': filestore,
-        'mode': 'disabled'
-    }
+    config = {"datastore": filestore, "mode": "disabled"}
     wnqueue.set_Queue(config, initialize=False)
 
     id = "00000000-0000-0000-0000-000000000002"
-    status = wnqueue.QueueStatus.complete
     fh = filestore.join(f"{id}.running")
     assert fh.read() == ""
 
@@ -153,6 +142,7 @@ def test_find_items_by_status_running(filestore):
 
     assert len(results) == 1
     assert results[0]["id"] == "00000000-0000-0000-0000-000000000002"
+
 
 def test_find_items_by_status_complete(filestore):
     status = wnqueue.QueueStatus.complete

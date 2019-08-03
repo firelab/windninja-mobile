@@ -5,6 +5,7 @@ import smtplib
 import base64
 from email.mime.text import MIMEText
 
+
 class Namespace(dict):
     def __getattr__(self, name):
         try:
@@ -15,6 +16,7 @@ class Namespace(dict):
     def __setattr__(self, name, value):
         self[name] = value
 
+
 def send_email(server, to_addresses, from_address, subject, body):
     """
     Send email using setting defined in 'server'
@@ -23,8 +25,8 @@ def send_email(server, to_addresses, from_address, subject, body):
         SMTP: SMTP object used to send the email. Primarily for unit testing.
     """
 
-    #NOTE: from address does not appear to 'reset' from the gmail account used
-    #TODO: implement other SMTP providers or non-SMTP variations
+    # NOTE: from address does not appear to 'reset' from the gmail account used
+    # TODO: implement other SMTP providers or non-SMTP variations
 
     # create the message
     msg = MIMEText(body)
@@ -39,7 +41,7 @@ def send_email(server, to_addresses, from_address, subject, body):
         s.starttls()
         s.ehlo()
         s.login(server["user"], server["password"])
-    s.sendmail(from_address, to_addresses.split(','), msg.as_string())
+    s.sendmail(from_address, to_addresses.split(","), msg.as_string())
     s.close()
 
     return s
@@ -58,7 +60,7 @@ def is_whitelisted(email, whitelist):
     return whitelisted
 
 
-#TODO: better name? or move to "models" as it's really specific to those attributes
+# TODO: better name? or move to "models" as it's really specific to those attributes
 def validate(value, value_type, message):
     """
     Validates a value is not "falsey" and of the correct type.

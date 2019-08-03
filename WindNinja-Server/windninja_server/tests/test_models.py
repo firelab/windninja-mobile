@@ -2,11 +2,12 @@
 import pytest
 
 import windninjaweb.models as wnmodels
-import unittest
 import datetime
 import dateutil
 
-_id_regex = "\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z"
+_id_regex = (
+    r"\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z"
+)
 
 
 def validate_job(actual):
@@ -20,67 +21,107 @@ def validate_job(actual):
 
     assert actual.messages is not None, "Job messages is None"
     assert len(actual.messages) == 9, "Incorrect job messages length"
-    #TODO: test some messages or split each to verify format
+    # TODO: test some messages or split each to verify format
 
     assert actual.input is not None, "Job input is None"
-    assert actual.input.products == "vector:true;raster:true;topofire:true;geopdf:false;clustered:true;weather:true", "Incorrect job input products"
-    assert actual.input.parameters == "forecast_duration:6;vegetation:trees;mesh_choice:fine", "Incorrect job input parameters"
+    assert (
+        actual.input.products
+        == "vector:true;raster:true;topofire:true;geopdf:false;clustered:true;weather:true"
+    ), "Incorrect job input products"
+    assert (
+        actual.input.parameters
+        == "forecast_duration:6;vegetation:trees;mesh_choice:fine"
+    ), "Incorrect job input parameters"
     assert actual.input.forecast == "NOMADS-NAM-CONUS-12-KM", "Incorrect job forecast"
 
     assert actual.input.domain is not None, "Job input domain is None"
-    assert actual.input.domain.xmax == -113.97925790543299, "Incorrect job input domain xmax"
-    assert actual.input.domain.ymax == 47.038565315467025, "Incorrect job input domain ymax"
-    assert actual.input.domain.xmin == -114.0235465406869, "Incorrect job input domain xmin"
-    assert actual.input.domain.ymin == 46.99526210560205, "Incorrect job input domain ymin"
+    assert (
+        actual.input.domain.xmax == -113.97925790543299
+    ), "Incorrect job input domain xmax"
+    assert (
+        actual.input.domain.ymax == 47.038565315467025
+    ), "Incorrect job input domain ymax"
+    assert (
+        actual.input.domain.xmin == -114.0235465406869
+    ), "Incorrect job input domain xmin"
+    assert (
+        actual.input.domain.ymin == 46.99526210560205
+    ), "Incorrect job input domain ymin"
 
     assert actual.output is not None, "Job output is None"
-    #assert actual.output.products is not None, "Job output products is None"
-    #assert len(actual.output.products) == 4, "Incorrect job output products length"
+    # assert actual.output.products is not None, "Job output products is None"
+    # assert len(actual.output.products) == 4, "Incorrect job output products length"
 
     assert actual.output.simulations is not None, "Job output simulation is None"
     assert actual.output.products is not None, "Job output products is None"
-    assert len(actual.output.products.keys()) == 5, "Incorrect job output products length"
+    assert (
+        len(actual.output.products.keys()) == 5
+    ), "Incorrect job output products length"
 
-    assert actual.output.products["vector"] is not None, "Job output product vector is None"
-    assert actual.output.products["topofire"] is not None, "Job output product topofire is None"
-    assert actual.output.products["clustered"] is not None, "Job output product clustered is None"
-    assert actual.output.products["weather"] is not None, "Job output product weather is None"
-    assert actual.output.products["raster"] is not None, "Job output product raster is None"
+    assert (
+        actual.output.products["vector"] is not None
+    ), "Job output product vector is None"
+    assert (
+        actual.output.products["topofire"] is not None
+    ), "Job output product topofire is None"
+    assert (
+        actual.output.products["clustered"] is not None
+    ), "Job output product clustered is None"
+    assert (
+        actual.output.products["weather"] is not None
+    ), "Job output product weather is None"
+    assert (
+        actual.output.products["raster"] is not None
+    ), "Job output product raster is None"
 
-    #actual_product = actual.output.products[0]
-    #context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
-    #TODO: test others are not None
-    #context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output product[0] name")
-    #context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output product[0] package")
-    #context.assertEqual(actual_product.type, "raster", msg="Incorrect job output product[0] type")
-    #context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output product[0] format")
+    # actual_product = actual.output.products[0]
+    # context.assertIsNotNone(actual_product, msg="Job output product[0] is None")
+    # TODO: test others are not None
+    # context.assertEqual(actual_product.name, "WindNinja Raster Tiles", msg="Incorrect job output product[0] name")
+    # context.assertEqual(actual_product.package, "tiles.zip", msg="Incorrect job output product[0] package")
+    # context.assertEqual(actual_product.type, "raster", msg="Incorrect job output product[0] type")
+    # context.assertEqual(actual_product.format, "tiles", msg="Incorrect job output product[0] format")
 
-    #context.assertEqual(len(actual_product.files), 4, "Incorrect job output product[0] files length")
-    #context.assertEqual(actual_product.files[0], "dem_12-15-2015_1700_29m", msg="Incorrect job output product[0] file[0]")
+    # context.assertEqual(len(actual_product.files), 4, "Incorrect job output product[0] files length")
+    # context.assertEqual(actual_product.files[0], "dem_12-15-2015_1700_29m", msg="Incorrect job output product[0] file[0]")
 
-    #context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
-    #context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
+    # context.assertEqual(len(actual_product.data), 4, "Incorrect job output product[0] data length")
+    # context.assertEqual(actual_product.data[0], "dem_12-15-2015_1700_29m:24.722978", msg="Incorrect job output product[0] data[0]")
 
-    #TODO: test other products
+    # TODO: test other products
 
     actual_product = actual.output.products["raster"]
-    assert actual_product.name == "WindNinja Raster Tiles", "Incorrect job output raster name"
+    assert (
+        actual_product.name == "WindNinja Raster Tiles"
+    ), "Incorrect job output raster name"
     assert actual_product.package == "tiles.zip", "Incorrect job output raster package"
     assert actual_product.type == "raster", "Incorrect job output raster type"
-    assert actual_product.format ==  "tiles", "Incorrect job output raster format"
+    assert actual_product.format == "tiles", "Incorrect job output raster format"
     assert len(actual_product.files) == 7, "Incorrect job output raster files length"
-    assert actual_product.files[0] == "20171025T1200", "Incorrect job output raster file[0]"
+    assert (
+        actual_product.files[0] == "20171025T1200"
+    ), "Incorrect job output raster file[0]"
     assert actual_product.data is not None, "Job output raster data is None"
-    assert actual_product.data["maxSpeed"] is not None, "Job output raster data max speed is None"
+    assert (
+        actual_product.data["maxSpeed"] is not None
+    ), "Job output raster data max speed is None"
 
-    assert len(actual_product.data["maxSpeed"].keys()) == 8, "Incorrect job output raster max speed keys length"
-    assert actual_product.data["maxSpeed"]["overall"] == 32.541089, "Incorrect job output raster max speed overall value"
-    assert actual_product.data["speedBreaks"] is not None, "Job output raster data speed breaks is None"
-    assert len(actual_product.data["speedBreaks"]) == 5, "Incorrect job output raster speed breaks keys"
+    assert (
+        len(actual_product.data["maxSpeed"].keys()) == 8
+    ), "Incorrect job output raster max speed keys length"
+    assert (
+        actual_product.data["maxSpeed"]["overall"] == 32.541089
+    ), "Incorrect job output raster max speed overall value"
+    assert (
+        actual_product.data["speedBreaks"] is not None
+    ), "Job output raster data speed breaks is None"
+    assert (
+        len(actual_product.data["speedBreaks"]) == 5
+    ), "Incorrect job output raster speed breaks keys"
 
 
 def validate_account(actual):
-    #TODO: finish validation
+    # TODO: finish validation
     assert actual is not None, "Account is None"
     assert wnmodels.AccountStatus.accepted == actual.status, "Status is not 'accepted'"
     assert len(actual.devices) == 1, "Device length is not 1"
@@ -91,8 +132,12 @@ def validate_feedback(actual):
     assert actual is not None, "Feedback is None"
     assert actual.id == "5a46dfb6-70c1-400d-8361-f9b9c000ecbd", "Incorrect feedback id"
     assert actual.account == "nwagenbrenner@gmail.com", "Incorrect feedback account"
-    assert actual.date_time_stamp == datetime.datetime(2015, 12, 16, 14, 10, 54, 455516, dateutil.tz.gettz("America/Denver")), "Incorrect feedback account"
-    assert actual.comments == "Does this work? Where is this sent to?\n", "Incorrect feedback comments"
+    assert actual.date_time_stamp == datetime.datetime(
+        2015, 12, 16, 14, 10, 54, 455516, dateutil.tz.gettz("America/Denver")
+    ), "Incorrect feedback account"
+    assert (
+        actual.comments == "Does this work? Where is this sent to?\n"
+    ), "Incorrect feedback comments"
 
 
 class MockModels:
@@ -117,13 +162,15 @@ def test_job_create():
     # completely flat structure
     initiaizer = {
         "name": "this is a test",
-        "account" : "unknown_account",
-        "email" : "sendalerts@here.com",
-        "xmin" : -113.99492384878174, "xmax" : -113.96402480093018,
-        "ymin" : 46.831572491414505, "ymax" : 46.86509153123788,
-        "parameters" : "duration:5",
-        "forecast" : "UCAR-NAM-CONUS-12-KM",
-        "products" : "stuff"
+        "account": "unknown_account",
+        "email": "sendalerts@here.com",
+        "xmin": -113.99492384878174,
+        "xmax": -113.96402480093018,
+        "ymin": 46.831572491414505,
+        "ymax": 46.86509153123788,
+        "parameters": "duration:5",
+        "forecast": "UCAR-NAM-CONUS-12-KM",
+        "products": "stuff",
     }
 
     expected = wnmodels.Job()
@@ -149,12 +196,14 @@ def test_job_create():
         "account": "unknown_account",
         "email": "sendalerts@here.com",
         "domain": {
-            "xmin": -113.99492384878174, "xmax" : -113.96402480093018,
-            "ymin": 46.831572491414505, "ymax": 46.86509153123788
+            "xmin": -113.99492384878174,
+            "xmax": -113.96402480093018,
+            "ymin": 46.831572491414505,
+            "ymax": 46.86509153123788,
         },
         "parameters": "duration:5",
         "forecast": "UCAR-NAM-CONUS-12-KM",
-        "products": "stuff"
+        "products": "stuff",
     }
 
     actual = wnmodels.Job.create(initiaizer)
@@ -167,13 +216,15 @@ def test_job_create():
         "email": "sendalerts@here.com",
         "input": {
             "domain": {
-                "xmin" : -113.99492384878174, "xmax" : -113.96402480093018,
-                "ymin" : 46.831572491414505, "ymax" : 46.86509153123788
+                "xmin": -113.99492384878174,
+                "xmax": -113.96402480093018,
+                "ymin": 46.831572491414505,
+                "ymax": 46.86509153123788,
             },
             "parameters": "duration:5",
             "forecast": "UCAR-NAM-CONUS-12-KM",
-            "products": "stuff"
-        }
+            "products": "stuff",
+        },
     }
 
     actual = wnmodels.Job.create(initiaizer)
@@ -206,15 +257,12 @@ def test_account_generate_code():
 
 
 def test_feedback():
-    actual  = wnmodels.Feedback.from_json(MockModels.feedback_json)
+    actual = wnmodels.Feedback.from_json(MockModels.feedback_json)
     validate_feedback(actual)
 
 
 def test_feedback_create():
-    initializer = {
-        "account": "my@account.com",
-        "comments": "this is a test"
-    }
+    initializer = {"account": "my@account.com", "comments": "this is a test"}
 
     expected = wnmodels.Feedback()
     expected.account = initializer["account"]
@@ -222,16 +270,16 @@ def test_feedback_create():
     expected.date_time_stamp = datetime.datetime.now()
 
     actual = wnmodels.Feedback.create(initializer)
-    #assert_feedback_equal(actual, expected, exact_id=False, dt_delta=datetime.timedelta(seconds=1))
+    assert_feedback_equal(
+        actual, expected, exact_id=False, dt_delta=datetime.timedelta(seconds=19000)
+    )
 
     # invalid initialier
-    initializer = {
-        "wrong": "keys"
-    }
+    initializer = {"wrong": "keys"}
     with pytest.raises(KeyError) as excinfo:
         wnmodels.Feedback.create(initializer)
 
-    assert 'account' in str(excinfo.value)
+    assert "account" in str(excinfo.value)
 
 
 def test_device_create():
@@ -250,7 +298,7 @@ def test_device_create():
     with pytest.raises(ValueError) as excinfo:
         wnmodels.Device.create("", model, platform, version)
 
-    assert 'Invalid device id' in str(excinfo.value)
+    assert "Invalid device id" in str(excinfo.value)
 
     with pytest.raises(TypeError) as excinfo:
         wnmodels.Device.create(1, model, platform, version)
@@ -260,7 +308,7 @@ def test_device_create():
     with pytest.raises(ValueError) as excinfo:
         wnmodels.Device.create(id, "", platform, version)
 
-    assert 'Invalid device model' in str(excinfo.value)
+    assert "Invalid device model" in str(excinfo.value)
 
     with pytest.raises(TypeError) as excinfo:
         wnmodels.Device.create(id, 1.1, platform, version)
@@ -270,7 +318,7 @@ def test_device_create():
     with pytest.raises(ValueError) as excinfo:
         wnmodels.Device.create(id, model, "", version)
 
-    assert 'Invalid device platform' in str(excinfo.value)
+    assert "Invalid device platform" in str(excinfo.value)
 
     with pytest.raises(TypeError) as excinfo:
         wnmodels.Device.create(id, model, {"a": "a"}, version)
@@ -280,7 +328,7 @@ def test_device_create():
     with pytest.raises(ValueError) as excinfo:
         wnmodels.Device.create(id, model, platform, "")
 
-    assert 'Invalid device version' in str(excinfo.value)
+    assert "Invalid device version" in str(excinfo.value)
 
     with pytest.raises(TypeError) as excinfo:
         wnmodels.Device.create(id, model, platform, ["a"])
@@ -288,10 +336,10 @@ def test_device_create():
     assert "Invalid device version: <class 'list'>" in str(excinfo.value)
 
 
-#VALIDATORS
+# VALIDATORS
 def assert_jobs_equal(actual, expected, exact_id=True, exact_messages=True):
 
-    assert actual.id is not None,  "Job id is none"
+    assert actual.id is not None, "Job id is none"
     if exact_id:
         assert actual.id == expected.id, "Incorrect job id"
     else:
@@ -305,44 +353,66 @@ def assert_jobs_equal(actual, expected, exact_id=True, exact_messages=True):
     if exact_messages:
         assert actual.messages == expected.messages, "Mismatched job messages"
     else:
-        assert len(actual.messages) == len(expected.messages), "Incorrect job message length"
+        assert len(actual.messages) == len(
+            expected.messages
+        ), "Incorrect job message length"
 
-    if (expected.input is None):
+    if expected.input is None:
         assert actual.input, "Job input is something, expected None"
     else:
         assert actual.input is not None, "Job input is None"
-        assert actual.input.forecast == expected.input.forecast, "Incorrect job forecast"
-        assert actual.input.parameters == expected.input.parameters, "Incorrect job parameters"
+        assert (
+            actual.input.forecast == expected.input.forecast
+        ), "Incorrect job forecast"
+        assert (
+            actual.input.parameters == expected.input.parameters
+        ), "Incorrect job parameters"
         assert actual.input.products == expected.input.products, "Incorrect job product"
 
-        if (expected.input.domain is None):
+        if expected.input.domain is None:
             assert actual.input.domain is None
         else:
             assert actual.input.domain is not None, "Job input domain is None"
-            assert actual.input.domain.xmin == expected.input.domain.xmin, "Incorrect job domain xmin"
-            assert actual.input.domain.ymin == expected.input.domain.ymin, "Incorrect job domain ymin"
-            assert actual.input.domain.xmax == expected.input.domain.xmax, "Incorrect job domain xmax"
-            assert actual.input.domain.ymax == expected.input.domain.ymax, "Incorrect job domain ymax"
+            assert (
+                actual.input.domain.xmin == expected.input.domain.xmin
+            ), "Incorrect job domain xmin"
+            assert (
+                actual.input.domain.ymin == expected.input.domain.ymin
+            ), "Incorrect job domain ymin"
+            assert (
+                actual.input.domain.xmax == expected.input.domain.xmax
+            ), "Incorrect job domain xmax"
+            assert (
+                actual.input.domain.ymax == expected.input.domain.ymax
+            ), "Incorrect job domain ymax"
 
-    if (expected.output is None):
+    if expected.output is None:
         assert actual.output is None, "Job output is something, expected None"
     else:
         assert actual.output is not None, "Job outputput is None"
-        assert len(actual.output.products) == len(expected.output.products), "Incorrect job output products length"
+        assert len(actual.output.products) == len(
+            expected.output.products
+        ), "Incorrect job output products length"
 
         for i, p in enumerate(zip(actual.output.products, expected.output.products)):
             assert type(p[0]) is wnmodels.Product, f"Incorrect product[{i}] class/type"
             assert p[0].name == p[1].name, f"Incorrect job output product[{i}] name"
-            assert p[0].package == p[1].package, f"Incorrect job output product[{i}] package"
+            assert (
+                p[0].package == p[1].package
+            ), f"Incorrect job output product[{i}] package"
             assert p[0].type == p[1].type, f"Incorrect job output product[{i}] type"
-            assert p[0].format == p[1].format, f"Incorrect job output product[{i}] format"
+            assert (
+                p[0].format == p[1].format
+            ), f"Incorrect job output product[{i}] format"
 
             assert p[0].files == p[1].files, f"Mismatched job output product[{i}] files"
             assert p[0].data == p[1].data, f"Mismatched job output product[{i}] data"
 
 
-def assert_feedback_equal(actual, expected, exact_id=True, dt_delta=datetime.timedelta(seconds=0)):
-    assert actual.id is not None,  "Feedback id is none"
+def assert_feedback_equal(
+    actual, expected, exact_id=True, dt_delta=datetime.timedelta(seconds=0)
+):
+    assert actual.id is not None, "Feedback id is none"
     if exact_id:
         assert actual.id == expected.id, "Incorrect feedback id"
     else:
@@ -350,4 +420,6 @@ def assert_feedback_equal(actual, expected, exact_id=True, dt_delta=datetime.tim
 
     assert actual.account == expected.account, "Incorrect feedback account"
     assert actual.comments == expected.comments, "Incorrect feedback comments"
-    assert abs(actual.date_time_stamp - expected.date_time_stamp) <= dt_delta, "Incorrect feedback date time stamp"
+    assert (
+        abs(actual.date_time_stamp - expected.date_time_stamp) <= dt_delta
+    ), "Incorrect feedback date time stamp"

@@ -1,7 +1,7 @@
 ﻿"""
 Services are RPC style methods for web application
 """
-from flask import request, abort, make_response, url_for, render_template
+from flask import request, make_response, url_for, render_template
 from flask_restful import reqparse
 from werkzeug import exceptions
 import json
@@ -18,18 +18,64 @@ logger = logging.getLogger(__name__)
 
 # ----------------CONFIGURATION----------------
 _register_parser = reqparse.RequestParser()
-_register_parser.add_argument("name", type=str, required=True, help="Name is required", location=["values", "json"])
-_register_parser.add_argument("email", type=str, required=True, help="Email is required", location=["values", "json"])
-_register_parser.add_argument("model", type=str, required=True, help="Model is required", location=["values", "json"])
-_register_parser.add_argument("platform", type=str, required=True, help="Platform is required", location=["values", "json"])
-_register_parser.add_argument("version", type=str, required=True, help="Version is required", location=["values", "json"])
-_register_parser.add_argument("deviceId", type=str, required=True, help="DeviceId is required", location=["values", "json"])
+_register_parser.add_argument(
+    "name",
+    type=str,
+    required=True,
+    help="Name is required",
+    location=["values", "json"],
+)
+_register_parser.add_argument(
+    "email",
+    type=str,
+    required=True,
+    help="Email is required",
+    location=["values", "json"],
+)
+_register_parser.add_argument(
+    "model",
+    type=str,
+    required=True,
+    help="Model is required",
+    location=["values", "json"],
+)
+_register_parser.add_argument(
+    "platform",
+    type=str,
+    required=True,
+    help="Platform is required",
+    location=["values", "json"],
+)
+_register_parser.add_argument(
+    "version",
+    type=str,
+    required=True,
+    help="Version is required",
+    location=["values", "json"],
+)
+_register_parser.add_argument(
+    "deviceId",
+    type=str,
+    required=True,
+    help="DeviceId is required",
+    location=["values", "json"],
+)
 
 _confirm_parser = reqparse.RequestParser()
-_confirm_parser.add_argument("code", type=str, required=True, help="code is required", location="args")
-_confirm_parser.add_argument("f", type=str, default="", required=False, store_missing=True, help="format of the output: json | html", location="args")
+_confirm_parser.add_argument(
+    "code", type=str, required=True, help="code is required", location="args"
+)
+_confirm_parser.add_argument(
+    "f",
+    type=str,
+    default="",
+    required=False,
+    store_missing=True,
+    help="format of the output: json | html",
+    location="args",
+)
 
-#TODO: log email confirmation offline
+# TODO: log email confirmation offline
 _email_parameters = app.config.get("MAIL", None)
 logger.info(_email_parameters)
 _confirmation_code_separator = ":"
@@ -45,9 +91,11 @@ def register():
         args = _register_parser.parse_args(request)
 
         # create a device to add to the account
-        device = wnmodels.Device.create(args.deviceId, args.model, args.platform, args.version)
+        device = wnmodels.Device.create(
+            args.deviceId, args.model, args.platform, args.version
+        )
 
-        #email is the account id
+        # email is the account id
         id = email = args["email"]
         account = wndb.get_account(id)
 
@@ -84,15 +132,16 @@ def register():
             _generate_registration_confirmation(account)
 
     except exceptions.HTTPException as hex:
-         response = make_response(json.dumps(hex.data), hex.code)
+        response = make_response(json.dumps(hex.data), hex.code)
     except Exception as ex:
-        #TODO: log
-        #TODO: hide real message with generic?
-        logger.exception('Failed to register account')
+        # TODO: log
+        # TODO: hide real message with generic?
+        logger.exception("Failed to register account")
         response = make_response("{{'message':'{}'}}".format(str(ex)), 500)
 
     response.headers["Content-Type"] = "application/json"
     return response
+
 
 @app.route("/services/registration/confirm", methods=["GET"])
 def confirm():
@@ -105,10 +154,10 @@ def confirm():
         # get the request data
         args = _confirm_parser.parse_args(request)
 
-        #----------------------------------------
-        #ERROR HANDLER TESTING
-        #raise Exception("Testing error handler")
-        #----------------------------------------
+        # ----------------------------------------
+        # ERROR HANDLER TESTING
+        # raise Exception("Testing error handler")
+        # ----------------------------------------
 
         # validate the confirmation code
         valid, message, account = _validate_registration_confirmation(args.code)
@@ -117,26 +166,33 @@ def confirm():
         if account and valid:
 
             # update account to accepted and return response
-            account.status = wnmodels.AccountStatus .accepted
+            account.status = wnmodels.AccountStatus.accepted
             success = wndb.save_account(account)
             if success:
                 result.code = 200
-                result.data = wnmodels.AccountState.create(account, message="Account enabled")
+                result.data = wnmodels.AccountState.create(
+                    account, message="Account enabled"
+                )
 
             else:
                 result.code = 500
                 result.data = {"message": "unable to update account"}
 
         elif account and not valid:
-            result.data = wnmodels.AccountState.create(account, message="Confirmation code is expired")
+            result.data = wnmodels.AccountState.create(
+                account, message="Confirmation code is expired"
+            )
             result.code = 403
 
             # send a new code
             try:
                 _generate_registration_confirmation(account)
-                result.data.message+="; A new code as been generated and sent"
-            except:
-                result.data.message+="; Error generating or sending new code"
+                result.data.message += "; A new code as been generated and sent"
+            except Exception:
+                logger.exception(
+                    f"Error generating or sending new code for {account.email}"
+                )
+                result.data.message += "; Error generating or sending new code"
 
         else:
             result.code = 400
@@ -149,16 +205,19 @@ def confirm():
         args.f = args.get("f") or request.args.get("f", "html")
 
     except Exception as ex:
-        #TODO: log
-        #TODO: hide real message with generic?
+        # TODO: log
+        # TODO: hide real message with generic?
         result.code = 500
         result.data = {"message": str(ex)}
 
     # create the expected response format - content-type rules over f argument
-    if ("application/json" in [x.strip() for x in request.headers.get("ContentType", "").split(";")]) or args.f == "json":
+    if (
+        "application/json"
+        in [x.strip() for x in request.headers.get("ContentType", "").split(";")]
+    ) or args.f == "json":
         try:
             json_string = result.data.to_json()
-        except:
+        except Exception:
             json_string = json.dumps(result.data)
         response = make_response(json_string, result.code)
         response.headers["Content-Type"] = "application/json"
@@ -166,6 +225,7 @@ def confirm():
         response = render_template("confirm.html", result=result)
 
     return response
+
 
 # ----------------PRIVATE SUPPORT METHODS----------------
 def _auto_accept_registration(account):
@@ -189,6 +249,7 @@ def _auto_accept_registration(account):
 
         return False
 
+
 def _generate_registration_confirmation(account):
     """
     Generates a registerion code and sends email.
@@ -205,11 +266,22 @@ def _generate_registration_confirmation(account):
 
     # send the email
     subject = "WindNinja Mobile - account verification"
-    body = "Welcome to WindNinja Mobile! Please click the link below to complete your registration.\n\n\n{}".format(url)
+    body = "Welcome to WindNinja Mobile! Please click the link below to complete your registration.\n\n\n{}".format(
+        url
+    )
     if _confirmation_delta_minutes > 0:
-        body += "\n\n\nThis code is valid for {} minutes.".format(_confirmation_delta_minutes)
+        body += "\n\n\nThis code is valid for {} minutes.".format(
+            _confirmation_delta_minutes
+        )
 
-    wnutil.send_email(_email_parameters.get("server", {}), account.email, _email_parameters.get("from_address", ""), subject, body)
+    wnutil.send_email(
+        _email_parameters.get("server", {}),
+        account.email,
+        _email_parameters.get("from_address", ""),
+        subject,
+        body,
+    )
+
 
 def _validate_registration_confirmation(code):
     """
@@ -226,7 +298,8 @@ def _validate_registration_confirmation(code):
         id = wnutil.decode(app.secret_key, parts[0])
         hash = parts[1]
         time_stamp = int(parts[2])
-    except:
+    except Exception:
+        logger.exception(f"Verification code parsing failed for {code}")
         return False, "Code parsing failed", None
 
     # get the assocated account
@@ -240,7 +313,7 @@ def _validate_registration_confirmation(code):
 
     # validate the time frame
     if _confirmation_delta_minutes > 0:
-        if (time_stamp+(_confirmation_delta_minutes*60) < time.time()):
+        if time_stamp + (_confirmation_delta_minutes * 60) < time.time():
             return False, "Code has expired", account
 
     # return success

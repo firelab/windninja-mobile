@@ -7,15 +7,18 @@ import datetime
 import windninjaqueue.manager as wnmanager
 import windninjaconfig as wnconfig
 
+
 def write_stdout(s):
     sys.stdout.write("[{}]:{}\n".format(datetime.datetime.now().isoformat(), s))
     sys.stdout.flush()
 
+
 def signal_handler(signal, frame):
-    write_stdout('Ctrl+C detected...')
+    write_stdout("Ctrl+C detected...")
     wnmanager.CANCEL = True
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", required=False)
