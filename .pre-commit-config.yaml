@@ -7,7 +7,7 @@ repos:
         language: system
         entry: pipenv run isort
         types: [python]
-        files: windninja_server/*
+        files: windninja_server
 
       - id: black
         name: black
@@ -15,7 +15,7 @@ repos:
         language: system
         entry: pipenv run black
         types: [python]
-        files: windninja_server/*
+        files: windninja_server
 
       - id: flake8
         name: flake8
@@ -23,8 +23,8 @@ repos:
         language: system
         entry: pipenv run flake8
         types: [python]
-        excldue: setup.py
-        files: windninja_server/*
+        exclude: setup.py
+        files: windninja_server
 
       - id: pytest
         name: pytest
@@ -32,4 +32,4 @@ repos:
         language: system
         entry: pipenv run pytest
         types: [python]
-        files: windninja_server/*
+        files: windninja_server
