@@ -21,7 +21,7 @@ def start_job(id):
     args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
     try:
         args += WN_WRAPPER_OPTIONS
-    except:
+    except Exception:
         pass
 
     logging.debug("start job args: {}".format(args))

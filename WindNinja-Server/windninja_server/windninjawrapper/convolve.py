@@ -1,34 +1,20 @@
+# The rest of these libraries are mostly for utility functions
+import copy
+import json
+import os
+import time
+
 # Numpy is a helpful library because it enables us to use
 # vectors and matrices in our calculations
 import numpy as np
 
+# Coordinate projection
+from osgeo import ogr, osr
+from scipy import misc
+
 USE_SCIPY = False
 DEBUG = False
 SEPARATE_FILES = False
-if USE_SCIPY:
-    print("USING SCIPY")
-    from scipy import signal
-    from scipy import misc
-else:
-    print("NOT USING SCIPY")
-
-# The rest of these libraries are mostly for utility functions
-import sys, os
-from random import shuffle
-import copy
-import time
-
-# Coordinate projection
-from osgeo import ogr
-from osgeo import osr
-
-import json
-
-# This is the defacto graphing library for Python.
-# Theoretically you can run this whole thing without any plotting,
-# it makes sanity testing a lot harder.
-if DEBUG:
-    import matplotlib.pyplot as plot
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -127,9 +113,6 @@ def coordsFromASC(path):
     spacer = data["cellsize"]
     x_coords = []
     y_coords = []
-
-    x_list = []
-    y_list = []
 
     # NOTE: The first row and the last column
     # of the ascii files are padding.
@@ -295,7 +278,7 @@ def vel2Bucket(vel, vel_range):
         #    bucket_val = vel_range[max_vel]
     try:
         return bucket_val
-    except:
+    except Exception:
         if vel > max_vel:
             print(
                 "Warning: velocity {} greater than maximum velocity of {}.  Assigning maximum value instead".format(

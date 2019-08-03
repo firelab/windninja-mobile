@@ -2,12 +2,11 @@
 import pytest
 
 import windninjaweb.models as wnmodels
-import unittest
 import datetime
 import dateutil
 
 _id_regex = (
-    "\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z"
+    r"\A[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\Z"
 )
 
 
@@ -271,7 +270,9 @@ def test_feedback_create():
     expected.date_time_stamp = datetime.datetime.now()
 
     actual = wnmodels.Feedback.create(initializer)
-    # assert_feedback_equal(actual, expected, exact_id=False, dt_delta=datetime.timedelta(seconds=1))
+    assert_feedback_equal(
+        actual, expected, exact_id=False, dt_delta=datetime.timedelta(seconds=19000)
+    )
 
     # invalid initialier
     initializer = {"wrong": "keys"}

@@ -3,10 +3,9 @@ import logging
 import math
 import os
 
-from osgeo import gdal, osr, ogr
 import ogr2ogr
-
 from config import CONFIG, MESSAGES
+from osgeo import gdal, ogr, osr
 from utility import execute_shell_process
 
 

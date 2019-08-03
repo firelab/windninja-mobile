@@ -2,6 +2,7 @@
 This script runs the windninjaweb application using a development server.
 """
 import unittest
+
 import tests.tests_config
 import tests.tests_utility
 

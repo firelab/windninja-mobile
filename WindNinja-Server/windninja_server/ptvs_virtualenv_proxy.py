@@ -56,7 +56,7 @@ if ptvsd_secret:
         try:
             ptvsd.enable_attach(ptvsd_secret)
             log("ptvsd enabled.\n")
-        except:
+        except Exception:
             log("ptvsd.enable_attach failed\n")
     except ImportError:
         log("error importing ptvsd.\n")

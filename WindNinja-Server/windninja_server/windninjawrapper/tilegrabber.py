@@ -88,7 +88,7 @@ def grab_tiles(domain, output_dir, map_type):
                 response = urllib2.urlopen(url)
                 data = response.read()
                 actual_file_count += 1
-            except urllib2.URLError as e:
+            except urllib2.URLError:
                 logging.warn("failed to fetch: {0}".format(url))
 
                 if not missing_tile_data:
@@ -98,7 +98,7 @@ def grab_tiles(domain, output_dir, map_type):
             finally:
                 try:
                     response.close()
-                except:
+                except Exception:
                     pass
             with open(file, "wb") as f:
                 f.write(data)

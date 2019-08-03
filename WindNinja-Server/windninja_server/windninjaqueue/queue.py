@@ -127,5 +127,5 @@ def _find_item(id):
     file_pattern = os.path.join(_directories["queue"], name_pattern)
     try:
         return glob.glob(file_pattern)[0]
-    except IndexError as iex:
+    except IndexError:
         return None

@@ -2,7 +2,7 @@
 import time
 import datetime
 from operator import itemgetter
-import signal
+
 import windninjaqueue.windninja as wn
 import windninjaqueue.queue as wnqueue
 

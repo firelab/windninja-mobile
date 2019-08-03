@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse
-import shutil
 import os
+import shutil
 import sys
 
 
@@ -21,7 +21,7 @@ def _deployData(jobs, source_root, destination):
         dst_folder = os.path.join(destination, data_foler_name, "job", job_name)
         try:
             shutil.rmtree(dst_folder)
-        except:
+        except Exception:
             pass
         src_folder = os.path.join(
             source_root, "..", data_foler_name, "job", test_data_folder

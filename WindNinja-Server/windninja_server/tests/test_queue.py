@@ -1,9 +1,7 @@
 ﻿import pytest
-import tempfile
 import os
 
 import windninjaqueue.queue as wnqueue
-from windninjaqueue.enums import QueueMode
 
 
 @pytest.fixture
@@ -51,12 +49,11 @@ def test_disabled_enqueue(filestore):
     unexpected_file = os.path.join(wnqueue._directories["queue"], f"{id}.{status.name}")
     assert not os.path.exists(
         unexpected_file
-    ), f"Unexpected file found: {expected_file}"
+    ), f"Unexpected file found: {unexpected_file}"
 
 
 def test_dequeue(filestore):
     id = "00000000-0000-0000-0000-000000000002"
-    status = wnqueue.QueueStatus.complete
     fh = filestore.join(f"{id}.running")
     assert fh.read() == ""
 
@@ -78,7 +75,6 @@ def test_disabled_dequeue(filestore):
     wnqueue.set_Queue(config, initialize=False)
 
     id = "00000000-0000-0000-0000-000000000002"
-    status = wnqueue.QueueStatus.complete
     fh = filestore.join(f"{id}.running")
     assert fh.read() == ""
 

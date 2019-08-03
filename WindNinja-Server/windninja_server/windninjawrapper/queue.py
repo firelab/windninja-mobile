@@ -1,9 +1,9 @@
-import os
-from config import CONFIG
-
 # --------------------------------------------
 # 2.7 version of the queue functions
 import glob
+import os
+
+from config import CONFIG
 
 _directories = {"queue": CONFIG.QUEUE_DIRECTORY}
 

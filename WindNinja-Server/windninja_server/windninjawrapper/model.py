@@ -1,15 +1,18 @@
-import os
 import json
+import logging
+import os
 import smtplib
 from datetime import datetime
 from email.mime.text import MIMEText
-from config import CONFIG
-import logging
-
 from enum import Enum
 
-# IMPORTANT: keep in sync with web versions
+from config import CONFIG
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# IMPORTANT: keep in sync with web versions
 # --------JOB--------------
 class JobStatus(Enum):
     unknown = 0
@@ -65,21 +68,21 @@ class Project:
             self.error = "Json.loads Error: {}".format(je.message)
             return
 
-        if self.job.has_key("input"):
+        if "input" in self.job:
             # get the forecast name
-            if self.job["input"].has_key("forecast"):
+            if "forecast" in self.job["input"]:
                 self.forecast = self.job["input"]["forecast"]
             else:
                 self.job["input"]["forecast"] = self.forecast
 
             # get the windninja parameters
-            if self.job["input"].has_key("parameters"):
+            if "parameters" in self.job["input"]:
                 self.parameters = self.job["input"]["parameters"]
             else:
                 self.job["input"]["parameters"] = self.parameters
 
             # parse products: semi-colon delimited key:value pairs where key is the product name and value is boolean to generate
-            if self.job["input"].has_key("products"):
+            if "products" in self.job["input"]:
                 self.products = {}
                 truelist = ("yes", "true", "t", "1")
                 products = self.job["input"]["products"].split(";")
@@ -91,16 +94,16 @@ class Project:
             else:
                 # the default back onto the job
                 self.job["input"]["products"] = ""
-                for p in selft.products.iterkeys():
+                for p in self.products.iterkeys():
                     self.products += "{0}:{1};".format(p, products[p])
 
             # parse the domain values into box
             if (
-                self.job["input"].has_key("domain")
-                and self.job["input"]["domain"].has_key("xmin")
-                and self.job["input"]["domain"].has_key("ymin")
-                and self.job["input"]["domain"].has_key("xmax")
-                and self.job["input"]["domain"].has_key("ymax")
+                "domain" in self.job["input"]
+                and "xmin" in self.job["input"]["domain"]
+                and "ymin" in self.job["input"]["domain"]
+                and "xmax" in self.job["input"]["domain"]
+                and "ymax" in self.job["input"]["domain"]
             ):
                 self.bbox = [
                     self.job["input"]["domain"]["xmin"],
@@ -120,7 +123,7 @@ class Project:
             self.job["status"] = status
 
         if message_tuple is not None:
-            if not self.job.has_key("messages"):
+            if "messages" not in self.job:
                 self.job["messages"] = []
 
             logging.log(*message_tuple)

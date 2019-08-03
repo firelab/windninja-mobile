@@ -1,14 +1,15 @@
-from datetime import datetime
-import pytz
-import dateutil.parser
-import dateutil.tz
 import glob
 import logging
 import os
-import shutil
 import re
-
+import shutil
+from datetime import datetime
 from string import Template
+
+import dateutil.parser
+import dateutil.tz
+import pytz
+
 from config import CONFIG
 from utility import execute_shell_process
 
@@ -26,7 +27,7 @@ _tzinfos = {
 }
 
 _sim_time_line_pattern = (
-    "Run \d*: Simulation time is \d*-[A-Za-z]*-\d* \d*:\d*:\d* [A-Z]{3,4}"
+    r"Run \d*: Simulation time is \d*-[A-Za-z]*-\d* \d*:\d*:\d* [A-Z]{3,4}"
 )
 _sim_time_line_sep = " is "
 

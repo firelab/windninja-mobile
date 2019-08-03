@@ -5,9 +5,10 @@ repos:
         name: isort
         stages: [commit]
         language: system
-        entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run isort'
+        entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run isort -rc --atomic'
         types: [python]
         files: WindNinja-Server/windninja_server
+        pass_filenames: false
 
       - id: black
         name: black
@@ -16,6 +17,7 @@ repos:
         entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run black .'
         types: [python]
         files: WindNinja-Server/windninja_server
+        pass_filenames: false
 
       - id: flake8
         name: flake8
@@ -25,6 +27,7 @@ repos:
         types: [python]
         exclude: setup.py
         files: WindNinja-Server/windninja_server
+        pass_filenames: false
 
       - id: pytest
         name: pytest
@@ -33,3 +36,4 @@ repos:
         entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run pytest'
         types: [python]
         files: WindNinja-Server/windninja_server
+        pass_filenames: false

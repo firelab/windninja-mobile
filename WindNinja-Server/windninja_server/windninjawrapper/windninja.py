@@ -1,20 +1,20 @@
 import argparse
-import logging
 import datetime
+import logging
 import os
+from queue import dequeue
 
 import logger
 from config import CONFIG, MESSAGES
-from model import Project, JobStatus
-from gis import createDem, convertShpToJson, getLayerInfo, getRasterInfo, withinForecast
-from wncli import execute_wncli
-from queue import dequeue
+from gis import convertShpToJson, createDem, getLayerInfo, getRasterInfo, withinForecast
+from model import JobStatus, Project
 from utility import zip_files
+from wncli import execute_wncli
 
 VERSION = "2019.02.21.1"
 
 
-def main():
+def main():  # noqa: C901
     logging.debug(
         "windninja.main()"
     )  # NOTE: THIS DEBUG STATEMENT WILL NEVER GET INTO THE LOG FILE BUT WILL OUTPUT TO STDOUT
@@ -397,7 +397,7 @@ def main():
                 project.updateJob(None, (logging.ERROR, msg), True)
             else:
                 logging.error(msg)
-        except:
+        except Exception:
             pass
 
     finish = datetime.datetime.now()

@@ -1,17 +1,15 @@
 #!/usr/bin/env python
-from math import pi, cos, sin, tan, log, exp, atan, radians
-from Queue import Queue
 import inspect
 import logging
 import os
 import threading
 import zipfile
+from math import atan, cos, exp, log, pi, radians, sin, tan
+from Queue import Queue
 
-from osgeo import ogr, osr
 import mapnik
-
 from config import CONFIG
-
+from osgeo import ogr, osr
 
 DEG_TO_RAD = pi / 180
 RAD_TO_DEG = 180 / pi
@@ -360,7 +358,7 @@ class RenderThread:
         while True:
             # Fetch a tile from the queue and render it
             r = self.q.get()
-            if r == None:
+            if r is None:
                 self.q.task_done()
                 break
             else:

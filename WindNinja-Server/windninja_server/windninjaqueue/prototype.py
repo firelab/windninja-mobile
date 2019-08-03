@@ -1,8 +1,7 @@
-import sys
-import os
-import time
-import tempfile
 import glob
+import os
+import sys
+import time
 
 # job_dir = r"/home/wnadmin/WindNinjaServer/Data/job"
 job_dir = r"/srv/WindNinjaServer/Data/job"
@@ -59,7 +58,7 @@ def _find_item(id):
     file_pattern = os.path.join(_directories["queue"], name_pattern)
     try:
         return glob.glob(file_pattern)[0]
-    except IndexError as iex:
+    except IndexError:
         return None
 
 
@@ -81,7 +80,7 @@ time.sleep(sleep_time)
 try:
     dequeue(id)
     f.write("[{0}] dequeue success...\n".format(current_pid))
-except:
+except Exception:
     f.write("[{0}] dequeue failed...\n".format(current_pid))
 
 f.write("[{0}] job complete...\n".format(current_pid))

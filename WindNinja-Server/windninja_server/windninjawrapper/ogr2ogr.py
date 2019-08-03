@@ -35,15 +35,15 @@
 # Note : this is the most direct port of ogr2ogr.cpp possible
 # It could be made much more Python'ish !
 
-import sys
 import os
 import stat
+import sys
 
 try:
     from osgeo import gdal
     from osgeo import ogr
     from osgeo import osr
-except:
+except Exception:
     import gdal
     import ogr
     import osr
@@ -149,7 +149,7 @@ class Enum(set):
 GeomOperation = Enum(["NONE", "SEGMENTIZE", "SIMPLIFY_PRESERVE_TOPOLOGY"])
 
 
-def main(args=None, progress_func=TermProgress, progress_data=None):
+def main(args=None, progress_func=TermProgress, progress_data=None):  # noqa: C901
 
     global bSkipFailures
     global nGroupTransactions
@@ -197,8 +197,6 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
     pszClipDstSQL = None
     pszClipDstLayer = None
     pszClipDstWhere = None
-    pszSrcEncoding = None
-    pszDstEncoding = None
     bWrapDateline = False
     bExplodeCollections = False
     pszZField = None
@@ -635,7 +633,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
 
             return False
 
-        if poDriver.TestCapability(ogr.ODrCCreateDataSource) == False:
+        if not poDriver.TestCapability(ogr.ODrCCreateDataSource):
             print("%s driver does not support data source creation." % pszFormat)
             return False
 
@@ -660,12 +658,12 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
 
             try:
                 os.stat(pszDestDataSource)
-            except:
+            except Exception:
                 try:
                     # decimal 493 = octal 0755. Python 3 needs 0o755, but
                     # this syntax is only supported by Python >= 2.6
                     os.mkdir(pszDestDataSource, 493)
-                except:
+                except Exception:
                     print(
                         "Failed to create directory %s\n"
                         "for shapefile datastore.\n" % pszDestDataSource
@@ -747,7 +745,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
                         pszNewLayerName = os.path.splitext(
                             os.path.basename(pszDestDataSource)
                         )[0]
-                except:
+                except Exception:
                     pass
 
             psInfo = SetupTargetLayer(
@@ -838,7 +836,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
                     pszNewLayerName = os.path.splitext(
                         os.path.basename(pszDestDataSource)
                     )[0]
-            except:
+            except Exception:
                 pass
 
         if bDisplayProgress and bSrcIsOSM:
@@ -1080,7 +1078,7 @@ def main(args=None, progress_func=TermProgress, progress_data=None):
                         pszNewLayerName = os.path.splitext(
                             os.path.basename(pszDestDataSource)
                         )[0]
-                except:
+                except Exception:
                     pass
 
             psInfo = SetupTargetLayer(
@@ -1167,9 +1165,8 @@ def Usage():
         + "               [-a_srs srs_def] [-t_srs srs_def] [-s_srs srs_def]\n"
         + "               [-f format_name] [-overwrite] [[-dsco NAME=VALUE] ...]\n"
         + "               [-simplify tolerance]\n"
-        +
         # // "               [-segmentize max_dist] [-fieldTypeToString All|(type1[,type2]*)]\n" + \
-        "               [-fieldTypeToString All|(type1[,type2]*)] [-explodecollections] \n"
+        + "               [-fieldTypeToString All|(type1[,type2]*)] [-explodecollections] \n"
         + "               dst_datasource_name src_datasource_name\n"
         + "               [-lco NAME=VALUE] [-nln name] [-nlt type] [-dim 2|3] [layer [layer ...]]\n"
         + "\n"
@@ -1195,10 +1192,9 @@ def Usage():
         + " -gt n: group n features per transaction (default 200)\n"
         + " -spat xmin ymin xmax ymax: spatial query extents\n"
         + " -simplify tolerance: distance tolerance for simplification.\n"
-        +
         # //" -segmentize max_dist: maximum distance between 2 nodes.\n" + \
         # //"                       Used to create intermediate points\n" + \
-        " -dsco NAME=VALUE: Dataset creation option (format specific)\n"
+        + " -dsco NAME=VALUE: Dataset creation option (format specific)\n"
         + " -lco  NAME=VALUE: Layer creation option (format specific)\n"
         + " -nln name: Assign an alternate name to the new layer\n"
         + " -nlt type: Force a geometry type for new layer.  One of NONE, GEOMETRY,\n"
@@ -1238,7 +1234,7 @@ def IsNumber(pszStr):
     try:
         (float)(pszStr)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -1333,7 +1329,7 @@ def SetZ(poGeom, dfZ):
 # /************************************************************************/
 
 
-def SetupTargetLayer(
+def SetupTargetLayer(  # noqa: C901
     poSrcDS,
     poSrcLayer,
     poDstDS,
@@ -1475,7 +1471,7 @@ def SetupTargetLayer(
         elif nCoordDim == 3:
             eGType = eGType | ogr.wkb25DBit
 
-        if poDstDS.TestCapability(ogr.ODsCCreateLayer) == False:
+        if not poDstDS.TestCapability(ogr.ODsCCreateLayer):
             print(
                 "Layer "
                 + pszNewLayerName
@@ -1690,7 +1686,7 @@ def SetupTargetLayer(
 # /************************************************************************/
 
 
-def TranslateLayer(
+def TranslateLayer(  # noqa: C901
     psInfo,
     poSrcDS,
     poSrcLayer,

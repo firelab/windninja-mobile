@@ -1,7 +1,5 @@
 ﻿import pytest
 
-import os
-import smtplib
 import windninjaweb.utility as wnutils
 
 
@@ -21,7 +19,7 @@ AUTO_REGISTER = {
 
 
 def test_send_email(mocker):
-    mock_smtp = mocker.patch("smtplib.SMTP")
+    mocker.patch("smtplib.SMTP")
 
     to_addresses = "fspataro@yourdatasmarter.com"
     body = "This is a unit test email"

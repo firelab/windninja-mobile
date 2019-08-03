@@ -1,6 +1,5 @@
 ﻿import pytest
 import datetime
-import tempfile
 import os
 
 import windninjaweb.models as wnmodels
