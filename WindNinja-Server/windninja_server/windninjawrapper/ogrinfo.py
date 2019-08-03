@@ -39,7 +39,7 @@ import sys
 try:
     from osgeo import gdal
     from osgeo import ogr
-except:
+except Exception:
     import gdal
     import ogr
 
@@ -59,7 +59,7 @@ def EQUAL(a, b):
 # /************************************************************************/
 
 
-def main(argv=None):
+def main(argv=None):  # noqa: C901
 
     global bReadOnly
     global bVerbose
@@ -336,7 +336,9 @@ def Usage():
 # /************************************************************************/
 
 
-def ReportOnLayer(poLayer, pszWHERE, pszGeomField, poSpatialFilter, options):
+def ReportOnLayer(  # noqa: C901
+    poLayer, pszWHERE, pszGeomField, poSpatialFilter, options
+):
 
     poDefn = poLayer.GetLayerDefn()
 
@@ -479,7 +481,7 @@ def DumpReadableFeature(poFeature, options=None):
             if poFeature.IsFieldSet(iField):
                 try:
                     line = line + "%s" % (poFeature.GetFieldAsString(iField))
-                except:
+                except Exception:
                     # For Python3 on non-UTF8 strings
                     line = line + "%s" % (poFeature.GetFieldAsBinary(iField))
             else:
@@ -513,7 +515,7 @@ def DumpReadableFeature(poFeature, options=None):
 
 def DumpReadableGeometry(poGeometry, pszPrefix, options):
 
-    if pszPrefix == None:
+    if pszPrefix is None:
         pszPrefix = ""
 
     if "DISPLAY_GEOMETRY" in options and EQUAL(options["DISPLAY_GEOMETRY"], "SUMMARY"):

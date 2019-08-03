@@ -274,11 +274,11 @@ def main():
 
                         # calculate values if needed
                         if output_wx and not wx_infos:
-                            wx_shpfiles = results[5]
+                            wx_shpfiles = result[5]
                             converted = processShapefiles(
                                 results_folder, wx_shpfiles, project.path, False
                             )
-                            wx_max_speed = covnerted[3]
+                            wx_max_speed = converted[3]
 
                         if not wn_infos:
                             converted = processShapefiles(

@@ -13,7 +13,7 @@ repos:
         name: black
         stages: [commit]
         language: system
-        entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run black'
+        entry: bash -c 'cd WindNinja-Server/windninja_server && pipenv run black .'
         types: [python]
         files: WindNinja-Server/windninja_server
 

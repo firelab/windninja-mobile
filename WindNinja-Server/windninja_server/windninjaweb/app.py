@@ -5,7 +5,6 @@ from flask import got_request_exception
 
 import windninjaconfig as wnconfig
 import windninjaqueue.queue as wnqueue
-import windninjaweb.api
 import windninjaweb.filestore as wndb
 
 

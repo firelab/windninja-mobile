@@ -1,5 +1,6 @@
-﻿import json
-import os
+﻿import os
+import logging
+
 from flask import abort, url_for, send_from_directory, jsonify
 from flask_restful import Api, Resource, reqparse, fields, marshal
 
@@ -9,6 +10,9 @@ import windninjaweb.filestore as wndb
 import windninjaqueue.queue as wnqueue
 import windninjaweb.utility as wnutil
 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 _email_parameters = app.config.get("MAIL", None)
 
 
@@ -237,9 +241,9 @@ class FeedbackController(Resource):
                     subject,
                     body,
                 )
-            except Exception as ex:
+            except Exception:
                 # return error_response(500, str(ex))
-                pass
+                logger.exception(f"Feedback from {feedback.account} failed")
 
             return marshal(feedback, self.feedback_fields)
         else:

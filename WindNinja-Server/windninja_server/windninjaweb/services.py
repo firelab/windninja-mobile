@@ -189,7 +189,9 @@ def confirm():
                 _generate_registration_confirmation(account)
                 result.data.message += "; A new code as been generated and sent"
             except Exception:
-                logger.exception(f'Error generating or sending new code for {account.email}')
+                logger.exception(
+                    f"Error generating or sending new code for {account.email}"
+                )
                 result.data.message += "; Error generating or sending new code"
 
         else:
@@ -215,7 +217,7 @@ def confirm():
     ) or args.f == "json":
         try:
             json_string = result.data.to_json()
-        except:
+        except Exception:
             json_string = json.dumps(result.data)
         response = make_response(json_string, result.code)
         response.headers["Content-Type"] = "application/json"
@@ -296,7 +298,8 @@ def _validate_registration_confirmation(code):
         id = wnutil.decode(app.secret_key, parts[0])
         hash = parts[1]
         time_stamp = int(parts[2])
-    except:
+    except Exception:
+        logger.exception(f"Verification code parsing failed for {code}")
         return False, "Code parsing failed", None
 
     # get the assocated account

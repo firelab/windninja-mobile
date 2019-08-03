@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-import inspect
-import json
 from math import pi, cos, sin, tan, log, exp, atan, radians
-from subprocess import call
-import os
 from Queue import Queue
-import sys
+import inspect
+import logging
+import os
 import threading
 import zipfile
 
@@ -13,7 +11,6 @@ from osgeo import ogr, osr
 import mapnik
 
 from config import CONFIG
-import logging
 
 
 DEG_TO_RAD = pi / 180

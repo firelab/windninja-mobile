@@ -14,6 +14,7 @@ import windninjaweb.utility as wnutils
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
 
+
 # ----------JOB----------------
 class JobStatus(Enum):
     unknown = 0
@@ -631,13 +632,8 @@ class AccountState:
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
-
-        list = []
-
-        dict = {
+        return {
             "account": self.account,
             "accountStatus": self.status.name,
             "message": self.message,
         }
-
-        return dict
