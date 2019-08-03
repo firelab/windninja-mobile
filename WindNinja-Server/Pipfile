@@ -10,6 +10,7 @@ httpie = "*"
 pytest-mock = "*"
 black = "*"
 isort = "*"
+flake8 = "*"
 
 [packages]
 flask = "*"
