@@ -6,7 +6,8 @@ import os
 import windninjaweb.models as wnmodels
 import windninjaweb.filestore as wndb
 
-from .tests_models import MockModels, validate_job, validate_account, validate_feedback
+from .test_models import MockModels, validate_job, validate_account, validate_feedback
+
 
 @pytest.fixture
 def filestore(tmpdir):
@@ -15,7 +16,7 @@ def filestore(tmpdir):
     wndb.set_Store(filestore, initialize=True)
 
     # create the "exsiting files" in a manual way
-    account_file =  f"{MockModels.account_id}.json"
+    account_file = f"{MockModels.account_id}.json"
     fh = filestore.join("account", account_file)
     fh.write(MockModels.account_json)
 
@@ -80,7 +81,7 @@ def test_get_account(filestore):
 
 def test_save_account(filestore):
     target = wnmodels.Account()
-    target.created_on = datetime.datetime(2016,1,2,3,4,5,6)
+    target.created_on = datetime.datetime(2016, 1, 2, 3, 4, 5, 6)
     target.email = "name@email.com"
     target.id = "my@account.com"
     target.name = "test account"
@@ -114,7 +115,7 @@ def test_save_feedback(filestore):
     target = wnmodels.Feedback()
     target.account = "my@account.com"
     target.comments = "this is a test"
-    target.date_time_stamp = datetime.datetime(2016,1,2,3,4,5,6)
+    target.date_time_stamp = datetime.datetime(2016, 1, 2, 3, 4, 5, 6)
     target.id = "f3e82852-97d8-4e49-baf9-c933b6c1c020"
 
     actual = wndb.save_feedback(target)

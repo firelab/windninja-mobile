@@ -8,9 +8,9 @@ import logging
 
 from enum import Enum
 
-#IMPORTANT: keep in sync with web versions
+# IMPORTANT: keep in sync with web versions
 
-#--------JOB--------------
+# --------JOB--------------
 class JobStatus(Enum):
     unknown = 0
     new = 1
@@ -24,7 +24,8 @@ class JobStatus(Enum):
     deleting = 9
     deleted = 10
 
-#--------PROJECT------------
+
+# --------PROJECT------------
 class Project:
     def __init__(self, path):
         self.error = None
@@ -37,7 +38,14 @@ class Project:
         self.forecast = "NOMADS-NAM-CONUS-12-KM"
         self.parameters = "duration:12;vegetation:grass"
         self.domain = []
-        self.products = {"vector":True, "raster":False, "topofire":True, "geopdf":False, "clustered": False, "weather": False}
+        self.products = {
+            "vector": True,
+            "raster": False,
+            "topofire": True,
+            "geopdf": False,
+            "clustered": False,
+            "weather": False,
+        }
         self.email = None
         self.output = {}
 
@@ -70,7 +78,7 @@ class Project:
             else:
                 self.job["input"]["parameters"] = self.parameters
 
-            #parse products: semi-colon delimited key:value pairs where key is the product name and value is boolean to generate
+            # parse products: semi-colon delimited key:value pairs where key is the product name and value is boolean to generate
             if self.job["input"].has_key("products"):
                 self.products = {}
                 truelist = ("yes", "true", "t", "1")
@@ -86,9 +94,20 @@ class Project:
                 for p in selft.products.iterkeys():
                     self.products += "{0}:{1};".format(p, products[p])
 
-            #parse the domain values into box
-            if (self.job["input"].has_key("domain") and self.job["input"]["domain"].has_key("xmin") and self.job["input"]["domain"].has_key("ymin") and self.job["input"]["domain"].has_key("xmax") and self.job["input"]["domain"].has_key("ymax")):
-                self.bbox = [self.job["input"]["domain"]["xmin"],self.job["input"]["domain"]["ymin"],self.job["input"]["domain"]["xmax"],self.job["input"]["domain"]["ymax"]]
+            # parse the domain values into box
+            if (
+                self.job["input"].has_key("domain")
+                and self.job["input"]["domain"].has_key("xmin")
+                and self.job["input"]["domain"].has_key("ymin")
+                and self.job["input"]["domain"].has_key("xmax")
+                and self.job["input"]["domain"].has_key("ymax")
+            ):
+                self.bbox = [
+                    self.job["input"]["domain"]["xmin"],
+                    self.job["input"]["domain"]["ymin"],
+                    self.job["input"]["domain"]["xmax"],
+                    self.job["input"]["domain"]["ymax"],
+                ]
             else:
                 raise ValueError("Job does not contain a valid domain bound box")
 
@@ -106,8 +125,12 @@ class Project:
 
             logging.log(*message_tuple)
 
-            #TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
-            formatted_message = "{} | {} | {}".format(datetime.utcnow().isoformat(), logging.getLevelName(message_tuple[0]).lower(), message_tuple[1])
+            # TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
+            formatted_message = "{} | {} | {}".format(
+                datetime.utcnow().isoformat(),
+                logging.getLevelName(message_tuple[0]).lower(),
+                message_tuple[1],
+            )
             self.job["messages"].append(formatted_message)
 
         if self.output is not None:
@@ -121,14 +144,20 @@ class Project:
                 json_file.write(json.dumps(self.job, indent=pretty))
 
     def sendEmail(self):
-        if self.job['email'] and self.job['email'].strip():
-            msg = MIMEText("Your run '{}' has been completed.\nStatus: {}".format(self.job['name'], self.job["status"]))
-            msg['Subject'] = 'WindNinja Run Complete'
-            msg['From'] = CONFIG.MAIL["from_address"]
-            msg['To'] = self.job['email']
+        if self.job["email"] and self.job["email"].strip():
+            msg = MIMEText(
+                "Your run '{}' has been completed.\nStatus: {}".format(
+                    self.job["name"], self.job["status"]
+                )
+            )
+            msg["Subject"] = "WindNinja Run Complete"
+            msg["From"] = CONFIG.MAIL["from_address"]
+            msg["To"] = self.job["email"]
 
             if CONFIG.MAIL["server"]["address"] is None:
-                logger.error('SMTP server address is not set! Cannot send notifications')
+                logger.error(
+                    "SMTP server address is not set! Cannot send notifications"
+                )
                 return
 
             s = smtplib.SMTP(CONFIG.MAIL["server"]["address"])
@@ -137,7 +166,15 @@ class Project:
                 logging.debug("server requires login")
                 s.starttls()
                 s.ehlo()
-                s.login(CONFIG.MAIL["server"]["user"], CONFIG.MAIL["server"]["password"])
-            logging.debug("attempting to send notification text: {}".format(msg.as_string()))
-            s.sendmail(CONFIG.MAIL["from_address"], self.job['email'].split(','), msg.as_string())
+                s.login(
+                    CONFIG.MAIL["server"]["user"], CONFIG.MAIL["server"]["password"]
+                )
+            logging.debug(
+                "attempting to send notification text: {}".format(msg.as_string())
+            )
+            s.sendmail(
+                CONFIG.MAIL["from_address"],
+                self.job["email"].split(","),
+                msg.as_string(),
+            )
             s.close()

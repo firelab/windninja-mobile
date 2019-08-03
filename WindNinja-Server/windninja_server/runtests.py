@@ -5,8 +5,8 @@ import unittest
 import tests.tests_config
 import tests.tests_utility
 
-if __name__ == '__main__':
-    #unittest.main(module="tests")
+if __name__ == "__main__":
+    # unittest.main(module="tests")
 
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()

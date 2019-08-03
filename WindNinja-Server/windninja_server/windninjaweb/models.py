@@ -8,13 +8,13 @@ import hashlib
 
 import windninjaweb.utility as wnutils
 
-#TODO: Break into sub package
-#TODO: better names for "from_" methods ???
+# TODO: Break into sub package
+# TODO: better names for "from_" methods ???
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
 
-#----------JOB----------------
+# ----------JOB----------------
 class JobStatus(Enum):
     unknown = 0
     new = 1
@@ -28,9 +28,11 @@ class JobStatus(Enum):
     deleting = 9
     deleted = 10
 
+
 class JobMessageType(Enum):
     info = 1
     error = 2
+
 
 class Product:
     def __init__(self):
@@ -40,7 +42,7 @@ class Product:
         self.baseurl = ""
         self.package = ""
         self.files = []
-        #self.data = []
+        # self.data = []
         self.data = {}
 
     @classmethod
@@ -48,10 +50,10 @@ class Product:
         if not json_dict:
             return None
 
-        #TODO: validate values
+        # TODO: validate values
         obj = cls()
         obj.name = json_dict.get("name")
-        obj.type= json_dict.get("type")
+        obj.type = json_dict.get("type")
         obj.format = json_dict.get("format")
         obj.baseurl = json_dict.get("baseurl")
         obj.package = json_dict.get("package")
@@ -60,7 +62,7 @@ class Product:
         for file in json_dict.get("files", []):
             obj.files.append(file)
 
-        #for data in json_dict.get("data", []):
+        # for data in json_dict.get("data", []):
         #    obj.data.append(data)
 
         return obj
@@ -68,7 +70,7 @@ class Product:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
@@ -78,22 +80,23 @@ class Product:
         for f in self.files:
             files.append(f)
 
-        #data = []
-        #for d in self.data:
+        # data = []
+        # for d in self.data:
         #    data.append(d)
 
         dict = {
-            "name" : self.name,
-            "type" : self.type,
-            "format" : self.format,
-            "baseurl" : self.baseurl,
-            "package" : self.package,
-            "files" : files,
-            #"data" : data,
-            "data" : self.data,
-            }
+            "name": self.name,
+            "type": self.type,
+            "format": self.format,
+            "baseurl": self.baseurl,
+            "package": self.package,
+            "files": files,
+            # "data" : data,
+            "data": self.data,
+        }
 
         return dict
+
 
 class BBOX:
     def __init__(self):
@@ -117,7 +120,7 @@ class BBOX:
             return None
 
         obj = cls()
-        #TODO: validate values
+        # TODO: validate values
         obj.xmin = json_dict.get("xmin")
         obj.ymin = json_dict.get("ymin")
         obj.xmax = json_dict.get("xmax")
@@ -127,18 +130,19 @@ class BBOX:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
         dict = {
-            "xmin" : self.xmin,
-            "ymin" : self.ymin,
-            "xmax" : self.xmax,
-            "ymax" : self.ymax
-            }
+            "xmin": self.xmin,
+            "ymin": self.ymin,
+            "xmax": self.xmax,
+            "ymax": self.ymax,
+        }
         return dict
+
 
 class JobInput:
     def __init__(self):
@@ -154,7 +158,7 @@ class JobInput:
 
         obj = cls()
 
-        #TODO: validate values
+        # TODO: validate values
         obj.domain = BBOX.from_dict(json_dict.get("domain", {}))
         obj.forecast = json_dict.get("forecast")
         obj.parameters = json_dict.get("parameters")
@@ -165,18 +169,19 @@ class JobInput:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
         dict = {
-            "domain" : self.domain.to_dict(),
-            "forecast" : self.forecast,
-            "parameters" : self.parameters,
-            "products" : self.products
-            }
+            "domain": self.domain.to_dict(),
+            "forecast": self.forecast,
+            "parameters": self.parameters,
+            "products": self.products,
+        }
         return dict
+
 
 class JobOutput:
     def __init__(self):
@@ -196,8 +201,8 @@ class JobOutput:
             else:
                 obj.products[k] = Product.from_dict(json_dict[k])
 
-        #products = json_dict.get("products", {})
-        #for product in products:
+        # products = json_dict.get("products", {})
+        # for product in products:
         #    obj.products.append(Product.from_dict(product))
 
         return obj
@@ -209,17 +214,17 @@ class JobOutput:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for tests to sort...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
-        #list = []
-        #for p in self.products:
+        # list = []
+        # for p in self.products:
         #    list.append(p.to_dict())
 
         dict = {
-        #    "products" : list
+            #    "products" : list
             "simulations": self.simulations
         }
 
@@ -228,7 +233,8 @@ class JobOutput:
 
         return dict
 
-class Job ():
+
+class Job:
     def __init__(self):
         self.id = ""
         self.name = ""
@@ -276,14 +282,14 @@ class Job ():
         obj = cls()
         # TODO which of these items MUST be found or generate an error?
 
-        #REQUIRED
+        # REQUIRED
         # TODO: check required values for something other than empty string
         obj.id = json_dict["id"]
         obj.name = json_dict["name"]
         obj.status = JobStatus[json_dict["status"].lower()]
         obj.account = json_dict["account"]
 
-        #OPTIONAL
+        # OPTIONAL
         obj.email = json_dict.get("email")
         for message in json_dict.get("messages", []):
             obj.messages.append(message)
@@ -294,14 +300,16 @@ class Job ():
         return obj
 
     def add_message(self, message, type):
-        #TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
-        formatted = "{0} | {1} | {2}".format(datetime.datetime.utcnow().isoformat(), type.name, message)
+        # TODO: keep formatting in sync with web and queue projects that might also add messages... or sync all "models" into a module.
+        formatted = "{0} | {1} | {2}".format(
+            datetime.datetime.utcnow().isoformat(), type.name, message
+        )
         self.messages.append(formatted)
 
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
@@ -311,18 +319,19 @@ class Job ():
             list.append(m)
 
         dict = {
-            "id" : self.id,
-            "name" : self.name,
-            "account" : self.account,
-            "email" : self.email,
-            "status" : self.status.name,
-            "input" : None if self.input is None else self.input.to_dict(),
-            "output" : None if self.output is None else self.output.to_dict(),
-            "messages": list
-            }
+            "id": self.id,
+            "name": self.name,
+            "account": self.account,
+            "email": self.email,
+            "status": self.status.name,
+            "input": None if self.input is None else self.input.to_dict(),
+            "output": None if self.output is None else self.output.to_dict(),
+            "messages": list,
+        }
         return dict
 
-#----------FEEDBACK----------------
+
+# ----------FEEDBACK----------------
 class Feedback:
     def __init__(self):
         self.id = ""
@@ -336,7 +345,7 @@ class Feedback:
         feedback.id = str(uuid.uuid4())
         feedback.date_time_stamp = datetime.datetime.utcnow()
 
-        #required so throw an error if not found in initialier
+        # required so throw an error if not found in initialier
         feedback.account = initializer["account"]
         feedback.comments = initializer["comments"]
 
@@ -357,7 +366,7 @@ class Feedback:
         obj = cls()
         # TODO which of these items MUST be found or generate an error?
 
-        #REQUIRED
+        # REQUIRED
         # TODO: check required values for something other than empty string
         obj.id = json_dict["id"]
         obj.account = json_dict["account"]
@@ -369,24 +378,27 @@ class Feedback:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
         dict = {
-            "id" : self.id,
-            "account" : self.account,
-            "dateTimeStamp" : self.date_time_stamp.isoformat(),
-            "comments" : self.comments
-            }
+            "id": self.id,
+            "account": self.account,
+            "dateTimeStamp": self.date_time_stamp.isoformat(),
+            "comments": self.comments,
+        }
         return dict
 
     def to_email_body(self):
         template = "ID:{}\nACCOUNT:{}\nDATE:{}\nCOMMENTS:\n{}"
-        return template.format(self.id, self.account, self.date_time_stamp.isoformat(), self.comments)
+        return template.format(
+            self.id, self.account, self.date_time_stamp.isoformat(), self.comments
+        )
 
-#----------NOTIFICATION------------
+
+# ----------NOTIFICATION------------
 class Notification:
     def __init__(self):
         self.id = ""
@@ -398,7 +410,7 @@ class Notification:
         notification = cls()
         notification.id = str(uuid.uuid4())
 
-        #required so throw an error if not found in initialier
+        # required so throw an error if not found in initialier
         notification.expires = initializer["expires"]
         notification.message = initializer["message"]
 
@@ -419,7 +431,7 @@ class Notification:
         obj = cls()
         # TODO which of these items MUST be found or generate an error?
 
-        #REQUIRED
+        # REQUIRED
         # TODO: check required values for something other than empty string
         obj.id = json_dict["id"]
         obj.message = json_dict["message"]
@@ -430,24 +442,28 @@ class Notification:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
         dict = {
-            "id" : self.id,
-            "message" : self.message,
-            "expires" : self.expires.isoformat() if self.expires else datetime.datetime.max,
+            "id": self.id,
+            "message": self.message,
+            "expires": self.expires.isoformat()
+            if self.expires
+            else datetime.datetime.max,
         }
         return dict
 
-#----------ACCOUNT----------------
+
+# ----------ACCOUNT----------------
 class AccountStatus(Enum):
     unknown = 0
     pending = 1
     accepted = 2
     disabled = 3
+
 
 class Device:
     def __init__(self):
@@ -477,26 +493,31 @@ class Device:
         if not json_dict:
             return
 
-        obj = cls.create(json_dict["id"], json_dict["model"],
-                         json_dict["platform"],  json_dict["version"])
+        obj = cls.create(
+            json_dict["id"],
+            json_dict["model"],
+            json_dict["platform"],
+            json_dict["version"],
+        )
 
         return obj
 
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
     def to_dict(self):
         dict = {
-            "id" : self.id,
-            "model" : self.model,
-            "platform" : self.platform,
-            "version" : self.version
-            }
+            "id": self.id,
+            "model": self.model,
+            "platform": self.platform,
+            "version": self.version,
+        }
         return dict
+
 
 class Account:
     _code_template = "{0}&{1}"
@@ -536,7 +557,7 @@ class Account:
         obj = cls()
         # TODO which of these items MUST be found or generate an error?
 
-        #REQUIRED
+        # REQUIRED
         # TODO: check required values for something other than empty string
         obj.id = json_dict["id"]
         obj.email = json_dict["email"]
@@ -552,7 +573,7 @@ class Account:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
@@ -563,18 +584,20 @@ class Account:
             list.append(d.to_dict())
 
         dict = {
-            "id" : self.id,
-            "email" : self.email,
-            "name" : self.name,
-            "createdOn" : self.created_on.isoformat(),
-            "status" : self.status.name,
-            "devices" : list
-            }
+            "id": self.id,
+            "email": self.email,
+            "name": self.name,
+            "createdOn": self.created_on.isoformat(),
+            "status": self.status.name,
+            "devices": list,
+        }
 
         return dict
 
     def generate_code(self):
-        encoded = Account._code_template.format(self.created_on.isoformat(), self.id).encode("utf-8")
+        encoded = Account._code_template.format(
+            self.created_on.isoformat(), self.id
+        ).encode("utf-8")
         hash = hashlib.sha256(encoded)
         return hash.hexdigest()
 
@@ -585,6 +608,7 @@ class Account:
 
         return False
 
+
 class AccountState:
     def __init__(self):
         self.account = ""
@@ -592,7 +616,7 @@ class AccountState:
         self.message = ""
 
     @classmethod
-    def create(cls, account, message = ""):
+    def create(cls, account, message=""):
         state = cls()
         state.account = account.id
         state.status = account.status
@@ -602,7 +626,7 @@ class AccountState:
     def to_json(self):
         dict = self.to_dict()
 
-        #TODO: sorting seems like a waste but tests fail without a known string represtatntion
+        # TODO: sorting seems like a waste but tests fail without a known string represtatntion
         # Maybe set module flags for these...
         return json.dumps(dict, sort_keys=True)
 
@@ -611,9 +635,9 @@ class AccountState:
         list = []
 
         dict = {
-            "account" : self.account,
-            "accountStatus" : self.status.name,
-            "message" : self.message
-            }
+            "account": self.account,
+            "accountStatus": self.status.name,
+            "message": self.message,
+        }
 
         return dict
