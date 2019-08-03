@@ -8,6 +8,8 @@ pytest = "*"
 bumpversion = "*"
 httpie = "*"
 pytest-mock = "*"
+black = "*"
+isort = "*"
 
 [packages]
 flask = "*"
@@ -26,3 +28,6 @@ py-dateutil = "*"
 
 [requires]
 python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true

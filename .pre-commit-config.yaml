@@ -1,0 +1,35 @@
+repos:
+  - repo: local
+    hooks:
+      - id: isort
+        name: isort
+        stages: [commit]
+        language: system
+        entry: pipenv run isort
+        types: [python]
+        files: windninja_server/*
+
+      - id: black
+        name: black
+        stages: [commit]
+        language: system
+        entry: pipenv run black
+        types: [python]
+        files: windninja_server/*
+
+      - id: flake8
+        name: flake8
+        stages: [commit]
+        language: system
+        entry: pipenv run flake8
+        types: [python]
+        excldue: setup.py
+        files: windninja_server/*
+
+      - id: pytest
+        name: pytest
+        stages: [commit]
+        language: system
+        entry: pipenv run pytest
+        types: [python]
+        files: windninja_server/*
