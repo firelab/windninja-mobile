@@ -3,10 +3,11 @@ import logging
 import math
 import os
 
-import ogr2ogr
-from config import CONFIG, MESSAGES
 from osgeo import gdal, ogr, osr
 from utility import execute_shell_process
+
+from . import ogr2ogr
+from .config import CONFIG, MESSAGES
 
 
 def withinForecast(bbox):
