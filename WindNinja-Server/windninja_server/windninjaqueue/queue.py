@@ -1,7 +1,8 @@
 ﻿import os
 import glob
 import logging
-from windninjaqueue.enums import QueueMode, QueueStatus
+
+from .enums import QueueMode, QueueStatus
 
 # TODO: move queue to database (could be easy enough to simply pull queue from JOB status once Job is database)
 # TODO: create QueueException

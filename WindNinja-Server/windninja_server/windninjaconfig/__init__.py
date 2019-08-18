@@ -1,6 +1,8 @@
 ﻿import os
 import yaml
 
+from flask_dotenv import DotEnv
+
 
 class Config:
     DATASTORE = None
@@ -8,6 +10,11 @@ class Config:
     AUTO_REGISTER = {}
     SECRET_KEY = None
     QUEUE = {}
+
+    @classmethod
+    def init_app(self, app):
+        env = DotEnv()
+        env.init_app(app)
 
 
 __config_file = os.environ["WNSERVER_CONFIG"]

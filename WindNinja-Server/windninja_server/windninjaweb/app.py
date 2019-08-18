@@ -3,9 +3,9 @@
 from flask import Flask
 from flask import got_request_exception
 
-import windninjaconfig as wnconfig
-import windninjaqueue.queue as wnqueue
-import windninjaweb.filestore as wndb
+import windninja_server.windninjaconfig as wnconfig
+import windninja_server.windninjaqueue.queue as wnqueue
+import windninja_server.windninjaweb.filestore as wndb
 
 
 def log_exception(sender, exception, **extra):

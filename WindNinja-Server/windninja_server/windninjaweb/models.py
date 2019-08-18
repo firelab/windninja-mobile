@@ -6,7 +6,7 @@ from enum import Enum
 import logging
 import hashlib
 
-import windninjaweb.utility as wnutils
+from . import utility as wnutils
 
 # TODO: Break into sub package
 # TODO: better names for "from_" methods ???

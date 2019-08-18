@@ -26,6 +26,8 @@ paramiko = "*"
 fabric = "*"
 invoke = "*"
 py-dateutil = "*"
+gunicorn = "*"
+flask-dotenv = "*"
 
 [requires]
 python_version = "3.7"

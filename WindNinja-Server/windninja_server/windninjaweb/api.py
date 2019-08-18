@@ -4,11 +4,11 @@ import logging
 from flask import abort, url_for, send_from_directory, jsonify
 from flask_restful import Api, Resource, reqparse, fields, marshal
 
-from windninjaweb.app import app
-import windninjaweb.models as wnmodels
-import windninjaweb.filestore as wndb
-import windninjaqueue.queue as wnqueue
-import windninjaweb.utility as wnutil
+from windninja_server.windninjaweb.app import app
+import windninja_server.windninjaweb.models as wnmodels
+import windninja_server.windninjaweb.filestore as wndb
+import windninja_server.windninjaqueue.queue as wnqueue
+import windninja_server.windninjaweb.utility as wnutil
 
 
 logging.basicConfig(level=logging.INFO)
