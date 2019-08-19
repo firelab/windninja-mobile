@@ -32,7 +32,10 @@ RUN pip install pipenv && \
 # Step 2: build the Flask app image
 ##############################################################################
 FROM python:3.7-alpine
+
+WORKDIR /app
 COPY --from=build /app/dist/*.whl dist/
+COPY --from=build /app/bin /app/bin
 
 RUN apk update && \
     apk add python3-dev && \
@@ -41,8 +44,7 @@ RUN apk update && \
     python3 -m pip install --find-links . --no-index dist/*.whl && \
     rm -r dist
 
-
-ENV FLASK_APP windninja_server/windninjaweb/app.py
+ENV FLASK_APP windninja_server.windninjaweb.app
 
 RUN adduser -D ninja
 USER ninja

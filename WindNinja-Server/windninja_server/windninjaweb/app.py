@@ -49,3 +49,5 @@ api.add_resource(
 
 # register_service_endpoints
 app.register_blueprint(registration_blueprint)
+
+application = app
