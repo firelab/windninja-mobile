@@ -41,8 +41,7 @@ COPY --from=build /app/bin /app/bin
 RUN set -xe \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt update -q && \
-    apt install -y -q python3.7 && \
-    python3.7 -m ensurepip && \
+    apt install -y -q python3.7 python3-pip && \
     python3.7 -m pip install --user --no-cache --upgrade pip setuptools wheel && \
     python3.7 -m pip install --user --find-links . --no-index dist/*.whl && \
     apt remove -y python3-pip python3-wheel && \
