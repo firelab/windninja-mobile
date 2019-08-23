@@ -11,6 +11,7 @@ pytest-mock = "*"
 black = "*"
 isort = "*"
 flake8 = "*"
+pre-commit = "*"
 
 [packages]
 flask = "*"

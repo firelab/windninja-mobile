@@ -10,6 +10,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PIPENV_VENV_IN_PROJECT 1
 
+ADD requirements.txt /app/
+WORKDIR /app
 
 RUN apk update && \
     apk add --no-cache --virtual build-deps \
@@ -20,34 +22,39 @@ RUN apk update && \
 
 
 ADD . /app
-WORKDIR /app
 
-
-RUN pip install pipenv && \
-    pipenv lock -r > requirements.txt && \
-    pipenv run python setup.py bdist_wheel && \
-    pipenv run pip wheel --wheel-dir=dist -r requirements.txt
+RUN pip wheel --wheel-dir=dist -r requirements.txt
 
 ##############################################################################
 # Step 2: build the Flask app image
+# 
+# Uses the wheels created from the first step to reduce the
+# build times and remove the need to store the source directory
+# in the image.
 ##############################################################################
-FROM python:3.7-alpine
+FROM ubuntu:bionic
 
 WORKDIR /app
 COPY --from=build /app/dist/*.whl dist/
 COPY --from=build /app/bin /app/bin
 
-RUN apk update && \
-    apk add python3-dev && \
-    python3 -m ensurepip && \
-    pip3 install --no-cache --upgrade pip setuptools wheel && \
-    python3 -m pip install --find-links . --no-index dist/*.whl && \
-    rm -r dist
+RUN set -xe \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt update -q && \
+    apt install -y -q python3.7 && \
+    python3.7 -m ensurepip && \
+    python3.7 -m pip install --user --no-cache --upgrade pip setuptools wheel && \
+    python3.7 -m pip install --user --find-links . --no-index dist/*.whl && \
+    apt remove -y python3-pip python3-wheel && \
+    apt autoremove -y && \
+    apt clean -y && \
+    rm -r dist && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd ninja --no-create-home --user-group
+
+USER ninja
 
 ENV FLASK_APP windninja_server.windninjaweb.app
-
-RUN adduser -D ninja
-USER ninja
 
 EXPOSE 5000
 ENTRYPOINT ["/app/bin/boot.sh"]
