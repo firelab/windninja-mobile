@@ -1,0 +1,30 @@
+version: '3'
+services:
+  web:
+    build: .
+    container_name: web
+    ports: 
+      - "5000:5000"
+    environment:
+      - FLASK_APP=windninja_server.windninjaweb.app
+      - WNSERVER_CONFIG=/app/config/windninjaserver.config.yaml
+    volumes:
+      - ./data:/srv/WindNinjaServer/data
+    networks:
+      ninja-network:
+        aliases:
+          - web
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+    ports:
+      - "4000:4000"
+    networks:
+      - ninja-network
+
+networks:
+  ninja-network:

@@ -8,9 +8,9 @@ pytest = "*"
 bumpversion = "*"
 httpie = "*"
 pytest-mock = "*"
-black = "*"
 isort = "*"
 flake8 = "*"
+pre-commit = "*"
 
 [packages]
 flask = "*"
@@ -26,6 +26,8 @@ paramiko = "*"
 fabric = "*"
 invoke = "*"
 py-dateutil = "*"
+gunicorn = "*"
+flask-dotenv = "*"
 
 [requires]
 python_version = "3.7"

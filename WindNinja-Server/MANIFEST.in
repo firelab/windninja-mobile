@@ -2,6 +2,7 @@ include HISTORY.md
 include README.md
 
 recursive-include tests *
+recursive-include windninja_server *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * .tox

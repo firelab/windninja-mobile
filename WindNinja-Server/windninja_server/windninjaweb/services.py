@@ -1,20 +1,25 @@
 ﻿"""
 Services are RPC style methods for web application
 """
-from flask import request, make_response, url_for, render_template
+from flask import request, make_response, url_for, render_template, Blueprint
 from flask_restful import reqparse
 from werkzeug import exceptions
 import json
 import time
 import logging
 
-from windninjaweb.app import app
-import windninjaweb.models as wnmodels
-import windninjaweb.filestore as wndb
-import windninjaweb.utility as wnutil
+import windninja_server.windninjaweb.models as wnmodels
+import windninja_server.windninjaweb.filestore as wndb
+import windninja_server.windninjaweb.utility as wnutil
+import windninja_server.windninjaconfig as wnconfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+registration_blueprint = Blueprint(
+    'registration_blueprint', __name__
+)
 
 # ----------------CONFIGURATION----------------
 _register_parser = reqparse.RequestParser()
@@ -76,13 +81,13 @@ _confirm_parser.add_argument(
 )
 
 # TODO: log email confirmation offline
-_email_parameters = app.config.get("MAIL", None)
+_email_parameters = wnconfig.Config.MAIL
 logger.info(_email_parameters)
 _confirmation_code_separator = ":"
 _confirmation_delta_minutes = -1
 
 # ----------------PUBLIC SERVICE METHODS----------------
-@app.route("/services/registration/register", methods=["POST"])
+@registration_blueprint.route("/services/registration/register", methods=["POST"])
 def register():
     """
     Registration handler
@@ -143,7 +148,7 @@ def register():
     return response
 
 
-@app.route("/services/registration/confirm", methods=["GET"])
+@registration_blueprint.route("/services/registration/confirm", methods=["GET"])
 def confirm():
     """
     Registrtaion confirmation handler
@@ -234,19 +239,17 @@ def _auto_accept_registration(account):
 
     Returns boolean: True/False
     """
-    settings = app.config.get("AUTO_REGISTER", {"mode": "NONE"})
+    settings = wnconfig.Config.AUTO_REGISTER,
+    if settings is None:
+        settings = {"mode": "NONE"}
+
     mode = settings.get("mode", "NONE").upper()
 
     if mode == "ALL":
-
         return True
-
     elif mode == "EMAILS":
-
         return wnutil.is_whitelisted(account.email, settings)
-
     else:
-
         return False
 
 
@@ -256,7 +259,7 @@ def _generate_registration_confirmation(account):
     """
 
     # create the code parts
-    encoded_id = wnutil.encode(app.secret_key, account.id).decode()
+    encoded_id = wnutil.encode(wnconfig.Config.SECRET_KEY, account.id).decode()
     account_hash = account.generate_code()
     time_stamp = str(int(time.time()))
 
@@ -295,7 +298,7 @@ def _validate_registration_confirmation(code):
     if len(parts) != 3:
         return False, "Invalid code", None
     try:
-        id = wnutil.decode(app.secret_key, parts[0])
+        id = wnutil.decode(wnconfig.Config.SECRET_KEY, parts[0])
         hash = parts[1]
         time_stamp = int(parts[2])
     except Exception:

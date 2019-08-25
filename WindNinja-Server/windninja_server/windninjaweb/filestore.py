@@ -1,9 +1,11 @@
-﻿import windninjaweb.models as wnmodels
-import os
+﻿import os
 import glob
 import logging
 from datetime import datetime
 import pytz
+
+from . import models as wnmodels
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -2,18 +2,18 @@
 import logging
 
 from flask import abort, url_for, send_from_directory, jsonify
-from flask_restful import Api, Resource, reqparse, fields, marshal
+from flask_restful import Resource, reqparse, fields, marshal
 
-from windninjaweb.app import app
-import windninjaweb.models as wnmodels
-import windninjaweb.filestore as wndb
-import windninjaqueue.queue as wnqueue
-import windninjaweb.utility as wnutil
+import windninja_server.windninjaweb.models as wnmodels
+import windninja_server.windninjaweb.filestore as wndb
+import windninja_server.windninjaqueue.queue as wnqueue
+import windninja_server.windninjaweb.utility as wnutil
+import windninja_server.windninjaconfig as wnconfig
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-_email_parameters = app.config.get("MAIL", None)
+_email_parameters = wnconfig.Config.MAIL
 
 
 def error_response(code, message):
@@ -255,21 +255,6 @@ class OutputController(Resource):
         job = job.replace("-", "")
         return send_from_directory(os.path.join(wndb._directories["job"], job), id)
 
-
-api = Api(app)
-api.add_resource(JobController, "/api/job", endpoint="jobs")
-api.add_resource(JobController, "/api/job/<string:id>", endpoint="job")
-api.add_resource(AccountController, "/api/account/<string:id>", endpoint="account")
-api.add_resource(FeedbackController, "/api/feedback", endpoint="feedback")
-api.add_resource(
-    NotificationListController, "/api/notification", endpoint="notifications"
-)
-api.add_resource(
-    NotificationController, "/api/notification/<string:id>", endpoint="notification"
-)
-api.add_resource(
-    OutputController, "/output/<string:job>/<string:id>", endpoint="output"
-)
 
 # /api/job/23becdaadf7c4ec2993497261e63d813
 # /api/account/test@gmail.com
