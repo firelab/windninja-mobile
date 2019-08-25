@@ -7,6 +7,7 @@ services:
       - "5000:5000"
     environment:
       - FLASK_APP=windninja_server.windninjaweb.app
+      - WNSERVER_CONFIG=/app/config/windninjaserver.config.yaml
     volumes:
       - ./data:/srv/WindNinjaServer/data
     networks:

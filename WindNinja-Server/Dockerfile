@@ -8,7 +8,6 @@ FROM python:3.7-alpine as build
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PIPENV_VENV_IN_PROJECT 1
 
 ADD requirements.txt /app/
 WORKDIR /app
@@ -20,8 +19,12 @@ RUN apk update && \
     python3 -m ensurepip && \
     pip3 install --no-cache --upgrade pip setuptools wheel
 
+# Install all requirements. Leverages docker layer caching to
+# speed up the build phase.
 RUN pip wheel --wheel-dir=dist -r requirements.txt
 
+# Add the package source and create a wheel. Will be installed
+# in the next stage.
 ADD . /app
 RUN python3 setup.py bdist_wheel
 
@@ -36,9 +39,14 @@ RUN python3 setup.py bdist_wheel
 FROM ubuntu:bionic
 
 WORKDIR /app
+RUN mkdir -p /app/config
+
 COPY --from=build /app/dist/*.whl dist/
 COPY --from=build /app/bin /app/bin
+COPY --from=build /app/windninja_server/windninjaserver.config.yaml /app/config/
 
+# Install all dependencies then remove unused system pacakges to keep
+# the resulting image size down.
 RUN set -xe \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt update -q && \
@@ -54,9 +62,7 @@ RUN set -xe \
     chmod 777 /run/ -R && \
     chmod 777 /root/ -R 
 
-
 USER ninja
-
 
 EXPOSE 5000
 ENTRYPOINT ["/app/bin/boot.sh"]
