@@ -2,6 +2,7 @@
 import time
 import datetime
 from operator import itemgetter
+import subprocess
 
 import windninjaqueue.windninja as wn
 import windninjaqueue.queue as wnqueue
@@ -56,17 +57,17 @@ def main_loop(config):
             current_running = len(
                 wnqueue.find_items_by_status(wnqueue.QueueStatus.running)
             )
-            available_jobs = MAX_RUNNING_JOBS - current_running
 
             # find pending jobs and sort by time created
             pending_jobs = wnqueue.find_items_by_status(wnqueue.QueueStatus.pending)
             pending_jobs.sort(key=itemgetter("created"))
             pending_job_count = len(pending_jobs)
+            available_cores = """mpstat -P ALL | cut -d" " -f10 | tail -n 8 | awk '$1 < 0.25 { print }' | sort -n | wc -l"""
 
             if VERBOSE:
                 write_stdout(
                     "Jobs - running: {0} ; available: {1}; pending:{2}".format(
-                        current_running, available_jobs, pending_job_count
+                        current_running, available_cores, pending_job_count
                     )
                 )
 
@@ -74,7 +75,7 @@ def main_loop(config):
                 if threads_in_use < max_threads:
                     id = job["id"]
                     write_stdout("enqueue job: {}".format(id))
-                    available_cores = """mpstat -P ALL | cut -d" " -f10 | tail -n 8 | awk '$1 < 0.25 { print }' | sort -n | wc -l"""
+                    available_cores = subprocess.check_output(available_cores, shell=True)
                     if pending_job_count >= available_cores:
                         nthreads = 1
                     elif pending_job_count == 1:
@@ -86,7 +87,6 @@ def main_loop(config):
                     wnqueue.update_queue_item_status(id, status, message)
 
                     if status == wnqueue.QueueStatus.running:
-                        available_jobs -= 1
                         pending_job_count -= 1
                     else:
                         write_stdout("job [{}] failed to start: {}".format(id, message))
