@@ -10,6 +10,8 @@ VERBOSE = False
 CANCEL = False
 LOOP_PAUSE = 5
 MAX_RUNNING_JOBS = 5
+# horrible way to do this, but we need to track how many threads are in use
+threads_in_use = 0
 
 # NOTES: this is a simple 'max' processes queue manager - first in, first out based on "created" time
 # other possible enhancements short term:
@@ -38,6 +40,8 @@ def main_loop(config):
 
     wnqueue.set_Queue(config)
 
+    max_threads = 8
+    threads_in_use = 0
     # start the loop
     while not CANCEL:
         try:
@@ -67,11 +71,18 @@ def main_loop(config):
                 )
 
             for job in pending_jobs:
-                if available_jobs > 0:
+                if threads_in_use < max_threads:
                     id = job["id"]
                     write_stdout("enqueue job: {}".format(id))
+                    available_cores = """mpstat -P ALL | cut -d" " -f10 | tail -n 8 | awk '$1 < 0.25 { print }' | sort -n | wc -l"""
+                    if pending_job_count >= available_cores:
+                        nthreads = 1
+                    elif pending_job_count == 1:
+                        nthreads = available_cores
+                    else:
+                        nthreads = available_cores / pending_job_count
 
-                    status, pid, message = wn.start_job(id)
+                    status, pid, message = wn.start_job(id, num_threads=nthreads)
                     wnqueue.update_queue_item_status(id, status, message)
 
                     if status == wnqueue.QueueStatus.running:

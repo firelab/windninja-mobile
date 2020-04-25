@@ -48,24 +48,6 @@ def enqueue(id, reset_existing=False):
     else:
         raise KeyError("Item with id {} already exists in queue".format(id))
 
-    # start job if in immediate mode
-    if _mode == QueueMode.immediate:
-        logging.debug("immediate queue start")
-        try:
-            status, pid, message = wn.start_job(id)
-            logging.debug(
-                "start results status={} pid={} message={}".format(status, pid, message)
-            )
-        except Exception as ex:
-            status = QueueStatus.failed
-            message = "ERROR:{}".format(str(ex))
-
-        # TODO: handle race condition here with wrapper...
-        update_queue_item_status(id, status, message)
-
-        if status == QueueStatus.failed:
-            raise Exception(message)
-
 
 def dequeue(id, **kwargs):
     # just skip out if disabled

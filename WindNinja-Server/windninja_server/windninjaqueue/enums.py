@@ -3,7 +3,7 @@ from enum import Enum
 
 class QueueMode(Enum):
     disabled = 0
-    immediate = 1
+    immediate = 1  # deprecated
     enabled = 2
 
 

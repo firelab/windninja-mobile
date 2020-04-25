@@ -16,15 +16,18 @@ def preexec_function():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def start_job(id):
+def start_job(id, **kwargs):
 
-    args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
+    wn_args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
     try:
-        args += WN_WRAPPER_OPTIONS
+        wn_args += WN_WRAPPER_OPTIONS
     except Exception:
         pass
 
-    logging.debug("start job args: {}".format(args))
+    if len(kwargs) > 0:
+        wn_args += ['--' + key + '=' + value for key, value in kwargs]
+
+    logging.debug("start job args: {}".format(wn_args))
     # windows/linux have different "Detach" usage
     status = QueueStatus.running
     message = ""
@@ -35,13 +38,13 @@ def start_job(id):
             # NOTE in testing on WIN10 in 'immediate' mode this setup will fail on the gdalwarp... ??? maybe missing environment variable?
             logging.debug("full new process group")
             pid = subprocess.Popen(
-                args, close_fds=True, creationflags=CREATE_NEW_PROCESS_GROUP
+                wn_args, close_fds=True, creationflags=CREATE_NEW_PROCESS_GROUP
             ).pid
             # pid = subprocess.Popen(args, close_fds=True, creationflags=DETACHED_PROCESS ).pid
             # pid = subprocess.Popen(args).pid
         else:
             pid = subprocess.Popen(
-                args, close_fds=True, preexec_fn=preexec_function
+                wn_args, close_fds=True, preexec_fn=preexec_function
             ).pid
 
         message = "pid:{}".format(pid)

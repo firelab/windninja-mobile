@@ -23,6 +23,7 @@ def main():  # noqa: C901
     # argument parsing
     parser = argparse.ArgumentParser(description="WindNinja Server Wrapper")
     parser.add_argument("id", help="id of the windninja run")
+    parser.add_argument("-n", "--num_threads", default=None, help="Number of threads to use.")
     parser.add_argument(
         "-l",
         "--log_level",
@@ -120,6 +121,10 @@ def main():  # noqa: C901
                     ptr.split(":")[0]: ptr.split(":")[1]
                     for ptr in project.parameters.split(";")
                 }
+
+                if args.num_threads is not None:
+                    override_args['num_threads'] = int(args.num_threads)
+
                 # TODO: rethink "products"
                 output_shp = project.products.get("vector", False)
                 output_asc = project.products.get("clustered", False)
