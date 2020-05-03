@@ -66,7 +66,7 @@ def main_loop(config):
 
             if VERBOSE:
                 write_stdout(
-                    "Jobs - running: {0} ; available: {1}; pending:{2}".format(
+                    "Jobs - running jobs: {0} ; available cores: {1}; pending jobs:{2}".format(
                         current_running, available_cores, pending_job_count
                     )
                 )
