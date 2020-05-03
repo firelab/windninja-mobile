@@ -49,7 +49,7 @@ def get_job(id):
     job_folder = id.replace("-", "").lower()
     path = os.path.join(_directories["job"], job_folder, _job_file_name)
 
-    logger.debug(f"Job file: {path}")
+    logger.debug("Job file: {}".format(path))
     json_string = read_file(path)
     if json_string is None:
         return
@@ -78,12 +78,12 @@ def save_job(job):
     root = _directories["job"]
     job_directory = job.id.replace("-", "").lower()
     job_folder = os.path.join(root, job_directory)
-    logger.debug(f"Job folder: {job_folder}")
+    logger.debug("Job folder: {}".format(job_folder))
 
     os.makedirs(job_folder, exist_ok=True)
 
     path = os.path.join(root, job_folder, _job_file_name)
-    logger.debug(f"Job file: {path}")
+    logger.debug("Job file: {}".format(path))
 
     with open(path, "w") as json_file:
         json_file.write(json_string)
@@ -102,8 +102,8 @@ def get_account(id):
             if the account was not found.
     """
     name = id.lower()
-    path = os.path.join(_directories["account"], f"{name}.json")
-    logger.debug(f"Account file: {path}")
+    path = os.path.join(_directories["account"], "{}.json".format(name))
+    logger.debug("Account file: {}".format(path))
     json_string = read_file(path)
     if json_string is None:
         return
@@ -133,7 +133,7 @@ def save_account(account):
     json_string = account.to_json()
 
     name = account.id.lower()
-    path = os.path.join(_directories["account"], f"{name}.json")
+    path = os.path.join(_directories["account"], "{}.json".format(name))
     logger.debug("Account file: {path}")
 
     with open(path, "w") as json_file:
@@ -153,8 +153,8 @@ def get_feedback(id):
                   or None if there was no feedback.
     """
     name = id.lower()
-    path = os.path.join(_directories["feedback"], f"{name}.json")
-    logger.debug(f"Feedback file: {path}")
+    path = os.path.join(_directories["feedback"], "{}.json".format(name))
+    logger.debug("Feedback file: {}".format(path))
     json_string = read_file(path)
 
     if json_string is None:
@@ -185,8 +185,8 @@ def save_feedback(feedback):
     json_string = feedback.to_json()
 
     name = feedback.id.lower()
-    path = os.path.join(_directories["feedback"], f"{name}.json")
-    logger.debug(f"Feedback file: {path}")
+    path = os.path.join(_directories["feedback"], "{}.json".format(name))
+    logger.debug("Feedback file: {}".format(path))
 
     with open(path, "w") as json_file:
         json_file.write(json_string)
@@ -196,7 +196,7 @@ def save_feedback(feedback):
 
 # ------------NOTIFICATION--------------
 def _get_notification_from_file(path):
-    logger.debug(f"Notification file: {path}")
+    logger.debug("Notification file: {}".format(path))
     json_string = read_file(path)
     if json_string is None:
         return
@@ -215,7 +215,7 @@ def get_notification(id):
             or None if there was no notification found.
     """
     name = id.lower()
-    path = os.path.join(_directories["notification"], f"{name}.json")
+    path = os.path.join(_directories["notification"], "{}.json".format(name))
     return _get_notification_from_file(path)
 
 
@@ -232,13 +232,13 @@ def get_notifications(expired=False):
     # ASSUMPTION: times are UTC WITH PYTZ
     dt = datetime.max if expired else datetime.utcnow()
     date_filter = pytz.utc.localize(dt)
-    logger.debug("Notification date filter: {date_filter.isoformat()}")
+    logger.debug("Notification date filter: {}".format(date_filter.isoformat()))
 
     file_filter = os.path.join(_directories["notification"], "*.json")
-    logger.debug("Notification file filter: {file_filter}")
+    logger.debug("Notification file filter: {}".format(file_filter))
 
     files = glob.glob(file_filter)
-    logger.debug(f"Notification count: {len(files)}")
+    logger.debug("Notification count: {}".format(len(files)))
 
     for f in files:
         notification = _get_notification_from_file(f)
@@ -247,7 +247,8 @@ def get_notifications(expired=False):
                 notifications.append(notification)
         except TypeError:
             logger.warn(
-                f"Notification expires date is not tz aware: id={notification.id}, expires:{notification.expires}"
+                "Notification expires date is not tz aware: id={}, expires:{}"
+                .format(notification.id, notification.expires)
             )
 
     return notifications
@@ -272,8 +273,8 @@ def save_notification(notification):
 
     json_string = notification.to_json()
 
-    path = os.path.join(_directories["notification"], "{notification.id.lower()}.json")
-    logger.debug(f"Notification file: {path}")
+    path = os.path.join(_directories["notification"], "{}.json".format(notification.id.lower()))
+    logger.debug("Notification file: {}".format(path))
 
     with open(path, "w") as json_file:
         json_file.write(json_string)
@@ -294,7 +295,7 @@ def read_file(path):
         with open(path, "r") as json_file:
             json_string = json_file.read()
     except FileNotFoundError:
-        logger.exception(f"{path} not found.")
+        logger.exception("{} not found.".format(path))
         return None
 
     return json_string

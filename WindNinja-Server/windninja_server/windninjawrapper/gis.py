@@ -6,8 +6,8 @@ import os
 from osgeo import gdal, ogr, osr
 from utility import execute_shell_process
 
-from . import ogr2ogr
-from .config import CONFIG, MESSAGES
+import ogr2ogr
+from config import CONFIG, MESSAGES
 
 
 def withinForecast(bbox):

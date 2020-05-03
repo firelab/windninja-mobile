@@ -15,6 +15,7 @@ ipython = "*"
 
 [packages]
 flask = "*"
+loguru = "*"
 supervisor = "*"
 flask-restful = "*"
 pyyaml = "*"

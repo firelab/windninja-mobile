@@ -95,7 +95,7 @@ def deploy_config(connection, source, destination):
 
     #job wrapper config
     src_file = os.path.join(source, "windninjawrapper", "windninjawrapper.config.yaml")
-    dst_folder = os.path.join(dst_folder, "windninjawrapper")
+    dst_folder = os.path.join(dst_folder, "windninja_server", "windninjawrapper")
 
     logger.info("creating job wrapper folder: {}".format(dst_folder))
     connection.run(f'mkdir -p {dst_folder}')
@@ -106,12 +106,13 @@ def deploy_config(connection, source, destination):
 
 def deploy_app(connection, source, destination):
     connection.run(f'rm -rf {destination}/app')
-    connection.run(f'mkdir -p {destination}/app')
+    connection.run(f'mkdir -p {destination}/app/windninja_server')
+    connection.sudo(f'touch {destination}/app/windninja_server/__init__.py')
 
     # copy main folders
     for filename in ["windninjaweb", "windninjaqueue", "windninjaconfig", "windninjawrapper"]:
         src_folder = os.path.join(source, filename)
-        dst_folder = os.path.join(destination, "app", filename)
+        dst_folder = os.path.join(destination, "app", "windninja_server", filename)
         logger.info(f"copying {filename} folder: {src_folder} to {dst_folder}")
         connection.run(f"cp -R {src_folder} {dst_folder}")
 
@@ -148,7 +149,7 @@ def reload_services(connection):
     connection.sudo('a2ensite WindNinjaApp')
     connection.sudo('service apache2 reload')
     connection.sudo('supervisorctl -c /etc/supervisor/supervisord.conf reload')
-    time.sleep(5)
+    time.sleep(10)
     connection.sudo('supervisorctl status')
 
 

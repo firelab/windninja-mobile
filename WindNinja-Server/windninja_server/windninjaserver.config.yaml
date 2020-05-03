@@ -12,7 +12,7 @@ auto_register:
         - nifc.gov
         - nps.gov
         - turnerforestry.com
-    emails: 
+    emails: []
 mail:
     from_address: wind.ninja.support@gmail.com
     support_address: wind.ninja.support@gmail.com
@@ -23,7 +23,7 @@ queue:
     loop_interval: 5
     windninja_wrapper:                              
         executable: /usr/bin/python
-        script: /srv/WindNinjaServer/app/windninjawrapper/windninja.py
+        script: /srv/WindNinjaServer/app/windninja_server/windninjawrapper/windninja.py
         options:
             - -p
             - -ldebug

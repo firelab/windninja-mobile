@@ -195,7 +195,7 @@ def confirm():
                 result.data.message += "; A new code as been generated and sent"
             except Exception:
                 logger.exception(
-                    f"Error generating or sending new code for {account.email}"
+                    "Error generating or sending new code for {}".format(account.email)
                 )
                 result.data.message += "; Error generating or sending new code"
 
@@ -239,7 +239,7 @@ def _auto_accept_registration(account):
 
     Returns boolean: True/False
     """
-    settings = wnconfig.Config.AUTO_REGISTER,
+    settings = wnconfig.Config.AUTO_REGISTER
     if settings is None:
         settings = {"mode": "NONE"}
 
@@ -265,7 +265,7 @@ def _generate_registration_confirmation(account):
 
     # create the code and url
     code = _confirmation_code_separator.join([encoded_id, account_hash, time_stamp])
-    url = url_for("confirm", _external=True, code=code, f="html")
+    url = url_for("registration_blueprint.confirm", _external=True, code=code, f="html")
 
     # send the email
     subject = "WindNinja Mobile - account verification"
@@ -302,7 +302,7 @@ def _validate_registration_confirmation(code):
         hash = parts[1]
         time_stamp = int(parts[2])
     except Exception:
-        logger.exception(f"Verification code parsing failed for {code}")
+        logger.exception("Verification code parsing failed for {}".format(code))
         return False, "Code parsing failed", None
 
     # get the assocated account

@@ -9,12 +9,15 @@ import windninja_server.windninjaqueue.queue as wnqueue
 import windninja_server.windninjaweb.filestore as wndb
 import windninja_server.windninjaweb.api as wnapi
 from windninja_server.windninjaweb.services import registration_blueprint
+from windninja_server.windninjaweb.views import main
 
 
 def log_exception(sender, exception, **extra):
     logging.exception(exception)
 
 # configure_app
+
+
 app = Flask(__name__)
 app.config.from_object(wnconfig.Config)
 
@@ -49,5 +52,6 @@ api.add_resource(
 
 # register_service_endpoints
 app.register_blueprint(registration_blueprint)
+app.register_blueprint(main)
 
 application = app

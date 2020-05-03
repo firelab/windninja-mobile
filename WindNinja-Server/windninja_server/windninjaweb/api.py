@@ -243,7 +243,7 @@ class FeedbackController(Resource):
                 )
             except Exception:
                 # return error_response(500, str(ex))
-                logger.exception(f"Feedback from {feedback.account} failed")
+                logger.exception("Feedback from {} failed".format(feedback.account))
 
             return marshal(feedback, self.feedback_fields)
         else:

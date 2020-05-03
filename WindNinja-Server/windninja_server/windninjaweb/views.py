@@ -1,25 +1,25 @@
 ﻿"""
 Routes and views for the flask application.
 """
-from flask import render_template
+from flask import render_template, Blueprint
 
-from windninjaweb.app import app
+main = Blueprint('main_blueprint', 'main')
 
 
-@app.route("/")
-@app.route("/home")
+@main.route("/")
+@main.route("/home")
 def home():
     """Renders the home page."""
     return render_template("index.html", title="Home")
 
 
-@app.route("/contact")
+@main.route("/contact")
 def contact():
     """Renders the contact page."""
     return render_template("contact.html", title="Contact")
 
 
-@app.route("/about")
+@main.route("/about")
 def about():
     """Renders the about page."""
     return render_template("about.html", title="About")

@@ -4,8 +4,8 @@ import sys
 import signal
 import datetime
 
-import windninjaqueue.manager as wnmanager
-import windninjaconfig as wnconfig
+import windninja_server.windninjaqueue.manager as wnmanager
+import windninja_server.windninjaconfig as wnconfig
 
 
 def write_stdout(s):

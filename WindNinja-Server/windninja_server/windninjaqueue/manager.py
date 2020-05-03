@@ -4,8 +4,8 @@ import datetime
 from operator import itemgetter
 import subprocess
 
-import windninjaqueue.windninja as wn
-import windninjaqueue.queue as wnqueue
+import windninja_server.windninjaqueue.windninja as wn
+import windninja_server.windninjaqueue.queue as wnqueue
 
 VERBOSE = False
 CANCEL = False
@@ -32,7 +32,7 @@ def get_available_cores():
     available_cores = subprocess.check_output(available_cores_proc, shell=True)
     available_cores = available_cores.decode("utf-8").strip()
 
-    return available_cores
+    return int(available_cores)
 
 
 def main_loop(config):
@@ -91,7 +91,9 @@ def main_loop(config):
                     else:
                         nthreads = available_cores / pending_job_count
 
+                    write_stdout('starting job {}'.format(id))
                     status, pid, message = wn.start_job(id, num_threads=nthreads)
+                    write_stdout('started job {}'.format(id))
                     wnqueue.update_queue_item_status(id, status, message)
 
                     if status == wnqueue.QueueStatus.running:

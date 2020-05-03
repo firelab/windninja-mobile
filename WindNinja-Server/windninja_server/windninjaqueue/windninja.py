@@ -2,7 +2,7 @@
 import subprocess
 import logging
 import signal
-from windninjaqueue.enums import QueueStatus
+from windninja_server.windninjaqueue.enums import QueueStatus
 
 DETACHED_PROCESS = 0x00000008
 CREATE_NEW_PROCESS_GROUP = 0x00000200
@@ -17,7 +17,6 @@ def preexec_function():
 
 
 def start_job(id, **kwargs):
-
     wn_args = [PYTHON_EXECUTABLE, WN_WRAPPER, id]
     try:
         wn_args += WN_WRAPPER_OPTIONS
@@ -25,8 +24,9 @@ def start_job(id, **kwargs):
         pass
 
     if len(kwargs) > 0:
-        wn_args += ['--' + key + '=' + value for key, value in kwargs]
+        wn_args += ['--{}={}'.format(key, value) for key, value in kwargs.items()]
 
+    print('hi')
     logging.debug("start job args: {}".format(wn_args))
     # windows/linux have different "Detach" usage
     status = QueueStatus.running
