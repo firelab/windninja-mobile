@@ -147,7 +147,7 @@ def reload_services(connection):
     connection.sudo('mkdir -p /var/log/WindNinjaServer')
     connection.sudo('a2ensite WindNinjaApp')
     connection.sudo('service apache2 reload')
-    connection.sudo('supervisorctl reload /etc/supervisor/supervisord.conf')
+    connection.sudo('supervisorctl -c /etc/supervisor/supervisord.conf reload')
     time.sleep(5)
     connection.sudo('supervisorctl status')
 
@@ -156,7 +156,7 @@ def reload_services(connection):
 @click.argument("parts", type=click.Choice(["all", "app", "config", "data", "apache", "supervisor"]))
 @click.option('-t', '--target', default=None)
 @click.option('-d', '--destination', default='/tmp/srv')
-@click.option('-h', '--host' )
+@click.option('-h', '--host')
 @click_log.simple_verbosity_option()
 def deploy(parts, target, destination, host):
     """Deploy windninja_server to a remote destination.
