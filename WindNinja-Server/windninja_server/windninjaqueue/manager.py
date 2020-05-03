@@ -62,7 +62,8 @@ def main_loop(config):
             pending_jobs = wnqueue.find_items_by_status(wnqueue.QueueStatus.pending)
             pending_jobs.sort(key=itemgetter("created"))
             pending_job_count = len(pending_jobs)
-            available_cores = """mpstat -P ALL | cut -d" " -f10 | tail -n 8 | awk '$1 < 0.25 { print }' | sort -n | wc -l"""
+            available_cores_proc = """mpstat -P ALL | cut -d" " -f10 | tail -n 8 | awk '$1 < 0.25 { print }' | sort -n | wc -l"""
+            available_cores = subprocess.check_output(available_cores_proc, shell=True)
 
             if VERBOSE:
                 write_stdout(
@@ -75,7 +76,7 @@ def main_loop(config):
                 if threads_in_use < max_threads:
                     id = job["id"]
                     write_stdout("enqueue job: {}".format(id))
-                    available_cores = subprocess.check_output(available_cores, shell=True)
+                    available_cores = subprocess.check_output(available_cores_proc, shell=True)
                     if pending_job_count >= available_cores:
                         nthreads = 1
                     elif pending_job_count == 1:
