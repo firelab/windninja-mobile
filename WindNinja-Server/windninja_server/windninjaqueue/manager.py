@@ -11,8 +11,6 @@ VERBOSE = False
 CANCEL = False
 LOOP_PAUSE = 5
 MAX_RUNNING_JOBS = 5
-# horrible way to do this, but we need to track how many threads are in use
-threads_in_use = 0
 
 # NOTES: this is a simple 'max' processes queue manager - first in, first out based on "created" time
 # other possible enhancements short term:
@@ -49,8 +47,6 @@ def main_loop(config):
 
     wnqueue.set_Queue(config)
 
-    max_threads = 8
-    threads_in_use = 0
     # start the loop
     while not CANCEL:
         try:
@@ -67,33 +63,26 @@ def main_loop(config):
             )
 
             # find pending jobs and sort by time created
+            current_running = len(
+                wnqueue.find_items_by_status(wnqueue.QueueStatus.running)
+            )
+            available_jobs = MAX_RUNNING_JOBS - current_running
             pending_jobs = wnqueue.find_items_by_status(wnqueue.QueueStatus.pending)
             pending_jobs.sort(key=itemgetter("created"))
             pending_job_count = len(pending_jobs)
-            available_cores = get_available_cores()
 
             if VERBOSE:
                 write_stdout(
-                    "Jobs - running jobs: {0} ; available cores: {1}; pending jobs:{2}".format(
-                        current_running, available_cores, pending_job_count
+                    "Jobs - running jobs: {0} ; available jobs: {1}; pending jobs:{2}".format(
+                        current_running, available_jobs, pending_job_count
                     )
                 )
 
             for job in pending_jobs:
-                if threads_in_use < max_threads:
+                if available_jobs > 0:
                     id = job["id"]
                     write_stdout("enqueue job: {}".format(id))
-                    available_cores = get_available_cores()
-                    if pending_job_count >= available_cores:
-                        nthreads = 1
-                    elif pending_job_count == 1:
-                        nthreads = available_cores
-                    else:
-                        nthreads = available_cores / pending_job_count
-
-                    write_stdout('starting job {}'.format(id))
-                    status, pid, message = wn.start_job(id, num_threads=nthreads)
-                    write_stdout('started job {}'.format(id))
+                    status, pid, message = wn.start_job(id)
                     wnqueue.update_queue_item_status(id, status, message)
 
                     if status == wnqueue.QueueStatus.running:
