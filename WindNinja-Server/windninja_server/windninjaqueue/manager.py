@@ -63,9 +63,6 @@ def main_loop(config):
             )
 
             # find pending jobs and sort by time created
-            current_running = len(
-                wnqueue.find_items_by_status(wnqueue.QueueStatus.running)
-            )
             available_jobs = MAX_RUNNING_JOBS - current_running
             pending_jobs = wnqueue.find_items_by_status(wnqueue.QueueStatus.pending)
             pending_jobs.sort(key=itemgetter("created"))
@@ -86,10 +83,10 @@ def main_loop(config):
                     wnqueue.update_queue_item_status(id, status, message)
 
                     if status == wnqueue.QueueStatus.running:
+                        available_jobs -= 1
                         pending_job_count -= 1
                     else:
                         write_stdout("job [{}] failed to start: {}".format(id, message))
-
                 else:
                     write_stdout(
                         "Running jobs filled - remaining: {0}".format(pending_job_count)
