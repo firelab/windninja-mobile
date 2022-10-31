@@ -1,0 +1,62 @@
+{
+    "access": "private",
+    "accessInformation": null,
+    "advancedSettings": null,
+    "appCategories": [
+    ],
+    "avgRating": 0,
+    "banner": null,
+    "categories": [
+    ],
+    "commentsEnabled": true,
+    "created": 1655993402000,
+    "culture": "en-au",
+    "description": "\n<p style=' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;'>This is a simple app to get you started with your own awesome creation.</p>\n<p style='-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;'><br /></p>\n<p style=' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;'><a href='http://geonet.esri.com/groups/appstudio/blog/2016/12/06/how-to-describe-our-resources-in-terms-of-difficulty-complexity-and-time-to-digest' rel='nofollow ugc'><span style=' text-decoration: underline; color:#0000ff;'>Resource Level:</span></a>🍌 </p>",
+    "documentation": null,
+    "extent": [
+    ],
+    "groupDesignations": null,
+    "guid": null,
+    "id": "90e10680756a4e3faf5172330dbee6bb",
+    "industries": [
+    ],
+    "isOrgItem": true,
+    "itemControl": "admin",
+    "languages": [
+    ],
+    "largeThumbnail": null,
+    "licenseInfo": null,
+    "listed": false,
+    "modified": 1663682140000,
+    "name": "90e10680756a4e3faf5172330dbee6bb.zip",
+    "numComments": 16,
+    "numRatings": 0,
+    "numViews": 26,
+    "owner": "tsyldevelopers_general",
+    "ownerFolder": null,
+    "properties": null,
+    "protected": false,
+    "proxyFilter": null,
+    "scoreCompleteness": 48,
+    "screenshots": [
+    ],
+    "size": 6222148,
+    "snippet": "App",
+    "spatialReference": null,
+    "subInfo": 0,
+    "tags": [
+    ],
+    "thumbnail": "thumbnail/thumbnail.png",
+    "title": "WindNinja Mobile",
+    "type": "Native Application",
+    "typeKeywords": [
+        "API_QML",
+        "App",
+        "Application",
+        "AppStudio",
+        "Configuration",
+        "Native",
+        "qml"
+    ],
+    "url": null
+}
