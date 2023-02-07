@@ -5,7 +5,7 @@ blinker==1.4
 cffi==1.14.0
 click-log==0.3.2
 click==7.1.2
-cryptography==2.9.2
+cryptography==39.0.1
 fabric==2.5.0
 flask-dotenv==0.1.2
 flask-restful==0.3.8
