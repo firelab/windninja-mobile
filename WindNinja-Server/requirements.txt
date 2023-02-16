@@ -24,4 +24,4 @@ pytz==2020.1
 pyyaml==5.3.1
 six==1.14.0
 supervisor==4.2.0
-werkzeug==1.0.1
+werkzeug==2.2.3
