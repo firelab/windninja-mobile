@@ -14,10 +14,10 @@ job_wrapper:
   queue_datastore: /srv/WindNinjaServer/data/queue
   tile_grabber: 
     file_template: "{0}.jpg"
-    max_level: 14
+    max_level: 12
     min_level: 1
     urls: 
-      topofire: "http://topofire.dbs.umt.edu/topomap/relief/{0}/{1}/{2}.jpg"
+      topofire: "https://topofire.dbs.umt.edu/topofire_v2/data/osmUShydro/{0}/{1}/{2}.png"
   tile_maker: 
     file_name: tiles
     zip_name: tiles.zip

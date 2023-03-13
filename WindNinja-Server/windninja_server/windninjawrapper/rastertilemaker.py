@@ -482,7 +482,7 @@ def make_tiles_for_output(dir, wn_results, wn_infos, forecast):
         layer_info = wn_infos[0][res]
         logging.debug("LAYER INFO: {}".format(layer_info))
         ext = layer_info["extents"]["4326"]
-        bbox = (ext["xmin"], ext["ymin"], ext["xmax"], ext["ymax"])
+        bbox = (ext["ymin"], ext["xmin"], ext["ymax"], ext["xmax"])
         proj4string = layer_info["extents"][layer_info["native_wkid"]]["proj4string"]
         logging.debug("Proj4String: {}".format(proj4string))
 

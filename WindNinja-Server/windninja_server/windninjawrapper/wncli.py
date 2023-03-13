@@ -149,8 +149,22 @@ def execute_wncli(working_dir, override_args_dict, dem_path, forecast, shp, asc,
 
     # execute the command
     command = cli_template.substitute(cli)
+
+    # DOCKER UPDATE: this will use a dockerized windninja with OpenFOAM support that has been dockerized
+    # in order to work properly
+
+    # Required as volume for WindNinja (OpenFOAM) docker
+    job_path = output_folder.split('wncli/output')[0]
+    # Extract only WindNina CLI command
+    wn_command = command.split(';')[1]
+    # logging.debug("WN CLI command to execute: {}".format(command))
+    # logging.debug("WN CLI working dir: {}".format(working_dir))
+    # logging.debug("WN COMMAND: {}".format(wn_command))
+    # logging.debug("JOB PATH: {}".format(job_path))
+    docker_command = 'docker run --rm -v {0}:{0} technosylva/windninja:3.7.4 /bin/bash -c "source ' \
+                     '/opt/src/windninja/build/ini.sh && {1}"'.format(job_path, wn_command)
     env = CONFIG.WN_CLI_ENV
-    shell_result = execute_shell_process(command, working_dir, env=env)
+    shell_result = execute_shell_process(docker_command, working_dir, env=env)
 
     # process results
     if shell_result[0]:

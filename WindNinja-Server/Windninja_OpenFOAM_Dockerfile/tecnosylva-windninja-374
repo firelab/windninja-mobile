@@ -1,0 +1,16 @@
+FROM ekeenan/windninja-momentum
+USER root
+WORKDIR cd /opt/src/windninja/
+RUN git pull
+RUN git checkout 7b974824e5b92e8c62fcad4388dfb107b812ae77
+RUN cd /opt/src/windninja/scripts/ && yes | ./build_deps.sh
+RUN mkdir build
+WORKDIR /opt/src/windninja/build
+RUN cmake -D SUPRESS_WARNINGS=ON -DNINJA_QTGUI=OFF -DNINJAFOAM=ON .. && \
+ make -j4 && \
+ make install
+ENV FOAM_INST_DIR=/opt/src/OpenFOAM/
+RUN . $FOAM_INST_DIR/OpenFOAM-2.2.0/etc/bashrc
+ADD ini.sh /opt/src/windninja/build
+RUN chmod +x /opt/src/windninja/build/ini.sh
+RUN chmod +x /opt/src/windninja/build/src/cli/WindNinja_cli

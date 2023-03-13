@@ -6,8 +6,27 @@ import os
 from osgeo import gdal, ogr, osr
 from utility import execute_shell_process
 
+import rasterio, numpy as np
+
 import ogr2ogr
 from config import CONFIG, MESSAGES
+
+
+def reclassify_nodata(path):
+    """
+    Reclassifies nodata values.
+    0 to 1.
+    Remaining to 0.
+    """
+    with rasterio.open(path) as src:
+        profile = src.profile
+        data = src.read()
+        new_nodata_val = 0
+        if profile["nodata"] == 0:
+            new_nodata_val = -1
+        data[np.where(data == profile["nodata"])] = new_nodata_val
+        with rasterio.open(path, 'w', **profile) as dest:
+            dest.write(data)
 
 
 def withinForecast(bbox):
@@ -115,6 +134,7 @@ def createDem(bbox, project_path):
         output_dem_path,
     )
     result = execute_shell_process(command, project_path)
+    reclassify_nodata(output_dem_path)
     if result[0]:
         result = (True, output_dem_path)
 

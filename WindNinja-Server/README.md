@@ -220,3 +220,18 @@ data/job/1a1111111111111111111111111111/clean-job.sh
 rm Data/queue/1a1111111111111111111111111111.complete 
 ```
 
+## 2023 March - TSYL UPDATE
+### gis.py
+Located at `WindNinja-Server/windninja_server/windninjawrapper/gis.py`, has been updated in order reclassify some DEM files being used
+during the process causing the simulation to fail if the area intersects with water.
+
+### rastertilemaker.py
+Located at `WindNinja-Server/windninja_server/windninjawrapper/rastertilemaker.py`, the function **make_tiles_for_output** has been updated
+to calculate bbox using other coordinates order. We think this was caused by newer libraries.
+
+### windninjawrapper.config.yaml
+Located at `WindNinja-Server/windninja_server/windninjawrapper/windninjawrapper.config.yaml`, updated the topofire source and reduced max level to 12.
+
+### wncli.py
+Located at `WindNinja-Server/windninja_server/windninjawrapper/wncli.py`, replaced the system call to wncli with the dockerized version of WindNinja
+with OpenFOAM support. Added bash script and dockerfile required for it.
